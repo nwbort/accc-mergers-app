@@ -1,0 +1,354 @@
+{
+  "total_mergers": 321,
+  "total_waivers": 503,
+  "total_conditional_approvals": 5,
+  "by_status": {
+    "Assessment completed": 272,
+    "Under assessment": 44,
+    "Assessment ceased": 5
+  },
+  "by_determination": {
+    "Approved": 265,
+    "Referred to phase 2": 9,
+    "Approved with conditions": 4
+  },
+  "by_phase_2_determination": {
+    "Approved with conditions": 1,
+    "Not approved": 3,
+    "Assessment ceased": 3
+  },
+  "by_waiver_determination": {
+    "Approved": 478,
+    "Not approved": 25
+  },
+  "clearance_rate": {
+    "cleared": 270,
+    "not_cleared": 2,
+    "total": 272,
+    "rate": 0.993
+  },
+  "phase_duration": {
+    "average_days": 29.503597122302157,
+    "median_days": 26.0,
+    "average_business_days": 20.07913669064748,
+    "median_business_days": 18.0,
+    "percentiles": {
+      "day15": {
+        "count": 58,
+        "percentage": 20.9
+      },
+      "day20": {
+        "count": 201,
+        "percentage": 72.3
+      },
+      "day30": {
+        "count": 260,
+        "percentage": 93.5
+      }
+    }
+  },
+  "waiver_duration": {
+    "average_days": 20.791252485089462,
+    "median_days": 21,
+    "average_business_days": 14.234592445328031,
+    "median_business_days": 14
+  },
+  "top_industries": [
+    {
+      "name": "Financial Asset Investing",
+      "count": 205
+    },
+    {
+      "name": "Other Auxiliary Finance and Investment Services",
+      "count": 98
+    },
+    {
+      "name": "Computer System Design and Related Services",
+      "count": 84
+    },
+    {
+      "name": "Non-Residential Property Operators",
+      "count": 48
+    },
+    {
+      "name": "Software Publishing",
+      "count": 48
+    },
+    {
+      "name": "Pubs, Taverns and Bars",
+      "count": 41
+    },
+    {
+      "name": "Engineering Design and Engineering Consulting Services",
+      "count": 28
+    },
+    {
+      "name": "Accommodation",
+      "count": 27
+    },
+    {
+      "name": "Supermarket and Grocery Stores",
+      "count": 26
+    },
+    {
+      "name": "Cafes and Restaurants",
+      "count": 26
+    }
+  ],
+  "recent_mergers": [
+    {
+      "merger_id": "MN-20046",
+      "merger_name": "Autosports Group - Mercedes-Benz Parramatta and Castle Hill, Chery Castle Hill",
+      "status": "Under assessment",
+      "accc_determination": null,
+      "effective_notification_datetime": "2026-11-06T12:00:00Z",
+      "page_modified_datetime": "2026-11-06T16:44:31+11:00",
+      "is_waiver": false,
+      "is_refiled": false
+    },
+    {
+      "merger_id": "MN-70049",
+      "merger_name": "Total Ventilation Hygiene - Alphacool",
+      "status": "Under assessment",
+      "accc_determination": null,
+      "effective_notification_datetime": "2026-11-05T12:00:00Z",
+      "page_modified_datetime": "2026-11-06T10:54:38+11:00",
+      "is_waiver": false,
+      "is_refiled": false
+    },
+    {
+      "merger_id": "MN-55046",
+      "merger_name": "USCO \u2013 ITM",
+      "status": "Under assessment",
+      "accc_determination": null,
+      "effective_notification_datetime": "2026-11-05T12:00:00Z",
+      "page_modified_datetime": "2026-11-05T16:45:29+11:00",
+      "is_waiver": false,
+      "is_refiled": false
+    },
+    {
+      "merger_id": "MN-65042",
+      "merger_name": "Thoma Bravo - Varonis",
+      "status": "Under assessment",
+      "accc_determination": null,
+      "effective_notification_datetime": "2026-11-04T12:00:00Z",
+      "page_modified_datetime": "2026-11-05T12:11:45+11:00",
+      "is_waiver": false,
+      "is_refiled": false
+    },
+    {
+      "merger_id": "MN-60052",
+      "merger_name": "Healthe Care - Prince of Wales Private Hospital",
+      "status": "Under assessment",
+      "accc_determination": null,
+      "effective_notification_datetime": "2026-11-02T12:00:00Z",
+      "page_modified_datetime": "2026-11-03T11:11:15+11:00",
+      "is_waiver": false,
+      "is_refiled": false
+    },
+    {
+      "merger_id": "MN-25058",
+      "merger_name": "Healthe Care \u2013 Knox Private, Ringwood Private, Northpark Private, Victorian Rehabilitation Centre and Geelong Clinic",
+      "status": "Under assessment",
+      "accc_determination": null,
+      "effective_notification_datetime": "2026-11-02T12:00:00Z",
+      "page_modified_datetime": "2026-11-03T10:52:54+11:00",
+      "is_waiver": false,
+      "is_refiled": false
+    },
+    {
+      "merger_id": "MN-60059",
+      "merger_name": "Merchant Wealth Partners - minority investment in Ironbark Financial Group",
+      "status": "Under assessment",
+      "accc_determination": null,
+      "effective_notification_datetime": "2026-11-02T12:00:00Z",
+      "page_modified_datetime": "2026-11-02T17:43:08+11:00",
+      "is_waiver": false,
+      "is_refiled": false
+    },
+    {
+      "merger_id": "MN-40049",
+      "merger_name": "Coles \u2013 supermarket site in Cannonvale Central (QLD)",
+      "status": "Under assessment",
+      "accc_determination": null,
+      "effective_notification_datetime": "2026-10-30T12:00:00Z",
+      "page_modified_datetime": "2026-11-02T10:47:45+11:00",
+      "is_waiver": false,
+      "is_refiled": false
+    },
+    {
+      "merger_id": "MN-10043",
+      "merger_name": "ACURIO - Nepean, Sydney Southwest, and Campbelltown Private Hospitals",
+      "status": "Under assessment",
+      "accc_determination": null,
+      "effective_notification_datetime": "2026-10-30T12:00:00Z",
+      "page_modified_datetime": "2026-11-02T10:10:34+11:00",
+      "is_waiver": false,
+      "is_refiled": false
+    },
+    {
+      "merger_id": "MN-65041",
+      "merger_name": "GLNG Participants \u2013 Greater Meridian CSG Project assets",
+      "status": "Under assessment",
+      "accc_determination": null,
+      "effective_notification_datetime": "2026-10-30T12:00:00Z",
+      "page_modified_datetime": "2026-11-02T09:19:14+11:00",
+      "is_waiver": false,
+      "is_refiled": false
+    },
+    {
+      "merger_id": "MN-90044",
+      "merger_name": "Stellex and ONA \u2013 Score",
+      "status": "Under assessment",
+      "accc_determination": null,
+      "effective_notification_datetime": "2026-10-29T12:00:00Z",
+      "page_modified_datetime": "2026-10-30T15:48:56+11:00",
+      "is_waiver": false,
+      "is_refiled": false
+    },
+    {
+      "merger_id": "MN-10040",
+      "merger_name": "Calvary \u2013 14 Healthscope hospitals and Healthscope Independence Services",
+      "status": "Under assessment",
+      "accc_determination": null,
+      "effective_notification_datetime": "2026-10-29T12:00:00Z",
+      "page_modified_datetime": "2026-10-30T10:08:39+11:00",
+      "is_waiver": false,
+      "is_refiled": false
+    }
+  ],
+  "recent_determinations": [
+    {
+      "merger_id": "WA-40050",
+      "merger_name": "Sims - business assets of Base Metal Recyclers, VIC",
+      "determination": "Approved",
+      "determination_date": "2026-11-05T12:00:00Z",
+      "page_modified_datetime": "2026-11-05T16:39:01+11:00",
+      "determination_type": "final",
+      "is_waiver": true,
+      "stage": "Waiver application",
+      "has_conditions": false
+    },
+    {
+      "merger_id": "MN-25047",
+      "merger_name": "Alcoa \u2013 South32 aluminium assets",
+      "determination": "Approved",
+      "determination_date": "2026-11-05T12:00:00Z",
+      "page_modified_datetime": "2026-11-05T16:37:47+11:00",
+      "determination_type": "final",
+      "is_waiver": false,
+      "stage": "Phase 1 - initial assessment",
+      "has_conditions": false
+    },
+    {
+      "merger_id": "MN-10032",
+      "merger_name": "TurOSI - Cordina",
+      "determination": "Approved",
+      "determination_date": "2026-11-05T12:00:00Z",
+      "page_modified_datetime": "2026-11-05T10:11:39+11:00",
+      "determination_type": "final",
+      "is_waiver": false,
+      "stage": "Phase 1 - initial assessment",
+      "has_conditions": false
+    },
+    {
+      "merger_id": "WA-70045",
+      "merger_name": "SVP \u2013 Marelli",
+      "determination": "Approved",
+      "determination_date": "2026-11-04T12:00:00Z",
+      "page_modified_datetime": "2026-11-04T17:57:21+11:00",
+      "determination_type": "final",
+      "is_waiver": true,
+      "stage": "Waiver application",
+      "has_conditions": false
+    },
+    {
+      "merger_id": "WA-85059",
+      "merger_name": "SMM Perth \u2013 mining tenements of Rio Tinto related to the Winu copper-gold project in Western Australia",
+      "determination": "Approved",
+      "determination_date": "2026-11-04T12:00:00Z",
+      "page_modified_datetime": "2026-11-04T17:50:36+11:00",
+      "determination_type": "final",
+      "is_waiver": true,
+      "stage": "Waiver application",
+      "has_conditions": false
+    },
+    {
+      "merger_id": "WA-10048",
+      "merger_name": "TA Associates \u2013 MedEnvision",
+      "determination": "Approved",
+      "determination_date": "2026-11-04T12:00:00Z",
+      "page_modified_datetime": "2026-11-04T17:48:24+11:00",
+      "determination_type": "final",
+      "is_waiver": true,
+      "stage": "Waiver application",
+      "has_conditions": false
+    },
+    {
+      "merger_id": "MN-65038",
+      "merger_name": "TCL Electronics \u2013 Sony\u2019s home entertainment business",
+      "determination": "Approved",
+      "determination_date": "2026-11-04T12:00:00Z",
+      "page_modified_datetime": "2026-11-04T14:30:59+11:00",
+      "determination_type": "final",
+      "is_waiver": false,
+      "stage": "Phase 1 - initial assessment",
+      "has_conditions": false
+    },
+    {
+      "merger_id": "WA-35051",
+      "merger_name": "Jaybro - Sewer Equipment Company Australia",
+      "determination": "Approved",
+      "determination_date": "2026-11-03T12:00:00Z",
+      "page_modified_datetime": "2026-11-03T16:41:35+11:00",
+      "determination_type": "final",
+      "is_waiver": true,
+      "stage": "Waiver application",
+      "has_conditions": false
+    },
+    {
+      "merger_id": "WA-80050",
+      "merger_name": "Pearson plc \u2013 Workera Corp",
+      "determination": "Approved",
+      "determination_date": "2026-11-02T12:00:00Z",
+      "page_modified_datetime": "2026-11-02T16:39:04+11:00",
+      "determination_type": "final",
+      "is_waiver": true,
+      "stage": "Waiver application",
+      "has_conditions": false
+    },
+    {
+      "merger_id": "WA-20047",
+      "merger_name": "Macquarie Korea Asset Management \u2013 Hwasung Cosmetics and Nowcos",
+      "determination": "Approved",
+      "determination_date": "2026-11-02T12:00:00Z",
+      "page_modified_datetime": "2026-11-02T16:38:08+11:00",
+      "determination_type": "final",
+      "is_waiver": true,
+      "stage": "Waiver application",
+      "has_conditions": false
+    },
+    {
+      "merger_id": "WA-60055",
+      "merger_name": "TD SYNNEX - BlueStar",
+      "determination": "Approved",
+      "determination_date": "2026-11-02T12:00:00Z",
+      "page_modified_datetime": "2026-11-02T16:36:09+11:00",
+      "determination_type": "final",
+      "is_waiver": true,
+      "stage": "Waiver application",
+      "has_conditions": false
+    },
+    {
+      "merger_id": "WA-80049",
+      "merger_name": "Samsung C&T - Powertech",
+      "determination": "Approved",
+      "determination_date": "2026-11-02T12:00:00Z",
+      "page_modified_datetime": "2026-11-02T16:31:10+11:00",
+      "determination_type": "final",
+      "is_waiver": true,
+      "stage": "Waiver application",
+      "has_conditions": false
+    }
+  ]
+}

@@ -1,0 +1,124 @@
+package fyi.mergers.app.tracking
+
+import fyi.mergers.app.data.MergerDetail
+import fyi.mergers.app.data.MergerSummary
+import fyi.mergers.app.data.Repository
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+
+/** What a check found. */
+data class SyncResult(
+    /** Every event on every followed merger, newest first. */
+    val events: List<TrackedEvent>,
+    /** Events nobody has been told about yet: these become notifications. */
+    val fresh: List<TrackedEvent>,
+    /** Mergers filed since the last check (only with new-filing alerts on). */
+    val newFilings: List<MergerSummary>,
+    /** Followed mergers whose file couldn't be read this time. */
+    val failed: List<String>,
+)
+
+/**
+ * Brings the follow list up to date: the one routine behind both the
+ * Following screen and the background check, so they can't disagree.
+ * Mirrors the effects in the site's TrackingContext.jsx.
+ */
+class Tracker(private val repo: Repository, private val store: TrackingStore) {
+
+    private val mutex = Mutex()
+
+    private val _last = MutableStateFlow<SyncResult?>(null)
+    /** The latest result, for the Following screen. */
+    val last: StateFlow<SyncResult?> = _last.asStateFlow()
+
+    /** Follow [id], with its history marked as already seen. */
+    suspend fun track(id: String) {
+        val detail = repo.detail(id).value.value ?: repo.fetchDetail(id)
+        store.track(id, detail?.let(TrackedEvents::of).orEmpty())
+        _last.value = _last.value?.let { r ->
+            val added = detail?.let(TrackedEvents::of).orEmpty()
+            r.copy(events = TrackedEvents.inboxOrder(r.events + added))
+        }
+    }
+
+    suspend fun untrack(id: String) {
+        store.untrack(id)
+        _last.value = _last.value?.let { r -> r.copy(events = r.events.filter { it.mergerId != id }) }
+    }
+
+    suspend fun sync(): SyncResult = mutex.withLock {
+        val start = store.current()
+
+        // Opted in to following every phase 2 matter: pick up any current one
+        // not acted on before. Recorded once each, so one the follower later
+        // drops stays dropped; its history is marked seen like a manual follow.
+        if (start.autoTrackPhase2) {
+            repo.fetchPhase2Current()?.let { current ->
+                val done = store.autoTrackedPhase2Ids()
+                val toRecord = current.filter { it !in done }
+                toRecord.filter { !start.isTracked(it) }.forEach { track(it) }
+                store.recordAutoTrackedPhase2(toRecord)
+            }
+        }
+
+        // Fetch every followed merger, then follow any re-filing they point
+        // forward to (once per link), and fetch those too, down the chain.
+        val details = LinkedHashMap<String, MergerDetail>()
+        val failed = mutableListOf<String>()
+        var pending = store.current().tracked
+        var rounds = 0
+        while (pending.isNotEmpty() && rounds++ < 5) {
+            val fetched = fetchAll(pending)
+            pending.forEach { id -> fetched[id]?.let { details[id] = it } ?: failed.add(id) }
+            val links = store.autoTrackLinks()
+            val tracked = store.current().trackedSet
+            val newLinks = mutableListOf<String>()
+            val newIds = mutableListOf<String>()
+            fetched.values.forEach { m ->
+                val to = TrackedEvents.forwardRefile(m) ?: return@forEach
+                val link = "${m.merger_id}->$to"
+                if (link in links) return@forEach
+                newLinks += link
+                if (to !in tracked && to !in newIds) newIds += to
+            }
+            store.recordAutoTrackLinks(newLinks)
+            // Not marked seen: being told the matter was re-filed is the point.
+            store.trackQuietly(newIds)
+            pending = newIds
+        }
+
+        val state = store.current()
+        val events = TrackedEvents.inboxOrder(
+            details.values.filter { state.isTracked(it.merger_id) }.flatMap(TrackedEvents::of),
+        )
+        val fresh = events.filter { it.key !in state.notified && it.key !in state.seen }
+
+        val newFilings = if (state.notifyNewFilings) newFilings(state) else emptyList()
+
+        SyncResult(events, fresh, newFilings, failed).also { _last.value = it }
+    }
+
+    private suspend fun fetchAll(ids: List<String>): Map<String, MergerDetail> = coroutineScope {
+        ids.map { id -> async { id to repo.fetchDetail(id) } }.awaitAll()
+            .mapNotNull { (id, m) -> m?.let { id to it } }.toMap()
+    }
+
+    /**
+     * Mergers in the list that weren't there last time. The first check after
+     * switching alerts on only records what's there, so it doesn't announce
+     * the whole register.
+     */
+    private suspend fun newFilings(state: TrackingState): List<MergerSummary> {
+        val list = repo.fetchList() ?: return emptyList()
+        val known = store.knownIds()
+        store.setKnownIds(list.map { it.merger_id }.toSet())
+        if (known.isEmpty()) return emptyList()
+        return list.filter { it.merger_id !in known && !state.isTracked(it.merger_id) }
+    }
+}

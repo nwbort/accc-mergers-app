@@ -1,0 +1,566 @@
+{
+  "url": "https://www.accc.gov.au/public-registers/acquisitions-and-mergers-registers/acquisitions-register/insurance-australia-group-%E2%80%93-rac-insurance",
+  "merger_name": "Insurance Australia Group \u2013 RAC Insurance",
+  "status": "Under assessment",
+  "merger_id": "MN-65005",
+  "effective_notification_datetime": "2026-03-03T12:00:00Z",
+  "original_notification_datetime": "2026-03-03T12:00:00Z",
+  "stage": "Public benefit phase",
+  "end_of_determination_period": "2027-02-01T12:00:00Z",
+  "public_benefit_application_date": "2026-10-13T12:00:00Z",
+  "consultation_response_due_date": "2026-10-21T12:00:00Z",
+  "acquirers": [
+    {
+      "name": "INSURANCE AUSTRALIA GROUP LIMITED",
+      "identifier_type": "ABN",
+      "identifier": "60 090 739 923",
+      "party_page": {
+        "id": "insurance-australia-group-limited",
+        "name": "Insurance Australia Group Limited"
+      }
+    }
+  ],
+  "targets": [
+    {
+      "name": "RACI PTY LIMITED",
+      "identifier_type": "ABN",
+      "identifier": "40 008 671 805",
+      "party_page": {
+        "id": "rac",
+        "name": "RAC",
+        "curated": true
+      }
+    },
+    {
+      "name": "RAC INSURANCE PTY LIMITED",
+      "identifier_type": "ABN",
+      "identifier": "59 094 685 882",
+      "party_page": {
+        "id": "rac",
+        "name": "RAC",
+        "curated": true
+      }
+    }
+  ],
+  "other_parties": [
+    {
+      "name": "RACWA HOLDINGS PTY LTD",
+      "identifier_type": "ABN",
+      "identifier": "60 008 985 877",
+      "party_page": {
+        "id": "rac",
+        "name": "RAC",
+        "curated": true
+      }
+    },
+    {
+      "name": "THE ROYAL AUTOMOBILE CLUB OF WA INC",
+      "identifier_type": "ABN",
+      "identifier": "33 212 133 120",
+      "party_page": {
+        "id": "rac",
+        "name": "RAC",
+        "curated": true
+      }
+    }
+  ],
+  "anzsic_codes": [
+    {
+      "code": "6322",
+      "name": "General Insurance"
+    }
+  ],
+  "merger_description": "Insurance Australia Group (**IAG**) proposes to acquire 100% of the issued share capital in RAC Insurance (**RACI**) from RACI Pty Ltd, a wholly owned subsidiary of the Royal Automobile Club of Western Australia Inc (**RAC**) (the **Acquisition**). The Acquisition does not include RAC's roadside assistance business which will continue to be operated independently by RAC.\n\nIAG is a general insurance company operating in Australia and New Zealand. IAG provides a range of personal and commercial insurance products under various brands, including NRMA Insurance, Swann Insurance, ROLLiN\u2019, Cylo, Lumley Special Vehicles and RACQ.\n\nRAC is a Western Australia based member-owned organisation (and, effective from 26 June 2026, a company limited by guarantee) that provides roadside products, general insurance products, and other ancillary services to its members. RAC issues general insurance products to customers through its wholly owned subsidiary RACI under the RAC brand. IAG and RACI are both active in the manufacture and supply of personal lines general insurance, including home insurance and motor insurance products in Australia.",
+  "events": [
+    {
+      "date": "2026-03-04T12:00:00Z",
+      "title": "Questionnaire - IAG - RACI",
+      "display_title": "Questionnaire - IAG - RACI",
+      "url": "https://www.accc.gov.au/system/files/public-merger-register/documents/Questionnaire%20-%20IAG%20-%20RACI.docx",
+      "url_gh": "/mergers/MN-65005/Questionnaire - IAG - RACI.pdf",
+      "phase": null
+    },
+    {
+      "date": "2026-03-03T12:00:00Z",
+      "title": "Merger notified to ACCC",
+      "display_title": "Merger notified to ACCC",
+      "phase": "Phase 1"
+    },
+    {
+      "date": "2026-04-16T12:00:00Z",
+      "title": "Decision to Proceed to a Phase 2 review",
+      "display_title": "Decision to Proceed to a Phase 2 review",
+      "url": "https://www.accc.gov.au/system/files/moderated_files/Decision%20to%20Proceed%20to%20a%20Phase%202%20review_5.pdf",
+      "phase2_notice_matters_to_investigate": [
+        {
+          "heading": "Relevant areas of competition",
+          "items": [
+            "The appropriate geographic dimensions of competition, including whether the markets for the supply of motor vehicle insurance and home and contents insurance are national or state-based and whether the markets for the acquisition of smash repair services are regional or state-based."
+          ]
+        },
+        {
+          "heading": "Competitive effects in the retail supply of home and contents insurance in Western Australia",
+          "items": [
+            "The various ways and extent to which competition takes place in the supply of home and contents insurance in Western Australia (including price, coverage and other terms of the insurance product offering, customer service, claims handling and renewals).",
+            "The extent to which IAG and RACI compete closely in Western Australia, including in relation to price, coverage and other terms of the insurance product offering, customer service, claims handling and renewals.",
+            "The competitive significance of RACI in Western Australia, and the likely future competitiveness of RACI absent the Acquisition (taking into account RACI\u2019s position as a state-based organisation, capital adequacy requirements, and RACI\u2019s ability to raise capital).",
+            "The competitive constraint from rival insurers on IAG post-Acquisition in Western Australia.",
+            "The likelihood, timeliness and sufficiency of new entry into or expansion of the supply of home and contents insurance in Western Australia, including the possible impediments to this.",
+            "The impact of the use of different brands (both underwriter and third-party brands) on competition for consumers.",
+            "How regulatory costs, claims cost volatility, reinsurance costs and geographic diversity impact RACI\u2019s ability to supply home and contents insurance.",
+            "The extent to which RACI\u2019s motor insurance portfolio could mitigate against loss events in RACI\u2019s home and contents insurance portfolio."
+          ]
+        },
+        {
+          "heading": "Competitive effects in the retail supply of motor vehicle insurance in Western Australia",
+          "items": [
+            "The various ways and extent to which competition takes place in the supply motor vehicle insurance in Western Australia (including price, coverage and other terms of the insurance product offering, service quality, claims handling and renewals).",
+            "The extent to which IAG and RACI compete closely in Western Australia including in relation to price, coverage and other terms of the insurance product offering, customer service, claims handling and renewals.",
+            "The competitive significance of RACI in Western Australia, and the likely future competitiveness of RACI absent the Acquisition (taking into account RACI\u2019s position as a state-based organisation, capital adequacy requirements, and RACI\u2019s ability to raise capital).",
+            "The competitive constraint from rival insurers on IAG post-Acquisition in Western Australia.",
+            "The likelihood, timeliness and sufficiency of new entry into or expansion of the supply of motor insurance in Western Australia, including the possible impediments to this.",
+            "The impact of the use of different brands (both underwriter and third-party brands) on competition for consumers.",
+            "How regulatory costs, claims cost volatility, reinsurance costs and geographic diversity impact RACI\u2019s ability to supply motor vehicle insurance. Vertical effects",
+            "Whether there are regions in Western Australia where smash repair services are limited or capacity constrained.",
+            "The degree to which contractual arrangements with smash repairers provide for exclusivity or priority access.",
+            "The extent to which smash repairers in practice prioritise work from larger insurers.",
+            "The extent to which IAG would be in an enhanced position to foreclose or frustrate competing insurers' access to repairers post-Acquisition.",
+            "The likely effect of any foreclosure strategies, including the extent to which rival insurers would become less vigorous competitors in the supply of home and contents insurance and motor insurance."
+          ]
+        },
+        {
+          "heading": "Competitive effects in the acquisition of motor vehicle smash repair services",
+          "items": [
+            "Whether smash repairers differ by size, quality, and efficiency in Western Australia and/or certain regions in Western Australia.",
+            "The extent to which repair-cost models of insurers influence the prices paid to smash repairers.",
+            "The effect of lower repair prices on exit, entry, and investment decisions of smash repairers in Western Australia and/or certain regions in Western Australia."
+          ]
+        }
+      ],
+      "url_gh": "/mergers/MN-65005/Decision to Proceed to a Phase 2 review_5.pdf",
+      "phase": "Phase 2",
+      "retired_url_gh": [
+        "/mergers/MN-65005/Decision to Proceed to a Phase 2 review.pdf",
+        "/mergers/MN-65005/Decision to Proceed to a Phase 2 review_4.pdf"
+      ]
+    },
+    {
+      "date": "2026-05-25T12:00:00Z",
+      "title": "Summary of Notice of Competition Concerns",
+      "display_title": "Summary of Notice of Competition Concerns",
+      "url": "https://www.accc.gov.au/system/files/moderated_files/IAG_RACI%20-%20Summary%20of%20Notice%20of%20Competition%20Concerns%20-%2025%20May%202026_12.pdf",
+      "url_gh": "/mergers/MN-65005/IAG_RACI - Summary of Notice of Competition Concerns - 25 May 2026_12.pdf",
+      "phase": null,
+      "retired_url_gh": [
+        "/mergers/MN-65005/IAG_RACI - Summary of Notice of Competition Concerns - 25 May 2026.pdf",
+        "/mergers/MN-65005/IAG_RACI - Summary of Notice of Competition Concerns - 25 May 2026_11.pdf"
+      ]
+    },
+    {
+      "date": "2026-06-26T12:00:00Z",
+      "title": "Timeline extended by 20 business days - following request for further information",
+      "display_title": "Timeline extended by 20 business days - following request for further information",
+      "phase": null
+    },
+    {
+      "date": "2026-07-08T12:00:00Z",
+      "title": "Remedy Offer - 1 July 2026 - IAG - RACI",
+      "display_title": "Remedy Offer - 1 July 2026 - IAG - RACI",
+      "url": "https://www.accc.gov.au/system/files/moderated_files/IAG%20RACI%20-%20Remedy%20Offer%20%281%20July%202026%29_4.pdf",
+      "url_gh": "/mergers/MN-65005/IAG RACI - Remedy Offer (1 July 2026)_4.pdf",
+      "phase": null,
+      "retired_url_gh": [
+        "/mergers/MN-65005/IAG RACI - Remedy Offer (1 July 2026).pdf",
+        "/mergers/MN-65005/IAG RACI - Remedy Offer (1 July 2026)_3.pdf"
+      ]
+    },
+    {
+      "date": "2026-07-08T12:00:00Z",
+      "title": "Remedy Offer Questionnaire - IAG - RACI",
+      "display_title": "Remedy Offer Questionnaire - IAG - RACI",
+      "url": "https://www.accc.gov.au/system/files/public-merger-register/documents/IAG%20RACI%20-%20Questionnaire%20-%20Remedy%20Offer%20%281%20July%202026%29_1.docx",
+      "url_gh": "/mergers/MN-65005/IAG RACI - Questionnaire - Remedy Offer (1 July 2026)_1.pdf",
+      "phase": null
+    },
+    {
+      "date": "2026-07-28T12:00:00Z",
+      "title": "Draft s87B Undertaking - 28 July 2026 - IAG - RACI",
+      "display_title": "Draft s87B Undertaking - 28 July 2026 - IAG - RACI",
+      "url": "https://www.accc.gov.au/system/files/moderated_files/Draft%20s87B%20Undertaking%20-%2028%20July%202026%20-%20IAG%20-%20RACI_7.pdf",
+      "url_gh": "/mergers/MN-65005/Draft s87B Undertaking - 28 July 2026 - IAG - RACI_7.pdf",
+      "phase": null,
+      "retired_url_gh": [
+        "/mergers/MN-65005/Draft s87B Undertaking - 28 July 2026 - IAG - RACI.pdf",
+        "/mergers/MN-65005/Draft s87B Undertaking - 28 July 2026 - IAG - RACI_6.pdf"
+      ]
+    },
+    {
+      "date": "2026-09-22T12:00:00Z",
+      "title": "IAG-RACI - Phase 2 Statement of Reasons",
+      "display_title": "IAG-RACI - Phase 2 Statement of Reasons",
+      "url": "https://www.accc.gov.au/system/files/moderated_files/IAG-RACI%20-%20Phase%202%20Statement%20of%20Reasons_9.pdf",
+      "url_gh": "/mergers/MN-65005/IAG-RACI - Phase 2 Statement of Reasons_9.pdf",
+      "phase": "Phase 2",
+      "retired_url_gh": [
+        "/mergers/MN-65005/IAG-RACI - Phase 2 Statement of Reasons_0.pdf",
+        "/mergers/MN-65005/IAG-RACI - Phase 2 Statement of Reasons_8.pdf"
+      ]
+    },
+    {
+      "date": "2026-09-22T12:00:00Z",
+      "title": "IAG-RACI - Phase 2 Annexure A",
+      "display_title": "IAG-RACI - Phase 2 Annexure A",
+      "url": "https://www.accc.gov.au/system/files/moderated_files/IAG-RACI%20-%20Phase%202%20Annexure%20A_3.pdf",
+      "url_gh": "/mergers/MN-65005/IAG-RACI - Phase 2 Annexure A_3.pdf",
+      "phase": "Phase 2",
+      "retired_url_gh": [
+        "/mergers/MN-65005/IAG-RACI - Phase 2 Annexure A.pdf",
+        "/mergers/MN-65005/IAG-RACI - Phase 2 Annexure A_2.pdf"
+      ]
+    },
+    {
+      "date": "2026-10-14T12:00:00Z",
+      "title": "Draft s87B Undertaking - 13 October 2026 - Public benefit phase - IAG - RACI",
+      "display_title": "Draft s87B Undertaking - 13 October 2026 - Public benefit phase - IAG - RACI",
+      "url": "https://www.accc.gov.au/system/files/moderated_files/IAG%20RACI%20-%20Section%2087B%20undertaking%20%28Public%20benefit%20phase%29.pdf",
+      "url_gh": "/mergers/MN-65005/IAG RACI - Section 87B undertaking (Public benefit phase).pdf",
+      "phase": "Public benefit"
+    },
+    {
+      "date": "2026-10-14T12:00:00Z",
+      "title": "Remedy offer - 13 October 2026 - Public benefit phase - IAG RACI",
+      "display_title": "Remedy offer - 13 October 2026 - Public benefit phase - IAG RACI",
+      "url": "https://www.accc.gov.au/system/files/moderated_files/IAG%20RACI%20-%20Remedy%20offer%20%2813%20October%202026%29%20%28Public%20benefit%20phase%29.pdf",
+      "url_gh": "/mergers/MN-65005/IAG RACI - Remedy offer (13 October 2026) (Public benefit phase).pdf",
+      "phase": "Public benefit"
+    },
+    {
+      "date": "2026-10-14T12:00:00Z",
+      "title": "IAG - RACI - public benefit questionnaire - October 2026",
+      "display_title": "IAG - RACI - public benefit questionnaire - October 2026",
+      "is_questionnaire_event": true,
+      "url": "https://www.accc.gov.au/system/files/moderated_files/IAG%20-%20RACI%20-%20public%20benefit%20questionnaire%20-%20October%202026.docx",
+      "url_gh": "/mergers/MN-65005/IAG - RACI - public benefit questionnaire - October 2026.pdf",
+      "phase": "Public benefit"
+    },
+    {
+      "date": "2026-09-22T12:00:00Z",
+      "title": "IAG-RACI - Phase 2 determination",
+      "display_title": "Phase 2 - detailed assessment determination: Not approved",
+      "url": "https://www.accc.gov.au/system/files/moderated_files/IAG_RACI%20-%20Phase%202%20determination_10.pdf",
+      "url_gh": "/mergers/MN-65005/IAG_RACI - Phase 2 determination_10.pdf",
+      "is_determination_event": true,
+      "phase": "Phase 2",
+      "retired_url_gh": [
+        "/mergers/MN-65005/IAG_RACI - Phase 2 determination.pdf",
+        "/mergers/MN-65005/IAG_RACI - Phase 2 determination_9.pdf"
+      ]
+    },
+    {
+      "date": "2026-09-22T12:00:00Z",
+      "title": "IAG-RACI - Phase 2 determination - Summary of reasons",
+      "display_title": "Phase 2 determination - Summary of reasons",
+      "url": "https://www.accc.gov.au/system/files/moderated_files/IAG_RACI%20-%20Phase%202%20determination%20-%20Summary%20of%20Reasons_11.pdf",
+      "url_gh": "/mergers/MN-65005/IAG_RACI - Phase 2 determination - Summary of Reasons_11.pdf",
+      "phase": "Phase 2",
+      "retired_url_gh": [
+        "/mergers/MN-65005/IAG_RACI - Phase 2 determination - Summary of Reasons.pdf",
+        "/mergers/MN-65005/IAG_RACI - Phase 2 determination - Summary of Reasons_10.pdf",
+        "/mergers/MN-65005/IAG_RACI - Phase 2 determination - Summary of Reasons_2.pdf",
+        "/mergers/MN-65005/IAG_RACI - Phase 2 determination - Summary of Reasons_5.pdf"
+      ]
+    },
+    {
+      "date": "2026-10-14T12:00:00Z",
+      "title": "Summary of IAG/RACI's claimed public benefits",
+      "display_title": "Summary of IAG/RACI's claimed public benefits",
+      "url": "https://www.accc.gov.au/system/files/moderated_files/RACI%27s%20claimed%20public%20benefits_4.pdf",
+      "url_gh": "/mergers/MN-65005/RACI's claimed public benefits_4.pdf",
+      "phase": "Public benefit"
+    },
+    {
+      "date": "2026-10-14T12:00:00Z",
+      "title": "Draft s87B Undertaking - 13 October 2026 - IAG - RACI",
+      "display_title": "Draft s87B Undertaking - 13 October 2026 - IAG - RACI",
+      "url": "https://www.accc.gov.au/system/files/moderated_files/IAG%20RACI%20-%20Section%2087B%20undertaking%20%28Public%20benefit%20phase%29_4.pdf",
+      "url_gh": "/mergers/MN-65005/IAG RACI - Section 87B undertaking (Public benefit phase)_4.pdf",
+      "phase": null
+    },
+    {
+      "date": "2026-10-14T12:00:00Z",
+      "title": "Remedy offer - 13 October 2026 - IAG - RACI",
+      "display_title": "Remedy offer - 13 October 2026 - IAG - RACI",
+      "url": "https://www.accc.gov.au/system/files/moderated_files/IAG%20RACI%20-%20Remedy%20offer%20%2813%20October%202026%29%20%28Public%20benefit%20phase%29_6.pdf",
+      "url_gh": "/mergers/MN-65005/IAG RACI - Remedy offer (13 October 2026) (Public benefit phase)_6.pdf",
+      "phase": null
+    },
+    {
+      "date": "2026-10-29T12:00:00Z",
+      "title": "Timeline extended by 15 business days \u2013 following remedy offered by parties",
+      "display_title": "Timeline extended by 15 business days \u2013 following remedy offered by parties",
+      "phase": null
+    },
+    {
+      "date": "2026-10-09T12:00:00Z",
+      "title": "Directions",
+      "display_title": "Tribunal appeal \u2013 Directions",
+      "appeal_base_title": "Tribunal appeal \u2013 Directions",
+      "url": "https://www.competitiontribunal.gov.au/decisions/tribunal-decisions?sq_content_src=%2BdXJsPWh0dHBzJTNBJTJGJTJGd3d3Lmp1ZGdtZW50cy5mZWRjb3VydC5nb3YuYXUlMkZqdWRnbWVudHMlMkZKdWRnbWVudHMlMkZ0cmlidW5hbHMlMkZhY29tcHQlMkYyMDI2JTJGMjAyNmFjb21wdDAwMDMmYWxsPTE%3D",
+      "url_gh": "/mergers/MN-65005/2026ACOMPT0003.pdf",
+      "is_appeal": true,
+      "appeal_filed_by": "Tribunal",
+      "appeal_confidentiality": "Non-confidential",
+      "tribunal_number": "ACT 3 & 4 of 2026",
+      "phase": null
+    },
+    {
+      "date": "2026-10-08T12:00:00Z",
+      "title": "Affidavit of Jacqueline Downes",
+      "display_title": "Tribunal appeal \u2013 Affidavit of Jacqueline Downes",
+      "appeal_base_title": "Tribunal appeal \u2013 Affidavit of Jacqueline Downes",
+      "url": "https://www.competitiontribunal.gov.au/__data/assets/pdf_file/0006/608802/ACT3-IAG-Affidavit-of-Jacqueline-Downes-Public-Version.pdf",
+      "url_gh": "/mergers/MN-65005/ACT3-IAG-Affidavit-of-Jacqueline-Downes-Public-Version.pdf",
+      "is_appeal": true,
+      "appeal_filed_by": "Insurance Australia Group Limited",
+      "appeal_confidentiality": "Non-confidential",
+      "tribunal_number": "ACT 3 of 2026",
+      "phase": null
+    },
+    {
+      "date": "2026-10-05T12:00:00Z",
+      "title": "Notice of Address for Service",
+      "display_title": "Tribunal appeal \u2013 Notice of Address for Service",
+      "appeal_base_title": "Tribunal appeal \u2013 Notice of Address for Service",
+      "url": "https://www.competitiontribunal.gov.au/__data/assets/pdf_file/0011/608267/ACCC-Notice-of-address-for-service.pdf",
+      "url_gh": "/mergers/MN-65005/ACCC-Notice-of-address-for-service.pdf",
+      "is_appeal": true,
+      "appeal_filed_by": "Australian Competition and Consumer Commission",
+      "appeal_confidentiality": "Non-confidential",
+      "tribunal_number": "ACT 3 of 2026",
+      "phase": null
+    },
+    {
+      "date": "2026-10-01T12:00:00Z",
+      "title": "Application for Review",
+      "display_title": "Tribunal appeal \u2013 Application for Review",
+      "appeal_base_title": "Tribunal appeal \u2013 Application for Review",
+      "url": "https://www.competitiontribunal.gov.au/__data/assets/pdf_file/0007/608155/01.-IAG-Application-for-review-by-Insurance-Australia-Group-Limited.pdf",
+      "url_gh": "/mergers/MN-65005/01.-IAG-Application-for-review-by-Insurance-Australia-Group-Limited.pdf",
+      "is_appeal": true,
+      "appeal_filed_by": "Insurance Australia Group Limited",
+      "appeal_confidentiality": "Non-confidential",
+      "tribunal_number": "ACT 3 of 2026",
+      "phase": null
+    },
+    {
+      "date": "2026-10-06T12:00:00Z",
+      "title": "Notice of Address for Service",
+      "display_title": "Tribunal appeal \u2013 Notice of Address for Service",
+      "appeal_base_title": "Tribunal appeal \u2013 Notice of Address for Service",
+      "url": "https://www.competitiontribunal.gov.au/__data/assets/pdf_file/0007/608317/ACCC-Notice-of-address-for-service-ACT4.pdf",
+      "url_gh": "/mergers/MN-65005/ACCC-Notice-of-address-for-service-ACT4.pdf",
+      "is_appeal": true,
+      "appeal_filed_by": "Australian Competition and Consumer Commission",
+      "appeal_confidentiality": "Non-confidential",
+      "tribunal_number": "ACT 4 of 2026",
+      "phase": null
+    },
+    {
+      "date": "2026-10-05T12:00:00Z",
+      "title": "Application to Tribunal for Review",
+      "display_title": "Tribunal appeal \u2013 Application to Tribunal for Review",
+      "appeal_base_title": "Tribunal appeal \u2013 Application to Tribunal for Review",
+      "url": "https://www.competitiontribunal.gov.au/__data/assets/pdf_file/0009/608292/RACWA-Application-for-Review.pdf",
+      "url_gh": "/mergers/MN-65005/RACWA-Application-for-Review.pdf",
+      "is_appeal": true,
+      "appeal_filed_by": "RACWA Holdings Pty Ltd",
+      "appeal_confidentiality": "Non-confidential",
+      "tribunal_number": "ACT 4 of 2026",
+      "phase": null
+    }
+  ],
+  "is_waiver": false,
+  "accc_determination": null,
+  "has_conditions": false,
+  "comments": [
+    {
+      "commentary": "Following the ACCC's Phase 2 determination not to approve the acquisition, IAG has [confirmed](https://www.iag.com.au/newsroom/iag-acknowledges-accc-phase-2-determination) it will make a public benefits application.",
+      "tags": [],
+      "date": "2026-09-23"
+    }
+  ],
+  "public_benefit_in_progress": true,
+  "determination_publication_date": null,
+  "phase_1_determination": "Referred to phase 2",
+  "phase_1_determination_date": "2026-04-16T12:00:00Z",
+  "phase_2_determination": "Not approved",
+  "phase_2_determination_date": "2026-09-23T12:00:00Z",
+  "public_benefit_assessment_date": "2026-11-10T12:00:00Z",
+  "public_benefit_response_date": "2026-12-01T12:00:00Z",
+  "has_questionnaire": true,
+  "has_nocc": true,
+  "similar_mergers": [
+    {
+      "merger_id": "MN-40015",
+      "merger_name": "Swiss Re - QBE Insurance's Trade Credit and Surety business",
+      "acquirers": [
+        "Swiss Re International SE"
+      ],
+      "targets": [
+        "QBE Insurance Holdings Pty Limited"
+      ],
+      "accc_determination": "Approved"
+    },
+    {
+      "merger_id": "MN-30016",
+      "merger_name": "Zurich - Beazley",
+      "acquirers": [
+        "Zurich Insurance Company Ltd"
+      ],
+      "targets": [
+        "Beazley plc"
+      ],
+      "accc_determination": "Approved"
+    },
+    {
+      "merger_id": "MN-80024",
+      "merger_name": "Allianz \u2013 certain assets of nib\u2019s Australian travel insurance business",
+      "acquirers": [
+        "AWP Australia Pty Ltd"
+      ],
+      "targets": [
+        "nib Travel Pty Ltd"
+      ],
+      "accc_determination": "Approved"
+    }
+  ],
+  "under_appeal": true,
+  "appeals": [
+    {
+      "tribunal_number": "ACT 3 of 2026",
+      "tribunal_url": "https://www.competitiontribunal.gov.au/current-matters/act-3-of-2026",
+      "appeal_type": "party_denial",
+      "appellant": "IAG",
+      "status": "current",
+      "outcome": null,
+      "effective_determination": null,
+      "filed_date": "2026-10-01",
+      "hearing_date": "2027-03-30",
+      "hearing_end_date": "2027-04-15",
+      "concluded_date": null,
+      "documents": [
+        {
+          "date": "2026-10-09",
+          "filed_by": "-",
+          "description": "Directions",
+          "confidentiality": "Non-confidential",
+          "url": "https://www.competitiontribunal.gov.au/decisions/tribunal-decisions?sq_content_src=%2BdXJsPWh0dHBzJTNBJTJGJTJGd3d3Lmp1ZGdtZW50cy5mZWRjb3VydC5nb3YuYXUlMkZqdWRnbWVudHMlMkZKdWRnbWVudHMlMkZ0cmlidW5hbHMlMkZhY29tcHQlMkYyMDI2JTJGMjAyNmFjb21wdDAwMDMmYWxsPTE%3D",
+          "url_gh": "/mergers/MN-65005/2026ACOMPT0003.pdf"
+        },
+        {
+          "date": "2026-10-08",
+          "filed_by": "Insurance Australia Group Limited",
+          "description": "Affidavit of Jacqueline Downes",
+          "confidentiality": "Non-confidential",
+          "url": "https://www.competitiontribunal.gov.au/__data/assets/pdf_file/0006/608802/ACT3-IAG-Affidavit-of-Jacqueline-Downes-Public-Version.pdf",
+          "url_gh": "/mergers/MN-65005/ACT3-IAG-Affidavit-of-Jacqueline-Downes-Public-Version.pdf"
+        },
+        {
+          "date": "2026-10-05",
+          "filed_by": "Australian Competition and Consumer Commission",
+          "description": "Notice of Address for Service",
+          "confidentiality": "Non-confidential",
+          "url": "https://www.competitiontribunal.gov.au/__data/assets/pdf_file/0011/608267/ACCC-Notice-of-address-for-service.pdf",
+          "url_gh": "/mergers/MN-65005/ACCC-Notice-of-address-for-service.pdf"
+        },
+        {
+          "date": "2026-10-01",
+          "filed_by": "Insurance Australia Group Limited",
+          "description": "Application for Review",
+          "confidentiality": "Non-confidential",
+          "url": "https://www.competitiontribunal.gov.au/__data/assets/pdf_file/0007/608155/01.-IAG-Application-for-review-by-Insurance-Australia-Group-Limited.pdf",
+          "url_gh": "/mergers/MN-65005/01.-IAG-Application-for-review-by-Insurance-Australia-Group-Limited.pdf"
+        }
+      ]
+    },
+    {
+      "tribunal_number": "ACT 4 of 2026",
+      "tribunal_url": "https://www.competitiontribunal.gov.au/current-matters/act-4-of-2026",
+      "appeal_type": "party_denial",
+      "appellant": "RACWA",
+      "status": "current",
+      "outcome": null,
+      "effective_determination": null,
+      "filed_date": "2026-10-05",
+      "hearing_date": "2027-03-30",
+      "hearing_end_date": "2027-04-15",
+      "concluded_date": null,
+      "documents": [
+        {
+          "date": "2026-10-09",
+          "filed_by": "-",
+          "description": "Directions",
+          "confidentiality": "Non-confidential",
+          "url": "https://www.competitiontribunal.gov.au/decisions/tribunal-decisions?sq_content_src=%2BdXJsPWh0dHBzJTNBJTJGJTJGd3d3Lmp1ZGdtZW50cy5mZWRjb3VydC5nb3YuYXUlMkZqdWRnbWVudHMlMkZKdWRnbWVudHMlMkZ0cmlidW5hbHMlMkZhY29tcHQlMkYyMDI2JTJGMjAyNmFjb21wdDAwMDMmYWxsPTE%3D",
+          "url_gh": "/mergers/MN-65005/2026ACOMPT0003.pdf"
+        },
+        {
+          "date": "2026-10-06",
+          "filed_by": "Australian Competition and Consumer Commission",
+          "description": "Notice of Address for Service",
+          "confidentiality": "Non-confidential",
+          "url": "https://www.competitiontribunal.gov.au/__data/assets/pdf_file/0007/608317/ACCC-Notice-of-address-for-service-ACT4.pdf",
+          "url_gh": "/mergers/MN-65005/ACCC-Notice-of-address-for-service-ACT4.pdf"
+        },
+        {
+          "date": "2026-10-05",
+          "filed_by": "RACWA Holdings Pty Ltd",
+          "description": "Application to Tribunal for Review",
+          "confidentiality": "Non-confidential",
+          "url": "https://www.competitiontribunal.gov.au/__data/assets/pdf_file/0009/608292/RACWA-Application-for-Review.pdf",
+          "url_gh": "/mergers/MN-65005/RACWA-Application-for-Review.pdf"
+        }
+      ]
+    }
+  ],
+  "appeal": {
+    "tribunal_number": "ACT 3 of 2026 and ACT 4 of 2026",
+    "tribunal_url": "https://www.competitiontribunal.gov.au/current-matters/act-3-of-2026",
+    "appeal_type": "party_denial",
+    "appellant": "IAG and RACWA",
+    "status": "current",
+    "outcome": null,
+    "effective_determination": null,
+    "filed_date": "2026-10-01",
+    "hearing_date": "2027-03-30",
+    "hearing_end_date": "2027-04-15",
+    "concluded_date": null
+  },
+  "phase_1_estimate": {
+    "expected_business_days": 17,
+    "range_business_days": [
+      15,
+      22
+    ],
+    "basis": "global",
+    "question_bucket": null,
+    "question_count": 5,
+    "sample_size": 22,
+    "as_of": "2026-03-03",
+    "estimated_at": "2026-09-08",
+    "method_version": 2
+  },
+  "pre_notification": {
+    "estimated_days": 23,
+    "min_days": 8,
+    "max_days": 36,
+    "id_issued_estimated": "2026-02-08",
+    "id_issued_before": "2026-02-23",
+    "id_issued_after": "2026-01-26",
+    "min_days_witness": "MN-65007",
+    "max_days_witness": "WA-65004",
+    "basis": "bracketed",
+    "method_version": 1
+  },
+  "og_card": "public-benefit-determination-sought.png"
+}
