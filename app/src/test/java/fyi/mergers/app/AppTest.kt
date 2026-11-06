@@ -93,9 +93,9 @@ class AppTest {
         compose.onAllNodesWithText("Autosports Group", substring = true).onFirst().performClick()
         waitForText("Consultation responses due")
         shot("3-detail-live")
-        compose.onNodeWithText("Follow").performClick()
+        compose.onNodeWithContentDescription("Follow").performClick()
         waitUntil { Graph.store.current().isTracked("MN-20046") }
-        waitForText("Following")
+        waitForText("Following: you", substring = true)
         back()
 
         // A decided matter under appeal and judicial review.

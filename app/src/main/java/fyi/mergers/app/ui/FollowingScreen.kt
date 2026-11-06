@@ -6,6 +6,7 @@ import android.content.pm.PackageManager
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -54,7 +55,7 @@ import fyi.mergers.app.data.Dates
 import fyi.mergers.app.notify.Notifier
 import fyi.mergers.app.tracking.TrackedEvent
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun FollowingScreen(vm: AppViewModel) {
     val tracking by vm.tracking.collectAsStateWithLifecycle()
@@ -109,12 +110,12 @@ fun FollowingScreen(vm: AppViewModel) {
                 }
 
                 if (unread.isNotEmpty()) {
-                    item { SectionTitle("New (${unread.size})") }
+                    stickyHeader(key = "h-New") { StickyTitle("New (${unread.size})") }
                     items(unread, key = { "new-" + it.key }) { e -> EventItem(e, unread = true) { open(vm, e) } }
                 }
 
                 if (upcoming.isNotEmpty()) {
-                    item { SectionTitle("Coming up") }
+                    stickyHeader(key = "h-Coming up") { StickyTitle("Coming up") }
                     items(upcoming, key = { "up-" + it.key }) { e ->
                         ListRow(
                             title = e.mergerName,
@@ -126,7 +127,7 @@ fun FollowingScreen(vm: AppViewModel) {
                 }
 
                 if (tracking.tracked.isNotEmpty()) {
-                    item { SectionTitle("Mergers you follow (${tracking.tracked.size})") }
+                    stickyHeader(key = "h-Mergers you follow") { StickyTitle("Mergers you follow (${tracking.tracked.size})") }
                     items(tracking.tracked.reversed(), key = { "f-$it" }) { id ->
                         val m = summaries[id]
                         if (m != null) {
@@ -142,10 +143,11 @@ fun FollowingScreen(vm: AppViewModel) {
                 }
 
                 if (earlier.isNotEmpty()) {
-                    item { SectionTitle("Earlier") }
+                    stickyHeader(key = "h-Earlier") { StickyTitle("Earlier") }
                     items(earlier, key = { "old-" + it.key }) { e -> EventItem(e, unread = false) { open(vm, e) } }
                 }
 
+                stickyHeader(key = "h-Alerts") { StickyTitle("Alerts") }
                 item { Settings(vm) }
             }
         }
@@ -217,7 +219,6 @@ private fun NotificationsBanner() {
 @Composable
 private fun Settings(vm: AppViewModel) {
     val tracking by vm.tracking.collectAsStateWithLifecycle()
-    SectionTitle("Alerts")
     Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
         ListItem(
             headlineContent = { Text("Follow every phase 2 matter") },

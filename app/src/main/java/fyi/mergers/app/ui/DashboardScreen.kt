@@ -32,6 +32,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
@@ -40,6 +41,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
@@ -65,10 +67,16 @@ fun DashboardScreen(vm: AppViewModel) {
     val upcomingState by vm.upcoming.collectAsStateWithLifecycle()
     val stats = statsState.value
 
+    // The name bar slides away as you scroll down the dashboard and comes
+    // back as soon as you scroll up.
+    val bar = TopAppBarDefaults.enterAlwaysScrollBehavior()
     Scaffold(
+        modifier = Modifier.nestedScroll(bar.nestedScrollConnection),
         contentWindowInsets = WindowInsets(0),
         topBar = {
             TopAppBar(
+                scrollBehavior = bar,
+                colors = TopAppBarDefaults.topAppBarColors(scrolledContainerColor = MaterialTheme.colorScheme.surface),
                 title = {
                     Column {
                         Text("mergers.fyi", fontWeight = FontWeight.Bold)
@@ -361,6 +369,6 @@ private fun Bar(label: String, value: String, fraction: Float, colorKey: String?
  * until the next section's title pushes it off.
  */
 @Composable
-private fun StickyTitle(text: String) {
+fun StickyTitle(text: String) {
     SectionTitle(text, Modifier.background(MaterialTheme.colorScheme.surface))
 }
