@@ -118,12 +118,12 @@ fun FollowingScreen(vm: AppViewModel) {
                 }
 
                 if (unread.isNotEmpty()) {
-                    stickyHeader(key = "h-New") { StickyTitle("New (${unread.size})") }
+                    stickyHeader { StickyTitle("New (${unread.size})") }
                     items(unread, key = { "new-" + it.key }) { e -> EventItem(e, unread = true) { open(vm, e) } }
                 }
 
                 if (upcoming.isNotEmpty()) {
-                    stickyHeader(key = "h-Coming up") { StickyTitle("Coming up") }
+                    stickyHeader { StickyTitle("Coming up") }
                     items(upcoming, key = { "up-" + it.key }) { e ->
                         ListRow(
                             title = e.mergerName,
@@ -135,7 +135,7 @@ fun FollowingScreen(vm: AppViewModel) {
                 }
 
                 if (tracking.tracked.isNotEmpty()) {
-                    stickyHeader(key = "h-Mergers you follow") { StickyTitle("Mergers you follow (${tracking.tracked.size})") }
+                    stickyHeader { StickyTitle("Mergers you follow (${tracking.tracked.size})") }
                     items(tracking.tracked.reversed(), key = { "f-$it" }) { id ->
                         val m = summaries[id]
                         if (m != null) {
@@ -151,11 +151,11 @@ fun FollowingScreen(vm: AppViewModel) {
                 }
 
                 if (earlier.isNotEmpty()) {
-                    stickyHeader(key = "h-Earlier") { StickyTitle("Earlier") }
+                    stickyHeader { StickyTitle("Earlier") }
                     items(earlier, key = { "old-" + it.key }) { e -> EventItem(e, unread = false) { open(vm, e) } }
                 }
 
-                stickyHeader(key = "h-Alerts") { StickyTitle("Alerts") }
+                stickyHeader { StickyTitle("Alerts") }
                 item { Settings(vm) }
             }
         }

@@ -21,11 +21,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
+import kotlinx.coroutines.flow.drop
 
 private data class Tab(val route: Route, val label: String, val icon: ImageVector, val selectedIcon: ImageVector)
 
@@ -93,9 +95,11 @@ private fun TabPager(vm: AppViewModel) {
     LaunchedEffect(index) {
         if (pager.currentPage != index) pager.animateScrollToPage(index)
     }
-    // ...and a swipe that comes to rest on a tab selects it.
-    LaunchedEffect(pager.settledPage) {
-        if (!pager.isScrollInProgress) vm.selectTab(TABS[pager.settledPage].route)
+    // ...and a swipe that comes to rest on a tab selects it. Only a change of
+    // page counts: coming back from a merger, the pager can be restored on the
+    // tab you left while the bar has since moved to another.
+    LaunchedEffect(pager) {
+        snapshotFlow { pager.settledPage }.drop(1).collect { vm.selectTab(TABS[it].route) }
     }
 
     HorizontalPager(state = pager, key = { TABS[it].label }) { page ->
