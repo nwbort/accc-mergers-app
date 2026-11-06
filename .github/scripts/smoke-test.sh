@@ -30,20 +30,23 @@ echo no | "$sdk/cmdline-tools/latest/bin/avdmanager" create avd --force -n smoke
 echo "AVDs: $(emulator -list-avds | tr '\n' ' ')"
 
 echo "Starting the emulator"
-emulator -avd smoke -no-window -no-audio -no-boot-anim -no-snapshot -no-metrics -gpu swiftshader_indirect \
+# The API 37 image is slow to boot on the runner's software GPU; the AVD's
+# default 2 GB and 2 cores made it slower still. Runners have 4 cores, 16 GB.
+emulator -avd smoke -memory 4096 -cores 4 -no-window -no-audio -no-boot-anim -no-snapshot -no-metrics -gpu swiftshader_indirect \
   -camera-back none -camera-front none > "$out/emulator.log" 2>&1 &
 emu=$!
 
 # Every wait is bounded: an emulator that never comes up should fail the job
 # in minutes, not hang it.
-deadline=$((SECONDS + 600))
+boot_minutes="${BOOT_MINUTES:-10}"
+deadline=$((SECONDS + boot_minutes * 60))
 until [ "$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" = 1 ]; do
   if ! kill -0 "$emu" 2>/dev/null; then
     echo "::error::The emulator exited before it finished booting"
     exit 1
   fi
   if [ $SECONDS -ge $deadline ]; then
-    echo "::error::The emulator didn't finish booting within 10 minutes"
+    echo "::error::The emulator didn't finish booting within ${boot_minutes} minutes"
     exit 1
   fi
   sleep 5
