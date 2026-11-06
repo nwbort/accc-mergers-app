@@ -113,7 +113,6 @@ class AppTest {
         compose.runOnUiThread { vm.selectTab(fyi.mergers.app.ui.Route.Following) }
         waitUntil { Graph.store.current().isTracked("MN-20013") }
         waitForText("Mergers you follow (3)")
-
         waitForText("New", substring = true)
         shot("6-following")
 
