@@ -27,12 +27,15 @@ echo "Installing $image"
 # otherwise count as the install failing.
 { yes || true; } | "$sdk/cmdline-tools/latest/bin/sdkmanager" --install "$image" emulator platform-tools > "$out/sdkmanager.log"
 echo no | "$sdk/cmdline-tools/latest/bin/avdmanager" create avd --force -n smoke -k "$image"
+# The API 37 image's default data partition is too small to install into
+# ("Requested internal only, but not enough space"); give it room.
+echo "disk.dataPartition.size=6G" >> "$ANDROID_AVD_HOME/smoke.avd/config.ini"
 echo "AVDs: $(emulator -list-avds | tr '\n' ' ')"
 
 echo "Starting the emulator"
 # The API 37 image is slow to boot on the runner's software GPU; the AVD's
 # default 2 GB and 2 cores made it slower still. Runners have 4 cores, 16 GB.
-emulator -avd smoke -memory 4096 -cores 4 -no-window -no-audio -no-boot-anim -no-snapshot -no-metrics -gpu swiftshader_indirect \
+emulator -avd smoke -memory 4096 -cores 4 -no-window -no-audio -no-boot-anim -no-snapshot -wipe-data -no-metrics -gpu swiftshader_indirect \
   -camera-back none -camera-front none > "$out/emulator.log" 2>&1 &
 emu=$!
 
