@@ -23,6 +23,53 @@ Building locally before pushing is fine
 (`./gradlew testDebugUnitTest assembleRelease`, JDK 21 + Android SDK), but
 never ask the user to build or install anything by hand.
 
+### Testing locally in a cloud session
+
+A fresh cloud container has JDK 21 but no Android SDK. CI only reports
+"Condition not met" for a UI test failure, so it pays to run the tests here,
+where you can add a throwaway `shot("debug-…")` and look at the PNG.
+
+1. **Install the SDK** (a few minutes; `dl.google.com` is reachable). The
+   platform package is `android-37.0`, not `android-37`:
+
+   ```bash
+   mkdir -p ~/android/cmdline-tools && cd ~/android
+   curl -sSLo clt.zip https://dl.google.com/android/repository/commandlinetools-linux-13114758_latest.zip
+   unzip -q clt.zip -d cmdline-tools && mv cmdline-tools/cmdline-tools cmdline-tools/latest
+   yes | cmdline-tools/latest/bin/sdkmanager --sdk_root=$HOME/android \
+     "platforms;android-37.0" "build-tools;37.0.0" "platform-tools"
+   echo "sdk.dir=$HOME/android" > /path/to/accc-mergers-app/local.properties  # ignored by git
+   ```
+
+2. **Get around Maven Central's rate limit.** Gradle's first resolve makes
+   hundreds of requests, and `repo.maven.apache.org` answers many of them
+   with `429 Too Many Requests`. Retrying doesn't help much. Add Google's
+   mirror of Maven Central with an init script kept *outside* the repo
+   (`settings.gradle.kts` sets `FAIL_ON_PROJECT_REPOS`, so it has to go in
+   through `settingsEvaluated`):
+
+   ```groovy
+   // e.g. $SCRATCHPAD/mirror.gradle — never commit it
+   def mirror = "https://maven-central.storage-download.googleapis.com/maven2/"
+   settingsEvaluated { s ->
+     s.pluginManagement.repositories { maven { url mirror } }
+     s.dependencyResolutionManagement.repositories { maven { url mirror } }
+   }
+   ```
+
+   Then pass it to every command: `./gradlew -I $SCRATCHPAD/mirror.gradle testDebugUnitTest`.
+
+3. **Run and read.** `compileDebugUnitTestKotlin` is a quick check that
+   the app and tests compile. `testDebugUnitTest` runs everything (about
+   30 s once warm). Gradle prints only "There were failing tests", so read the
+   failure from `app/build/reports/tests/testDebugUnitTest/*/*.html`. Screenshots
+   land in `app/build/screenshots/`.
+
+When CI does fail, its `build-reports` and `screenshots` artifacts can be
+fetched with `gh api repos/nwbort/accc-mergers-app/actions/artifacts/<id>/zip`
+(get the ids from the run's log or the artifacts list). The screenshots show
+how far the test got before it failed.
+
 The repo is public: the signing key comes from the `SIGNING_KEYSTORE_BASE64`
 and `SIGNING_PASSWORD` secrets and is never committed (`/signing/` is
 ignored).
