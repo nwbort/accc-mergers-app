@@ -35,7 +35,7 @@ echo "AVDs: $(emulator -list-avds | tr '\n' ' ')"
 echo "Starting the emulator"
 # The API 37 image is slow to boot on the runner's software GPU; the AVD's
 # default 2 GB and 2 cores made it slower still. Runners have 4 cores, 16 GB.
-emulator -avd smoke -memory 4096 -cores 4 -no-window -no-audio -no-boot-anim -no-snapshot -wipe-data -no-metrics -gpu swiftshader_indirect \
+emulator -avd smoke -memory 4096 -cores 4 -no-window -no-audio -no-boot-anim -no-snapshot -no-metrics -gpu swiftshader_indirect \
   -camera-back none -camera-front none > "$out/emulator.log" 2>&1 &
 emu=$!
 
@@ -57,27 +57,42 @@ done
 adb shell input keyevent 82 || true   # wake and unlock
 echo "Booted Android $(adb shell getprop ro.build.version.release | tr -d '\r') (API $(adb shell getprop ro.build.version.sdk | tr -d '\r')), page size $(adb shell getconf PAGE_SIZE | tr -d '\r')"
 
-# boot_completed can come before the package manager will take an install
-# ("Failure calling service package: Broken pipe"), so wait for it and retry.
-until adb shell pm path android >/dev/null 2>&1; do
+# boot_completed comes before the first boot has settled: the system server
+# can still restart ("Broken pipe", "Can't find service: package", "Activity
+# class does not exist"). Wait until the package manager has answered three
+# times running, ten seconds apart, then retry each step until it sticks.
+steady=0
+until [ $steady -ge 3 ]; do
+  if adb shell pm path android >/dev/null 2>&1; then steady=$((steady + 1)); else steady=0; fi
   if [ $SECONDS -ge $deadline ]; then
-    echo "::error::The package manager never came up"
+    echo "::error::The system never settled after boot"
     exit 1
   fi
-  sleep 5
+  sleep 10
 done
-installed=
-for attempt in 1 2 3 4 5; do
-  if timeout 120 adb install -r "$apk"; then installed=1; break; fi
-  echo "Install attempt $attempt failed; retrying"
-  sleep 15
-done
-if [ -z "$installed" ]; then
-  echo "::error::Couldn't install the APK"
+
+retry() {  # retry <what> <command...>: up to 6 tries, 15 s apart
+  local what="$1"; shift
+  for attempt in 1 2 3 4 5 6; do
+    if "$@"; then return 0; fi
+    echo "$what: attempt $attempt failed; retrying"
+    sleep 15
+  done
+  echo "::error::$what kept failing"
   exit 1
-fi
+}
+
+installed() { timeout 120 adb install -r "$apk" && adb shell pm path "$pkg" | grep -q package:; }
+retry "Install" installed
+
+launched() {
+  local result
+  result="$(timeout 60 adb shell am start -W -n "$pkg/.MainActivity" 2>&1)"
+  echo "$result"
+  ! grep -qE "^Error|Exception" <<<"$result"
+}
 adb logcat -c
-timeout 60 adb shell am start -W -n "$pkg/.MainActivity"
+retry "Launch" launched
 sleep 20
 adb exec-out screencap -p > "$out/launch.png"
 adb logcat -d > "$out/logcat.txt"
