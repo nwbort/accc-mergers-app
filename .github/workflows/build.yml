@@ -109,9 +109,13 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 40
     env:
-      # The only Android the app supports: 17 (API 37). Its image boots slowly
-      # on the runner, so it gets longer than the usual 10 minutes.
-      IMAGE: "system-images;android-37.0;google_apis;x86_64"
+      # The only Android the app supports: 17 (API 37), as an Automated Test
+      # Device image: the full google_apis one kept losing its system server
+      # on the runner's software GPU (launcher and background services dying
+      # with DEAD_OBJECT), taking every install and launch with it. ATD drops
+      # the launcher and that background load. It also boots slowly, so it
+      # gets longer than the usual 10 minutes.
+      IMAGE: "system-images;android-37.0;google_atd;x86_64"
       BOOT_MINUTES: "20"
     steps:
       - name: Check out
