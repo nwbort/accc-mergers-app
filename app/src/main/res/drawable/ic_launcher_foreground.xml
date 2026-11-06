@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The site's mark: two parties joining into one. Drawn inside the adaptive
+     icon's 66dp safe zone. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M37,40 L54,58 L71,40 M54,58 L54,72" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M37,40m-8,0a8,8 0,1 1,16 0a8,8 0,1 1,-16 0" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M71,40m-8,0a8,8 0,1 1,16 0a8,8 0,1 1,-16 0" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,72m-8,0a8,8 0,1 1,16 0a8,8 0,1 1,-16 0" />
+</vector>

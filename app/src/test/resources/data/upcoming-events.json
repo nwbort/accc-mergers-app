@@ -1,0 +1,610 @@
+{
+  "events": [
+    {
+      "type": "consultation_due",
+      "event_type_display": "Consultation responses due",
+      "date": "2026-11-06T12:00:00Z",
+      "merger_id": "MN-10040",
+      "merger_name": "Calvary \u2013 14 Healthscope hospitals and Healthscope Independence Services",
+      "status": "Under assessment",
+      "stage": "Phase 1 - initial assessment",
+      "effective_notification_datetime": "2026-10-29T12:00:00Z"
+    },
+    {
+      "type": "consultation_due",
+      "event_type_display": "Consultation responses due",
+      "date": "2026-11-06T12:00:00Z",
+      "merger_id": "MN-65041",
+      "merger_name": "GLNG Participants \u2013 Greater Meridian CSG Project assets",
+      "status": "Under assessment",
+      "stage": "Phase 1 - initial assessment",
+      "effective_notification_datetime": "2026-10-30T12:00:00Z"
+    },
+    {
+      "type": "consultation_due",
+      "event_type_display": "Consultation responses due",
+      "date": "2026-11-06T12:00:00Z",
+      "merger_id": "MN-90044",
+      "merger_name": "Stellex and ONA \u2013 Score",
+      "status": "Under assessment",
+      "stage": "Phase 1 - initial assessment",
+      "effective_notification_datetime": "2026-10-29T12:00:00Z"
+    },
+    {
+      "type": "consultation_due",
+      "event_type_display": "Consultation responses due",
+      "date": "2026-11-09T12:00:00Z",
+      "merger_id": "MN-10043",
+      "merger_name": "ACURIO - Nepean, Sydney Southwest, and Campbelltown Private Hospitals",
+      "status": "Under assessment",
+      "stage": "Phase 1 - initial assessment",
+      "effective_notification_datetime": "2026-10-30T12:00:00Z"
+    },
+    {
+      "type": "consultation_due",
+      "event_type_display": "Consultation responses due",
+      "date": "2026-11-09T12:00:00Z",
+      "merger_id": "MN-40049",
+      "merger_name": "Coles \u2013 supermarket site in Cannonvale Central (QLD)",
+      "status": "Under assessment",
+      "stage": "Phase 1 - initial assessment",
+      "effective_notification_datetime": "2026-10-30T12:00:00Z"
+    },
+    {
+      "type": "consultation_due",
+      "event_type_display": "Consultation responses due",
+      "date": "2026-11-09T12:00:00Z",
+      "merger_id": "MN-60059",
+      "merger_name": "Merchant Wealth Partners - minority investment in Ironbark Financial Group",
+      "status": "Under assessment",
+      "stage": "Phase 1 - initial assessment",
+      "effective_notification_datetime": "2026-11-02T12:00:00Z"
+    },
+    {
+      "type": "tribunal_hearing",
+      "event_type_display": "Tribunal hearing",
+      "date": "2026-11-09T12:00:00Z",
+      "merger_id": "MN-01068",
+      "merger_name": "Coles \u2013 supermarket and liquor site in Kalgoorlie, WA",
+      "status": "Assessment completed",
+      "stage": "Phase 2 - detailed assessment",
+      "effective_notification_datetime": "2025-11-27T12:00:00Z",
+      "tribunal_number": "ACT 1 of 2026",
+      "end_date": "2026-11-19T12:00:00Z"
+    },
+    {
+      "type": "consultation_due",
+      "event_type_display": "Consultation responses due",
+      "date": "2026-11-10T12:00:00Z",
+      "merger_id": "MN-25058",
+      "merger_name": "Healthe Care \u2013 Knox Private, Ringwood Private, Northpark Private, Victorian Rehabilitation Centre and Geelong Clinic",
+      "status": "Under assessment",
+      "stage": "Phase 1 - initial assessment",
+      "effective_notification_datetime": "2026-11-02T12:00:00Z"
+    },
+    {
+      "type": "consultation_due",
+      "event_type_display": "Consultation responses due",
+      "date": "2026-11-10T12:00:00Z",
+      "merger_id": "MN-60052",
+      "merger_name": "Healthe Care - Prince of Wales Private Hospital",
+      "status": "Under assessment",
+      "stage": "Phase 1 - initial assessment",
+      "effective_notification_datetime": "2026-11-02T12:00:00Z"
+    },
+    {
+      "type": "public_benefit_assessment",
+      "event_type_display": "Public benefit assessment",
+      "date": "2026-11-10T12:00:00Z",
+      "merger_id": "MN-65005",
+      "merger_name": "Insurance Australia Group \u2013 RAC Insurance",
+      "status": "Under assessment",
+      "stage": "Public benefit phase",
+      "effective_notification_datetime": "2026-03-03T12:00:00Z"
+    },
+    {
+      "type": "consultation_due",
+      "event_type_display": "Consultation responses due",
+      "date": "2026-11-11T12:00:00Z",
+      "merger_id": "MN-05013",
+      "merger_name": "Zoetis \u2013 Neogen Genomics Business",
+      "status": "Under assessment",
+      "stage": "Phase 2 - detailed assessment",
+      "effective_notification_datetime": "2026-05-12T12:00:00Z"
+    },
+    {
+      "type": "consultation_due",
+      "event_type_display": "Consultation responses due",
+      "date": "2026-11-12T12:00:00Z",
+      "merger_id": "MN-55024",
+      "merger_name": "PSP Investments - AAA Egg Company",
+      "status": "Under assessment",
+      "stage": "Phase 1 - initial assessment",
+      "effective_notification_datetime": "2026-09-10T12:00:00Z"
+    },
+    {
+      "type": "consultation_due",
+      "event_type_display": "Consultation responses due",
+      "date": "2026-11-12T12:00:00Z",
+      "merger_id": "MN-55046",
+      "merger_name": "USCO \u2013 ITM",
+      "status": "Under assessment",
+      "stage": "Phase 1 - initial assessment",
+      "effective_notification_datetime": "2026-11-05T12:00:00Z"
+    },
+    {
+      "type": "consultation_due",
+      "event_type_display": "Consultation responses due",
+      "date": "2026-11-12T12:00:00Z",
+      "merger_id": "MN-65042",
+      "merger_name": "Thoma Bravo - Varonis",
+      "status": "Under assessment",
+      "stage": "Phase 1 - initial assessment",
+      "effective_notification_datetime": "2026-11-04T12:00:00Z"
+    },
+    {
+      "type": "determination_due",
+      "event_type_display": "Determination due",
+      "date": "2026-11-12T12:00:00Z",
+      "merger_id": "MN-75042",
+      "merger_name": "Coles - supermarket site in Angle Vale, SA",
+      "status": "Under assessment",
+      "stage": "Phase 1 - initial assessment",
+      "effective_notification_datetime": "2026-09-30T12:00:00Z"
+    },
+    {
+      "type": "consultation_due",
+      "event_type_display": "Consultation responses due",
+      "date": "2026-11-13T12:00:00Z",
+      "merger_id": "MN-20046",
+      "merger_name": "Autosports Group - Mercedes-Benz Parramatta and Castle Hill, Chery Castle Hill",
+      "status": "Under assessment",
+      "stage": "Phase 1 - initial assessment",
+      "effective_notification_datetime": "2026-11-06T12:00:00Z"
+    },
+    {
+      "type": "consultation_due",
+      "event_type_display": "Consultation responses due",
+      "date": "2026-11-13T12:00:00Z",
+      "merger_id": "MN-70049",
+      "merger_name": "Total Ventilation Hygiene - Alphacool",
+      "status": "Under assessment",
+      "stage": "Phase 1 - initial assessment",
+      "effective_notification_datetime": "2026-11-05T12:00:00Z"
+    },
+    {
+      "type": "determination_due",
+      "event_type_display": "Determination due",
+      "date": "2026-11-18T12:00:00Z",
+      "merger_id": "MN-75059",
+      "merger_name": "Macquarie Global Infrastructure Fund - SERV",
+      "status": "Under assessment",
+      "stage": "Phase 1 - initial assessment",
+      "effective_notification_datetime": "2026-10-07T12:00:00Z"
+    },
+    {
+      "type": "determination_due",
+      "event_type_display": "Determination due",
+      "date": "2026-11-20T12:00:00Z",
+      "merger_id": "MN-60048",
+      "merger_name": "Ingenia - Peet - Flagstone JV",
+      "status": "Under assessment",
+      "stage": "Phase 1 - initial assessment",
+      "effective_notification_datetime": "2026-10-09T12:00:00Z"
+    },
+    {
+      "type": "determination_due",
+      "event_type_display": "Determination due",
+      "date": "2026-11-23T12:00:00Z",
+      "merger_id": "MN-85053",
+      "merger_name": "Funds managed by New Forests \u2013 Forestry plantations of AKD",
+      "status": "Under assessment",
+      "stage": "Phase 1 - initial assessment",
+      "effective_notification_datetime": "2026-10-12T12:00:00Z"
+    },
+    {
+      "type": "determination_due",
+      "event_type_display": "Determination due",
+      "date": "2026-11-24T12:00:00Z",
+      "merger_id": "MN-50040",
+      "merger_name": "FlightSafety International / Commercial Training Solutions",
+      "status": "Under assessment",
+      "stage": "Phase 1 - initial assessment",
+      "effective_notification_datetime": "2026-10-13T12:00:00Z"
+    },
+    {
+      "type": "determination_due",
+      "event_type_display": "Determination due",
+      "date": "2026-11-25T12:00:00Z",
+      "merger_id": "MN-75058",
+      "merger_name": "Kinetic - Tassielink",
+      "status": "Under assessment",
+      "stage": "Phase 1 - initial assessment",
+      "effective_notification_datetime": "2026-09-29T12:00:00Z"
+    },
+    {
+      "type": "determination_due",
+      "event_type_display": "Determination due",
+      "date": "2026-11-26T12:00:00Z",
+      "merger_id": "MN-01127",
+      "merger_name": "CVS Group \u2013 Karrinyup Small Animal Hospital",
+      "status": "Under assessment",
+      "stage": "Phase 1 - initial assessment",
+      "effective_notification_datetime": "2026-10-15T12:00:00Z"
+    },
+    {
+      "type": "determination_due",
+      "event_type_display": "Determination due",
+      "date": "2026-11-26T12:00:00Z",
+      "merger_id": "MN-15048",
+      "merger_name": "Camp Australia \u2013 Jabiru",
+      "status": "Under assessment",
+      "stage": "Phase 1 - initial assessment",
+      "effective_notification_datetime": "2026-10-15T12:00:00Z"
+    },
+    {
+      "type": "determination_due",
+      "event_type_display": "Determination due",
+      "date": "2026-11-26T12:00:00Z",
+      "merger_id": "MN-20040",
+      "merger_name": "Tabcorp - BetMakers",
+      "status": "Under assessment",
+      "stage": "Phase 1 - initial assessment",
+      "effective_notification_datetime": "2026-10-15T12:00:00Z"
+    },
+    {
+      "type": "determination_due",
+      "event_type_display": "Determination due",
+      "date": "2026-11-26T12:00:00Z",
+      "merger_id": "MN-55040",
+      "merger_name": "Kirin \u2013 Jamieson Wellness",
+      "status": "Under assessment",
+      "stage": "Phase 1 - initial assessment",
+      "effective_notification_datetime": "2026-10-15T12:00:00Z"
+    },
+    {
+      "type": "determination_due",
+      "event_type_display": "Determination due",
+      "date": "2026-11-27T12:00:00Z",
+      "merger_id": "MN-10039",
+      "merger_name": "Koch \u2013 50% interest in certain assets of OCP Nutricrops",
+      "status": "Under assessment",
+      "stage": "Phase 1 - initial assessment",
+      "effective_notification_datetime": "2026-10-16T12:00:00Z"
+    },
+    {
+      "type": "determination_due",
+      "event_type_display": "Determination due",
+      "date": "2026-11-27T12:00:00Z",
+      "merger_id": "MN-70047",
+      "merger_name": "Australian Venue Co \u2013 assets of Molly\u2019s Irish Pub, Highgate and Molly\u2019s Irish Pub, Victoria Park, Perth",
+      "status": "Under assessment",
+      "stage": "Phase 1 - initial assessment",
+      "effective_notification_datetime": "2026-10-16T12:00:00Z"
+    },
+    {
+      "type": "determination_due",
+      "event_type_display": "Determination due",
+      "date": "2026-11-27T12:00:00Z",
+      "merger_id": "MN-75031",
+      "merger_name": "VetPartners \u2013 VetLove",
+      "status": "Under assessment",
+      "stage": "Phase 1 - initial assessment",
+      "effective_notification_datetime": "2026-10-09T12:00:00Z"
+    },
+    {
+      "type": "determination_due",
+      "event_type_display": "Determination due",
+      "date": "2026-11-27T12:00:00Z",
+      "merger_id": "MN-75061",
+      "merger_name": "ABB - Rotork",
+      "status": "Under assessment",
+      "stage": "Phase 1 - initial assessment",
+      "effective_notification_datetime": "2026-10-17T12:00:00Z"
+    },
+    {
+      "type": "determination_due",
+      "event_type_display": "Determination due",
+      "date": "2026-11-27T12:00:00Z",
+      "merger_id": "MN-80047",
+      "merger_name": "Thoma Bravo - Tanda",
+      "status": "Under assessment",
+      "stage": "Phase 1 - initial assessment",
+      "effective_notification_datetime": "2026-10-16T12:00:00Z"
+    },
+    {
+      "type": "determination_due",
+      "event_type_display": "Determination due",
+      "date": "2026-11-30T12:00:00Z",
+      "merger_id": "MN-01126",
+      "merger_name": "IPLiving - Springwood Living Group",
+      "status": "Under assessment",
+      "stage": "Phase 1 - initial assessment",
+      "effective_notification_datetime": "2026-10-19T12:00:00Z"
+    },
+    {
+      "type": "determination_due",
+      "event_type_display": "Determination due",
+      "date": "2026-11-30T12:00:00Z",
+      "merger_id": "MN-85060",
+      "merger_name": "Australian Venue Co \u2013 assets of The Breakwater, Hillarys and Print Hall, Perth",
+      "status": "Under assessment",
+      "stage": "Phase 1 - initial assessment",
+      "effective_notification_datetime": "2026-10-19T12:00:00Z"
+    },
+    {
+      "type": "determination_due",
+      "event_type_display": "Determination due",
+      "date": "2026-12-01T12:00:00Z",
+      "merger_id": "MN-15053",
+      "merger_name": "Fruitico \u2013 Lease and option to purchase Terra Farm and Sunsweet Farm",
+      "status": "Under assessment",
+      "stage": "Phase 1 - initial assessment",
+      "effective_notification_datetime": "2026-10-20T12:00:00Z"
+    },
+    {
+      "type": "determination_due",
+      "event_type_display": "Determination due",
+      "date": "2026-12-01T12:00:00Z",
+      "merger_id": "MN-45032",
+      "merger_name": "Novotech - Agilex",
+      "status": "Under assessment",
+      "stage": "Phase 1 - initial assessment",
+      "effective_notification_datetime": "2026-10-20T12:00:00Z"
+    },
+    {
+      "type": "public_benefit_response_due",
+      "event_type_display": "Public benefit responses due",
+      "date": "2026-12-01T12:00:00Z",
+      "merger_id": "MN-65005",
+      "merger_name": "Insurance Australia Group \u2013 RAC Insurance",
+      "status": "Under assessment",
+      "stage": "Public benefit phase",
+      "effective_notification_datetime": "2026-03-03T12:00:00Z"
+    },
+    {
+      "type": "determination_due",
+      "event_type_display": "Determination due",
+      "date": "2026-12-03T12:00:00Z",
+      "merger_id": "MN-35035",
+      "merger_name": "Sun Pharma - Organon",
+      "status": "Under assessment",
+      "stage": "Phase 1 - initial assessment",
+      "effective_notification_datetime": "2026-10-22T12:00:00Z"
+    },
+    {
+      "type": "determination_due",
+      "event_type_display": "Determination due",
+      "date": "2026-12-04T12:00:00Z",
+      "merger_id": "MN-20042",
+      "merger_name": "Webuild \u2013 Trevi Group",
+      "status": "Under assessment",
+      "stage": "Phase 1 - initial assessment",
+      "effective_notification_datetime": "2026-10-24T12:00:00Z"
+    },
+    {
+      "type": "determination_due",
+      "event_type_display": "Determination due",
+      "date": "2026-12-04T12:00:00Z",
+      "merger_id": "MN-55024",
+      "merger_name": "PSP Investments - AAA Egg Company",
+      "status": "Under assessment",
+      "stage": "Phase 1 - initial assessment",
+      "effective_notification_datetime": "2026-09-10T12:00:00Z"
+    },
+    {
+      "type": "determination_due",
+      "event_type_display": "Determination due",
+      "date": "2026-12-04T12:00:00Z",
+      "merger_id": "MN-55042",
+      "merger_name": "AUB \u2013 One Underwriting",
+      "status": "Under assessment",
+      "stage": "Phase 1 - initial assessment",
+      "effective_notification_datetime": "2026-10-23T12:00:00Z"
+    },
+    {
+      "type": "determination_due",
+      "event_type_display": "Determination due",
+      "date": "2026-12-04T12:00:00Z",
+      "merger_id": "MN-75065",
+      "merger_name": "Monadelphous - Tyden Power",
+      "status": "Under assessment",
+      "stage": "Phase 1 - initial assessment",
+      "effective_notification_datetime": "2026-10-23T12:00:00Z"
+    },
+    {
+      "type": "determination_due",
+      "event_type_display": "Determination due",
+      "date": "2026-12-07T12:00:00Z",
+      "merger_id": "MN-20041",
+      "merger_name": "Hopper Motor Group \u2013 Essendon Kia",
+      "status": "Under assessment",
+      "stage": "Phase 1 - initial assessment",
+      "effective_notification_datetime": "2026-10-26T12:00:00Z"
+    },
+    {
+      "type": "determination_due",
+      "event_type_display": "Determination due",
+      "date": "2026-12-08T12:00:00Z",
+      "merger_id": "MN-15043",
+      "merger_name": "NYK - NS United",
+      "status": "Under assessment",
+      "stage": "Phase 1 - initial assessment",
+      "effective_notification_datetime": "2026-10-27T12:00:00Z"
+    },
+    {
+      "type": "determination_due",
+      "event_type_display": "Determination due",
+      "date": "2026-12-08T12:00:00Z",
+      "merger_id": "MN-20044",
+      "merger_name": "4K Automotive Group \u2013 Peninsula Motor Group",
+      "status": "Under assessment",
+      "stage": "Phase 1 - initial assessment",
+      "effective_notification_datetime": "2026-10-27T12:00:00Z"
+    },
+    {
+      "type": "determination_due",
+      "event_type_display": "Determination due",
+      "date": "2026-12-09T12:00:00Z",
+      "merger_id": "MN-10044",
+      "merger_name": "OCTA \u2013 Woodside-EDL LNG JV",
+      "status": "Under assessment",
+      "stage": "Phase 1 - initial assessment",
+      "effective_notification_datetime": "2026-10-28T12:00:00Z"
+    },
+    {
+      "type": "determination_due",
+      "event_type_display": "Determination due",
+      "date": "2026-12-09T12:00:00Z",
+      "merger_id": "MN-45028",
+      "merger_name": "Endeavour Group \u2013 retail liquor site in Penrith, NSW",
+      "status": "Under assessment",
+      "stage": "Phase 1 - initial assessment",
+      "effective_notification_datetime": "2026-10-28T12:00:00Z"
+    },
+    {
+      "type": "determination_due",
+      "event_type_display": "Determination due",
+      "date": "2026-12-10T12:00:00Z",
+      "merger_id": "MN-10040",
+      "merger_name": "Calvary \u2013 14 Healthscope hospitals and Healthscope Independence Services",
+      "status": "Under assessment",
+      "stage": "Phase 1 - initial assessment",
+      "effective_notification_datetime": "2026-10-29T12:00:00Z"
+    },
+    {
+      "type": "determination_due",
+      "event_type_display": "Determination due",
+      "date": "2026-12-10T12:00:00Z",
+      "merger_id": "MN-90044",
+      "merger_name": "Stellex and ONA \u2013 Score",
+      "status": "Under assessment",
+      "stage": "Phase 1 - initial assessment",
+      "effective_notification_datetime": "2026-10-29T12:00:00Z"
+    },
+    {
+      "type": "determination_due",
+      "event_type_display": "Determination due",
+      "date": "2026-12-11T12:00:00Z",
+      "merger_id": "MN-10043",
+      "merger_name": "ACURIO - Nepean, Sydney Southwest, and Campbelltown Private Hospitals",
+      "status": "Under assessment",
+      "stage": "Phase 1 - initial assessment",
+      "effective_notification_datetime": "2026-10-30T12:00:00Z"
+    },
+    {
+      "type": "determination_due",
+      "event_type_display": "Determination due",
+      "date": "2026-12-11T12:00:00Z",
+      "merger_id": "MN-40049",
+      "merger_name": "Coles \u2013 supermarket site in Cannonvale Central (QLD)",
+      "status": "Under assessment",
+      "stage": "Phase 1 - initial assessment",
+      "effective_notification_datetime": "2026-10-30T12:00:00Z"
+    },
+    {
+      "type": "determination_due",
+      "event_type_display": "Determination due",
+      "date": "2026-12-11T12:00:00Z",
+      "merger_id": "MN-65041",
+      "merger_name": "GLNG Participants \u2013 Greater Meridian CSG Project assets",
+      "status": "Under assessment",
+      "stage": "Phase 1 - initial assessment",
+      "effective_notification_datetime": "2026-10-30T12:00:00Z"
+    },
+    {
+      "type": "determination_due",
+      "event_type_display": "Determination due",
+      "date": "2026-12-14T12:00:00Z",
+      "merger_id": "MN-25058",
+      "merger_name": "Healthe Care \u2013 Knox Private, Ringwood Private, Northpark Private, Victorian Rehabilitation Centre and Geelong Clinic",
+      "status": "Under assessment",
+      "stage": "Phase 1 - initial assessment",
+      "effective_notification_datetime": "2026-11-02T12:00:00Z"
+    },
+    {
+      "type": "determination_due",
+      "event_type_display": "Determination due",
+      "date": "2026-12-14T12:00:00Z",
+      "merger_id": "MN-60052",
+      "merger_name": "Healthe Care - Prince of Wales Private Hospital",
+      "status": "Under assessment",
+      "stage": "Phase 1 - initial assessment",
+      "effective_notification_datetime": "2026-11-02T12:00:00Z"
+    },
+    {
+      "type": "determination_due",
+      "event_type_display": "Determination due",
+      "date": "2026-12-14T12:00:00Z",
+      "merger_id": "MN-60059",
+      "merger_name": "Merchant Wealth Partners - minority investment in Ironbark Financial Group",
+      "status": "Under assessment",
+      "stage": "Phase 1 - initial assessment",
+      "effective_notification_datetime": "2026-11-02T12:00:00Z"
+    },
+    {
+      "type": "determination_due",
+      "event_type_display": "Determination due",
+      "date": "2026-12-16T12:00:00Z",
+      "merger_id": "MN-65042",
+      "merger_name": "Thoma Bravo - Varonis",
+      "status": "Under assessment",
+      "stage": "Phase 1 - initial assessment",
+      "effective_notification_datetime": "2026-11-04T12:00:00Z"
+    },
+    {
+      "type": "determination_due",
+      "event_type_display": "Determination due",
+      "date": "2026-12-17T12:00:00Z",
+      "merger_id": "MN-55046",
+      "merger_name": "USCO \u2013 ITM",
+      "status": "Under assessment",
+      "stage": "Phase 1 - initial assessment",
+      "effective_notification_datetime": "2026-11-05T12:00:00Z"
+    },
+    {
+      "type": "determination_due",
+      "event_type_display": "Determination due",
+      "date": "2026-12-17T12:00:00Z",
+      "merger_id": "MN-70049",
+      "merger_name": "Total Ventilation Hygiene - Alphacool",
+      "status": "Under assessment",
+      "stage": "Phase 1 - initial assessment",
+      "effective_notification_datetime": "2026-11-05T12:00:00Z"
+    },
+    {
+      "type": "determination_due",
+      "event_type_display": "Determination due",
+      "date": "2026-12-18T12:00:00Z",
+      "merger_id": "MN-20046",
+      "merger_name": "Autosports Group - Mercedes-Benz Parramatta and Castle Hill, Chery Castle Hill",
+      "status": "Under assessment",
+      "stage": "Phase 1 - initial assessment",
+      "effective_notification_datetime": "2026-11-06T12:00:00Z"
+    },
+    {
+      "type": "determination_due",
+      "event_type_display": "Determination due",
+      "date": "2026-12-22T12:00:00Z",
+      "merger_id": "MN-01072",
+      "merger_name": "Saipem S.p.A - Subsea7 S.A.",
+      "status": "Under assessment",
+      "stage": "Phase 2 - detailed assessment",
+      "effective_notification_datetime": "2026-04-27T12:00:00Z"
+    },
+    {
+      "type": "tribunal_hearing",
+      "event_type_display": "Tribunal hearing",
+      "date": "2027-03-30T12:00:00Z",
+      "merger_id": "MN-65005",
+      "merger_name": "Insurance Australia Group \u2013 RAC Insurance",
+      "status": "Under assessment",
+      "stage": "Public benefit phase",
+      "effective_notification_datetime": "2026-03-03T12:00:00Z",
+      "tribunal_number": "ACT 3 of 2026 and ACT 4 of 2026",
+      "end_date": "2027-04-15T12:00:00Z"
+    }
+  ],
+  "count": 60,
+  "days_ahead": 60
+}
