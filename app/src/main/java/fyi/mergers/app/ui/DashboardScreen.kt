@@ -3,6 +3,7 @@ package fyi.mergers.app.ui
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -10,13 +11,22 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Balance
+import androidx.compose.material.icons.outlined.Forum
+import androidx.compose.material.icons.outlined.Gavel
+import androidx.compose.material.icons.outlined.WarningAmber
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -24,9 +34,18 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -34,6 +53,7 @@ import fyi.mergers.app.data.Dates
 import fyi.mergers.app.data.Stats
 import fyi.mergers.app.data.Status
 import fyi.mergers.app.data.UpcomingEvent
+import fyi.mergers.app.ui.theme.eventTypeColors
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 import kotlin.math.roundToInt
@@ -90,8 +110,33 @@ private fun DashboardContent(vm: AppViewModel, stats: Stats, upcoming: List<Upco
         val n = Dates.daysUntil(e.end_date ?: e.date) ?: return@filter false
         n >= 0 && (Dates.daysUntil(e.date) ?: 0) <= 14
     }.sortedBy { it.date }
+    val days = soon.groupBy { it.date?.take(10) }
 
-    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 24.dp)) {
+    // Which day each Coming up item belongs to, by key, so a day header can
+    // tell when it's the one pinned at the top (it then carries the section's
+    // title too, since it has pushed the title itself off).
+    val dayOfKey = remember(days) {
+        buildMap {
+            days.forEach { (day, events) ->
+                put(dayKey(day), day)
+                events.forEach { put(eventKey(it), day) }
+            }
+        }
+    }
+    val listState = rememberLazyListState()
+    val pinnedDay by remember(dayOfKey) {
+        derivedStateOf {
+            val top = listState.layoutInfo.visibleItemsInfo
+                .firstOrNull { it.index == listState.firstVisibleItemIndex }
+            top?.let { dayOfKey[it.key] }
+        }
+    }
+
+    LazyColumn(
+        Modifier.fillMaxSize().testTag("dashboard"),
+        state = listState,
+        contentPadding = PaddingValues(bottom = 24.dp),
+    ) {
         item {
             val pd = stats.phase_duration
             Column(Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -148,14 +193,15 @@ private fun DashboardContent(vm: AppViewModel, stats: Stats, upcoming: List<Upco
 
         if (soon.isNotEmpty()) {
             stickyHeader(key = "h-Coming up") { StickyTitle("Coming up") }
-            soon.groupBy { it.date?.take(10) }.forEach { (day, events) ->
-                item(key = "u-$day") { DayHeader(day) }
-                items(events, key = { "u-${it.merger_id}-${it.type}-${it.date}" }) { e ->
+            days.forEach { (day, events) ->
+                stickyHeader(key = dayKey(day)) { DayHeader(day, pinned = pinnedDay == day) }
+                items(events, key = ::eventKey) { e ->
                     ListRow(
                         title = e.merger_name,
                         subtitle = e.event_type_display,
-                        trailing = e.merger_id,
+                        trailing = null,
                         onClick = { vm.openMerger(e.merger_id) },
+                        leading = { EventTypeTile(e.type, e.event_type_display) },
                     )
                 }
             }
@@ -168,20 +214,69 @@ private fun DashboardContent(vm: AppViewModel, stats: Stats, upcoming: List<Upco
 
 private val dayFormat = DateTimeFormatter.ofPattern("EEEE d MMMM", Locale.forLanguageTag("en-AU"))
 
+private fun dayKey(day: String?) = "u-$day"
+
+private fun eventKey(e: UpcomingEvent) = "u-${e.merger_id}-${e.type}-${e.date}"
+
+/**
+ * A day in Coming up. Sticky like the section titles: while its events
+ * scroll under it, it's pinned at the top, and as it has pushed "Coming up"
+ * off by then, it says so itself.
+ */
 @Composable
-private fun DayHeader(day: String?) {
-    val d = Dates.day(day) ?: return
-    val label = when (Dates.daysUntil(day)) {
-        0L -> "Today"
-        1L -> "Tomorrow"
-        else -> dayFormat.format(d)
+private fun DayHeader(day: String?, pinned: Boolean) {
+    val d = Dates.day(day)
+    val label = when {
+        d == null -> "Undated"
+        else -> when (Dates.daysUntil(day)) {
+            0L -> "Today"
+            1L -> "Tomorrow"
+            else -> dayFormat.format(d)
+        }
     }
-    Text(
-        label,
-        style = MaterialTheme.typography.labelLarge,
-        color = MaterialTheme.colorScheme.primary,
-        modifier = Modifier.padding(start = 16.dp, top = 8.dp, bottom = 2.dp),
-    )
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.surface)
+            .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (pinned) {
+            Text(
+                "Coming up · ",
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.SemiBold,
+            )
+        }
+        Text(
+            label,
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.primary,
+        )
+    }
+}
+
+/** What kind of deadline an upcoming event is, as the site's icon tiles (UpcomingEventsTimeline). */
+private fun eventTypeIcon(type: String?): ImageVector = when (type) {
+    "consultation_due", "public_benefit_response_due" -> Icons.Outlined.Forum
+    "notice_of_competition_concerns" -> Icons.Outlined.WarningAmber
+    "public_benefit_assessment", "tribunal_hearing", "federal_court_hearing" -> Icons.Outlined.Balance
+    else -> Icons.Outlined.Gavel
+}
+
+@Composable
+private fun EventTypeTile(type: String?, description: String?) {
+    val c = eventTypeColors(type)
+    Box(
+        Modifier
+            .size(32.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(c.fill)
+            .semantics { role = Role.Image; contentDescription = description ?: "Event" },
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(eventTypeIcon(type), contentDescription = null, tint = c.onFill, modifier = Modifier.size(18.dp))
+    }
 }
 
 private fun median(v: Double): String = if (v % 1.0 == 0.0) v.toInt().toString() else "%.1f".format(v)

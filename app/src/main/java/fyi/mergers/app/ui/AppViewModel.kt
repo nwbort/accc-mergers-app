@@ -30,6 +30,9 @@ sealed interface Route {
     data object Mergers : Route
     data object Following : Route
     data class Merger(val id: String) : Route
+
+    /** Only on screen, never in [AppViewModel.backStack]: the root that holds all three tabs. */
+    data object Tabs : Route
 }
 
 /** The merger list's search and filters, kept while you go in and out of mergers. */

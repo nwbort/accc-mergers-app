@@ -73,3 +73,24 @@ fun statusColors(label: String?): StatusColors = when (label) {
 
 /** The wash a matter under appeal or judicial review takes, as on the site. */
 val AppealIndigo = StatusColors(Color(0xFF4338CA), Color.White)
+
+/**
+ * An upcoming event's tile: each kind of deadline has its own accent, as the
+ * site's Coming up list (EVENT_TYPES in UpcomingEventsTimeline.jsx). Tailwind's
+ * 50 tint under its 600/700 shade; in the dark, the 300 shade on a faint wash.
+ */
+@Composable
+fun eventTypeColors(type: String?): StatusColors {
+    val dark = isSystemInDarkTheme()
+    fun pair(tint: Long, ink: Long, darkInk: Long) =
+        if (dark) StatusColors(Color(darkInk).copy(alpha = 0.16f), Color(darkInk))
+        else StatusColors(Color(tint), Color(ink))
+    return when (type) {
+        "consultation_due" -> pair(0xFFEFF6FF, 0xFF2563EB, 0xFF93C5FD) // blue
+        "notice_of_competition_concerns" -> pair(0xFFFFFBEB, 0xFFB45309, 0xFFFCD34D) // amber
+        "public_benefit_assessment", "public_benefit_response_due" -> pair(0xFFF0FDFA, 0xFF0F766E, 0xFF5EEAD4) // teal
+        "determination_due" -> pair(0xFFFAF5FF, 0xFF9333EA, 0xFFD8B4FE) // purple
+        "tribunal_hearing", "federal_court_hearing" -> pair(0xFFFFF1F2, 0xFFE11D48, 0xFFFDA4AF) // rose
+        else -> pair(0xFFF3F4F6, 0xFF4B5563, 0xFFD1D5DB) // gray
+    }
+}
