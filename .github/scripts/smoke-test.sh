@@ -54,7 +54,25 @@ done
 adb shell input keyevent 82 || true   # wake and unlock
 echo "Booted Android $(adb shell getprop ro.build.version.release | tr -d '\r') (API $(adb shell getprop ro.build.version.sdk | tr -d '\r')), page size $(adb shell getconf PAGE_SIZE | tr -d '\r')"
 
-timeout 120 adb install -r "$apk"
+# boot_completed can come before the package manager will take an install
+# ("Failure calling service package: Broken pipe"), so wait for it and retry.
+until adb shell pm path android >/dev/null 2>&1; do
+  if [ $SECONDS -ge $deadline ]; then
+    echo "::error::The package manager never came up"
+    exit 1
+  fi
+  sleep 5
+done
+installed=
+for attempt in 1 2 3 4 5; do
+  if timeout 120 adb install -r "$apk"; then installed=1; break; fi
+  echo "Install attempt $attempt failed; retrying"
+  sleep 15
+done
+if [ -z "$installed" ]; then
+  echo "::error::Couldn't install the APK"
+  exit 1
+fi
 adb logcat -c
 timeout 60 adb shell am start -W -n "$pkg/.MainActivity"
 sleep 20
