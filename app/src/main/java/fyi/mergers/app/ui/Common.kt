@@ -19,9 +19,15 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Block
 import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -37,11 +43,13 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import fyi.mergers.app.data.Dates
 import fyi.mergers.app.data.MergerSummary
 import fyi.mergers.app.data.Party
+import fyi.mergers.app.data.Status
 import fyi.mergers.app.data.headerStatus
 import fyi.mergers.app.data.outcomeInput
 import fyi.mergers.app.data.outcomeText
@@ -81,6 +89,42 @@ fun StatusBadge(label: String, modifier: Modifier = Modifier, colorKey: String =
             .padding(horizontal = 8.dp, vertical = 3.dp)
             .semantics { role = Role.Image; contentDescription = "Status: $label" },
     )
+}
+
+/**
+ * An outcome as a symbol alone: the status colour in a circle with the site's
+ * glyph for it (constants/outcomeIcons.js, and StatusBadge's live glyphs). The
+ * words go to the accessible name, so colour isn't the only signal.
+ */
+@Composable
+fun StatusGlyph(label: String?, modifier: Modifier = Modifier, conditions: Boolean = false, size: Dp = 28.dp) {
+    val c = statusColors(label)
+    val icon = when (label) {
+        Status.APPROVED, Status.NOT_OPPOSED, Status.APPROVED_WITH_CONDITIONS -> Icons.Filled.Check
+        Status.NOT_APPROVED, Status.DECLINED -> Icons.Filled.Close
+        Status.ASSESSMENT_CEASED -> Icons.Filled.Block
+        Status.UNDER_ASSESSMENT, Status.REFERRED_TO_PHASE_2 -> Icons.Outlined.Schedule
+        Status.ASSESSMENT_SUSPENDED -> Icons.Filled.Pause
+        else -> null
+    }
+    val words = listOfNotNull(
+        label ?: "Unknown",
+        "with conditions".takeIf { conditions && label == Status.APPROVED },
+    ).joinToString(" ")
+    Box(
+        modifier
+            .size(size)
+            .clip(CircleShape)
+            .background(c.fill)
+            .semantics { role = Role.Image; contentDescription = words },
+        contentAlignment = Alignment.Center,
+    ) {
+        if (icon != null) {
+            Icon(icon, contentDescription = null, tint = c.onFill, modifier = Modifier.size(size * 0.6f))
+        } else {
+            Box(Modifier.size(size / 4).clip(CircleShape).background(c.onFill))
+        }
+    }
 }
 
 @Composable

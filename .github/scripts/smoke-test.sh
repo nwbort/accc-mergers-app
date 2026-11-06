@@ -79,6 +79,10 @@ retry() {  # retry <what> <command...>: up to 6 tries, 15 s apart
     sleep 15
   done
   echo "::error::$what kept failing"
+  # Whatever took the system down: the crash buffer, then any system_server death.
+  echo "--- crash buffer"; adb logcat -d -b crash | tail -150 || true
+  adb logcat -d > "$out/logcat.txt" 2>/dev/null || true
+  echo "--- system process"; grep -B2 -A40 "FATAL EXCEPTION IN SYSTEM PROCESS\|\*\*\* FATAL EXCEPTION" "$out/logcat.txt" | head -120 || true
   exit 1
 }
 

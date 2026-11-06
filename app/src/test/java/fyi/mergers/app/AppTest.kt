@@ -17,7 +17,9 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.hasScrollToIndexAction
 import androidx.compose.ui.test.hasSetTextAction
+import androidx.compose.ui.test.performScrollToIndex
 import androidx.lifecycle.ViewModelProvider
 import androidx.work.ListenableWorker
 import androidx.work.testing.TestListenableWorkerBuilder
@@ -66,6 +68,10 @@ class AppTest {
         waitForText("Recent determinations")
         waitForText("Mergers")
         shot("1-dashboard")
+        // Partway down Recent determinations, its title stays pinned at the top.
+        compose.onNode(hasScrollToIndexAction()).performScrollToIndex(5)
+        shot("1b-dashboard-scrolled")
+        compose.onNode(hasScrollToIndexAction()).performScrollToIndex(0)
 
         // The merger list, searched and cleared.
         compose.runOnUiThread { vm.selectTab(fyi.mergers.app.ui.Route.Mergers) }

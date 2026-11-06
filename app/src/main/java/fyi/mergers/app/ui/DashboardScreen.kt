@@ -1,5 +1,7 @@
 package fyi.mergers.app.ui
 
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -81,6 +83,7 @@ fun Loading() {
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun DashboardContent(vm: AppViewModel, stats: Stats, upcoming: List<UpcomingEvent>) {
     val soon = upcoming.filter { e ->
@@ -116,7 +119,7 @@ private fun DashboardContent(vm: AppViewModel, stats: Stats, upcoming: List<Upco
         }
 
         if (stats.recent_determinations.isNotEmpty()) {
-            item { SectionTitle("Recent determinations") }
+            stickyHeader(key = "h-Recent determinations") { StickyTitle("Recent determinations") }
             items(stats.recent_determinations.take(8), key = { "d-" + it.merger_id }) { d ->
                 ListRow(
                     title = d.merger_name,
@@ -126,16 +129,13 @@ private fun DashboardContent(vm: AppViewModel, stats: Stats, upcoming: List<Upco
                     ).joinToString(" · "),
                     trailing = Dates.format(d.determination_date, compact = true),
                     onClick = { vm.openMerger(d.merger_id) },
-                    leading = {
-                        val label = d.determination ?: "Unknown"
-                        StatusBadge(if (d.has_conditions && label == Status.APPROVED) "Conditions" else label, colorKey = label)
-                    },
+                    leading = { StatusGlyph(d.determination, conditions = d.has_conditions) },
                 )
             }
         }
 
         if (stats.recent_mergers.isNotEmpty()) {
-            item { SectionTitle("Recently notified") }
+            stickyHeader(key = "h-Recently notified") { StickyTitle("Recently notified") }
             items(stats.recent_mergers.take(8), key = { "n-" + it.merger_id }) { m ->
                 ListRow(
                     title = m.merger_name,
@@ -147,7 +147,7 @@ private fun DashboardContent(vm: AppViewModel, stats: Stats, upcoming: List<Upco
         }
 
         if (soon.isNotEmpty()) {
-            item { SectionTitle("Coming up") }
+            stickyHeader(key = "h-Coming up") { StickyTitle("Coming up") }
             soon.groupBy { it.date?.take(10) }.forEach { (day, events) ->
                 item(key = "u-$day") { DayHeader(day) }
                 items(events, key = { "u-${it.merger_id}-${it.type}-${it.date}" }) { e ->
@@ -161,7 +161,7 @@ private fun DashboardContent(vm: AppViewModel, stats: Stats, upcoming: List<Upco
             }
         }
 
-        item { SectionTitle("Outcomes") }
+        stickyHeader(key = "h-Outcomes") { StickyTitle("Outcomes") }
         item { Outcomes(stats) }
     }
 }
@@ -259,4 +259,13 @@ private fun Bar(label: String, value: String, fraction: Float, colorKey: String?
             modifier = Modifier.fillMaxWidth().padding(top = 3.dp),
         )
     }
+}
+
+/**
+ * A section title that stays at the top while its section scrolls under it,
+ * until the next section's title pushes it off.
+ */
+@Composable
+private fun StickyTitle(text: String) {
+    SectionTitle(text, Modifier.background(MaterialTheme.colorScheme.surface))
 }
