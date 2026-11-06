@@ -3,6 +3,8 @@ package fyi.mergers.app.ui
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Bookmarks
@@ -17,12 +19,15 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
+import kotlinx.coroutines.flow.drop
 
 private data class Tab(val route: Route, val label: String, val icon: ImageVector, val selectedIcon: ImageVector)
 
@@ -66,16 +71,42 @@ fun MergersApp(vm: AppViewModel) {
         // From the root of another tab, back goes to the dashboard first.
         BackHandler(enabled = vm.backStack.size == 1 && vm.tab != Route.Dashboard) { vm.back() }
 
+        // The tabs share one root entry, side by side in a pager, so you can
+        // swipe between them; a merger stacks on top of whichever is showing.
         NavDisplay(
-            backStack = vm.backStack,
+            backStack = listOf<Route>(Route.Tabs) + vm.backStack.drop(1),
             onBack = { if (!vm.back()) activity?.finish() },
             modifier = Modifier.padding(bottom = padding.calculateBottomPadding()),
             entryProvider = entryProvider {
-                entry<Route.Dashboard> { DashboardScreen(vm) }
-                entry<Route.Mergers> { MergersScreen(vm) }
-                entry<Route.Following> { FollowingScreen(vm) }
+                entry<Route.Tabs> { TabPager(vm) }
                 entry<Route.Merger> { key -> MergerDetailScreen(vm, key.id) }
             },
         )
+    }
+}
+
+/** The three tabs, swiped between left and right, kept in step with the bottom bar. */
+@Composable
+private fun TabPager(vm: AppViewModel) {
+    val index = TABS.indexOfFirst { it.route == vm.tab }.coerceAtLeast(0)
+    val pager = rememberPagerState(initialPage = index) { TABS.size }
+
+    // A tap on the bottom bar (or back to the dashboard) moves the pager...
+    LaunchedEffect(index) {
+        if (pager.currentPage != index) pager.animateScrollToPage(index)
+    }
+    // ...and a swipe that comes to rest on a tab selects it. Only a change of
+    // page counts: coming back from a merger, the pager can be restored on the
+    // tab you left while the bar has since moved to another.
+    LaunchedEffect(pager) {
+        snapshotFlow { pager.settledPage }.drop(1).collect { vm.selectTab(TABS[it].route) }
+    }
+
+    HorizontalPager(state = pager, key = { TABS[it].label }) { page ->
+        when (TABS[page].route) {
+            Route.Dashboard -> DashboardScreen(vm)
+            Route.Mergers -> MergersScreen(vm)
+            else -> FollowingScreen(vm)
+        }
     }
 }

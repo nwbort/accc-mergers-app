@@ -17,7 +17,10 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.onNodeWithContentDescription
-import androidx.compose.ui.test.hasScrollToIndexAction
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performScrollToKey
+import androidx.compose.ui.test.swipeLeft
+import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.performScrollToIndex
 import androidx.lifecycle.ViewModelProvider
@@ -69,12 +72,16 @@ class AppTest {
         waitForText("Mergers")
         shot("1-dashboard")
         // Partway down Recent determinations, its title stays pinned at the top.
-        compose.onNode(hasScrollToIndexAction()).performScrollToIndex(5)
+        compose.onNodeWithTag("dashboard").performScrollToIndex(5)
         shot("1b-dashboard-scrolled")
-        compose.onNode(hasScrollToIndexAction()).performScrollToIndex(0)
+        // Partway down a day in Coming up, that day stays pinned too.
+        compose.onNodeWithTag("dashboard").performScrollToKey("u-MN-55046-consultation_due-2026-11-12T12:00:00Z")
+        shot("1c-dashboard-coming-up")
+        compose.onNodeWithTag("dashboard").performScrollToIndex(0)
 
-        // The merger list, searched and cleared.
-        compose.runOnUiThread { vm.selectTab(fyi.mergers.app.ui.Route.Mergers) }
+        // The merger list, swiped to from the dashboard, searched and cleared.
+        compose.onNodeWithTag("dashboard").performTouchInput { swipeLeft() }
+        waitUntil { vm.tab == fyi.mergers.app.ui.Route.Mergers }
         waitForText("40 matters")
         shot("2-mergers")
         compose.onNode(hasSetTextAction()).performTextInput("asahi")
@@ -86,9 +93,9 @@ class AppTest {
         compose.onAllNodesWithText("Autosports Group", substring = true).onFirst().performClick()
         waitForText("Consultation responses due")
         shot("3-detail-live")
-        compose.onNodeWithText("Follow").performClick()
+        compose.onNodeWithContentDescription("Follow").performClick()
         waitUntil { Graph.store.current().isTracked("MN-20046") }
-        waitForText("Following")
+        waitForText("Following: you", substring = true)
         back()
 
         // A decided matter under appeal and judicial review.

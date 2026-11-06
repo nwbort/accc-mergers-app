@@ -38,8 +38,6 @@ import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.AssistChip
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
@@ -49,7 +47,6 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -69,7 +66,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
@@ -171,20 +167,20 @@ fun MergerDetailScreen(vm: AppViewModel, id: String) {
             when {
                 m == null && state.loading -> Loading()
                 m == null -> Centered("Couldn't load $id. Pull down to try again.")
-                else -> Detail(vm, m, followed, toggleFollow)
+                else -> Detail(vm, m)
             }
         }
     }
 }
 
 @Composable
-private fun Detail(vm: AppViewModel, m: MergerDetail, followed: Boolean, toggleFollow: () -> Unit) {
+private fun Detail(vm: AppViewModel, m: MergerDetail) {
     val context = LocalContext.current
     val events = remember(m) { m.events.sortedWith(compareByDescending<MergerEvent> { it.date ?: "" }) }
     val upcoming = remember(m) { TrackedEvents.upcoming(m).sortedBy { it.date } }
 
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 32.dp)) {
-        item { Header(m, followed, toggleFollow) }
+        item { Header(m) }
 
         item { Facts(m) }
 
@@ -311,7 +307,7 @@ private fun Detail(vm: AppViewModel, m: MergerDetail, followed: Boolean, toggleF
  * appeal), a pale tint of the status colour while it runs.
  */
 @Composable
-private fun Header(m: MergerDetail, followed: Boolean, toggleFollow: () -> Unit) {
+private fun Header(m: MergerDetail) {
     val input = m.outcomeInput()
     val header = input.headerStatus()
     val decided = header?.decided == true
@@ -351,30 +347,6 @@ private fun Header(m: MergerDetail, followed: Boolean, toggleFollow: () -> Unit)
             fontWeight = FontWeight.SemiBold,
             modifier = Modifier.padding(top = 6.dp).semantics { heading() },
         )
-        Spacer(Modifier.height(14.dp))
-        if (followed) {
-            OutlinedButton(
-                onClick = toggleFollow,
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = fg),
-            ) {
-                Icon(Icons.Filled.Bookmark, contentDescription = null, modifier = Modifier.size(18.dp))
-                Spacer(Modifier.width(6.dp))
-                Text("Following")
-            }
-        } else {
-            Button(
-                onClick = toggleFollow,
-                colors = if (decided) {
-                    ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = bg)
-                } else {
-                    ButtonDefaults.buttonColors()
-                },
-            ) {
-                Icon(Icons.Filled.BookmarkBorder, contentDescription = null, modifier = Modifier.size(18.dp))
-                Spacer(Modifier.width(6.dp))
-                Text("Follow")
-            }
-        }
     }
 }
 
