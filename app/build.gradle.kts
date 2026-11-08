@@ -23,7 +23,7 @@ val signingPassword: String? = System.getenv("SIGNING_PASSWORD")
 // caches ~/.m2, and often refused with 429 Too Many Requests. Resolving it as
 // a Gradle dependency puts it in Gradle's cache (which CI keeps) and through
 // the same repositories as everything else; the tests then run offline.
-val robolectricRuntime: Configuration by configurations.creating
+val robolectricRuntime: Configuration = configurations.create("robolectricRuntime")
 val robolectricJarsDir = layout.buildDirectory.dir("robolectric-jars")
 val robolectricJars = tasks.register<Sync>("robolectricJars") {
     from(robolectricRuntime)
