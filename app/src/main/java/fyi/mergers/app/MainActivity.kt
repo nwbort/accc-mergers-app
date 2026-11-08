@@ -40,9 +40,15 @@ class MainActivity : ComponentActivity() {
         handle(intent)
     }
 
-    /** A mergers.fyi merger link (from a notification, or shared from anywhere) opens that merger. */
+    /**
+     * A mergers.fyi merger or industry link (from a notification, or shared
+     * from anywhere) opens that page.
+     */
     private fun handle(intent: Intent) {
-        mergerIdFrom(intent.data?.toString())?.let { vm.openMerger(it) }
+        val url = intent.data?.toString()
+        mergerIdFrom(url)?.let { vm.openMerger(it); return }
+        industryCodeFrom(url)?.let { vm.openIndustry(it); return }
+        if (url != null && INDUSTRIES_LINK.matches(url)) vm.openIndustries()
     }
 
     companion object {
@@ -50,5 +56,12 @@ class MainActivity : ComponentActivity() {
 
         /** "https://mergers.fyi/mergers/MN-01016/asahi-…" → "MN-01016". */
         fun mergerIdFrom(url: String?): String? = url?.let { MERGER_LINK.find(it)?.groupValues?.get(1)?.uppercase() }
+
+        /** A division letter, or a 2 to 4 digit subdivision, group or class. */
+        private val INDUSTRY_LINK = Regex("^https?://(?:www\\.)?mergers\\.fyi/industries/([A-Za-z]|\\d{2,4})(?:[/?#].*)?$")
+        private val INDUSTRIES_LINK = Regex("^https?://(?:www\\.)?mergers\\.fyi/industries/?(?:[?#].*)?$")
+
+        /** "https://mergers.fyi/industries/4110/supermarket-…" → "4110". */
+        fun industryCodeFrom(url: String?): String? = url?.let { INDUSTRY_LINK.find(it)?.groupValues?.get(1)?.uppercase() }
     }
 }

@@ -1,6 +1,7 @@
 package fyi.mergers.app.tracking
 
 import fyi.mergers.app.data.Dates
+import fyi.mergers.app.data.IndustryNode
 import fyi.mergers.app.data.MergerDetail
 import fyi.mergers.app.data.MergerEvent
 import fyi.mergers.app.data.Status
@@ -18,6 +19,9 @@ data class TrackedEvent(
     val upcoming: Boolean,
     val documentUrl: String? = null,
     val documentUrlGh: String? = null,
+    /** Set on a filing or determination surfaced by a followed industry, rather than a followed merger. */
+    val industryCode: String? = null,
+    val industryName: String? = null,
 )
 
 /**
@@ -113,6 +117,33 @@ object TrackedEvents {
         add(m.public_benefit_response_date, "Public benefit responses due")
         add(m.competition_concerns_notice_date, "Notice of competition concerns")
         return out
+    }
+
+    const val INDUSTRY_NEW_MERGER = "New merger filed"
+    const val INDUSTRY_DETERMINATION = "Determination published"
+
+    /**
+     * What a followed industry flags: each merger filed in it, and each
+     * determination published. Keyed as the site keys them, scoped to the
+     * industry ("ind_{code}_…"), so the same merger under two followed
+     * industries, or followed itself as well, stays distinct.
+     */
+    fun industry(node: IndustryNode): List<TrackedEvent> = node.mergers.flatMap { m ->
+        listOfNotNull(
+            m.notification_date?.let { INDUSTRY_NEW_MERGER to it },
+            m.determination_date?.let { INDUSTRY_DETERMINATION to it },
+        ).map { (title, date) ->
+            TrackedEvent(
+                key = "ind_${node.code}_${key(m.merger_id, date, title)}",
+                mergerId = m.merger_id,
+                mergerName = m.merger_name,
+                date = date,
+                title = title,
+                upcoming = false,
+                industryCode = node.code,
+                industryName = node.name,
+            )
+        }
     }
 
     /** The newer matters a followed merger was re-filed as. */

@@ -72,7 +72,7 @@ fun MergersApp(vm: AppViewModel) {
         BackHandler(enabled = vm.backStack.size == 1 && vm.tab != Route.Dashboard) { vm.back() }
 
         // The tabs share one root entry, side by side in a pager, so you can
-        // swipe between them; a merger stacks on top of whichever is showing.
+        // swipe between them; a merger or an industry stacks on top of whichever is showing.
         NavDisplay(
             backStack = listOf<Route>(Route.Tabs) + vm.backStack.drop(1),
             onBack = { if (!vm.back()) activity?.finish() },
@@ -80,6 +80,8 @@ fun MergersApp(vm: AppViewModel) {
             entryProvider = entryProvider {
                 entry<Route.Tabs> { TabPager(vm) }
                 entry<Route.Merger> { key -> MergerDetailScreen(vm, key.id) }
+                entry<Route.Industries> { IndustriesScreen(vm) }
+                entry<Route.Industry> { key -> IndustryScreen(vm, key.code) }
             },
         )
     }

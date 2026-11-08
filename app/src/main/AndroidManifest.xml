@@ -27,7 +27,7 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-            <!-- Merger pages on the site open here. Without a Digital Asset
+            <!-- Merger and industry pages on the site open here. Without a Digital Asset
                  Links file on mergers.fyi the phone asks (or it can be turned
                  on under the app's "Open by default" settings). -->
             <intent-filter>
@@ -37,6 +37,7 @@
                 <data android:scheme="https" />
                 <data android:host="mergers.fyi" />
                 <data android:pathPrefix="/mergers/" />
+                <data android:pathPrefix="/industries" />
             </intent-filter>
         </activity>
     </application>

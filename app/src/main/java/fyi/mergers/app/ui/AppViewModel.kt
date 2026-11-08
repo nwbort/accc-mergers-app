@@ -8,12 +8,16 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import fyi.mergers.app.Graph
+import fyi.mergers.app.data.IndustryDivisionFile
+import fyi.mergers.app.data.IndustryEntry
+import fyi.mergers.app.data.IndustryIndex
 import fyi.mergers.app.data.Loaded
 import fyi.mergers.app.data.MergerDetail
 import fyi.mergers.app.data.MergerSummary
 import fyi.mergers.app.data.PhaseFilter
 import fyi.mergers.app.data.SortOrder
 import fyi.mergers.app.data.Status
+import fyi.mergers.app.data.node
 import fyi.mergers.app.data.sortedBy
 import fyi.mergers.app.notify.Notifier
 import fyi.mergers.app.tracking.SyncResult
@@ -24,12 +28,14 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-/** Where the app can be. The tabs are the roots; a merger stacks on top. */
+/** Where the app can be. The tabs are the roots; a merger or an industry stacks on top. */
 sealed interface Route {
     data object Dashboard : Route
     data object Mergers : Route
     data object Following : Route
     data class Merger(val id: String) : Route
+    data object Industries : Route
+    data class Industry(val code: String) : Route
 
     /** Only on screen, never in [AppViewModel.backStack]: the root that holds all three tabs. */
     data object Tabs : Route
@@ -56,6 +62,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     val stats get() = repo.stats
     val upcoming get() = repo.upcoming
     val list get() = repo.list
+    val industries: StateFlow<Loaded<IndustryIndex>> get() = repo.industries
     val sync: StateFlow<SyncResult?> get() = tracker.last
 
     var filter by mutableStateOf(ListFilter())
@@ -83,6 +90,24 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     fun openMerger(id: String) {
         if (backStack.lastOrNull() == Route.Merger(id)) return
         backStack.add(Route.Merger(id))
+    }
+
+    fun openIndustries() = goTo(Route.Industries)
+
+    fun openIndustry(code: String) = goTo(Route.Industry(code))
+
+    /**
+     * Back to [route] if it's already open further down (a breadcrumb up to an
+     * industry you came through), else on top. Walking the tree up and down
+     * then doesn't pile up a stack that takes as many presses of back.
+     */
+    private fun goTo(route: Route) {
+        val at = backStack.indexOf(route)
+        if (at > 0) {
+            while (backStack.size > at + 1) backStack.removeAt(backStack.lastIndex)
+        } else if (backStack.lastOrNull() != route) {
+            backStack.add(route)
+        }
     }
 
     /** Back: down the stack, then from another tab to the dashboard. False when there's nowhere left. */
@@ -124,7 +149,46 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                 store.markSeen(TrackedEvents.of(m).map { it.key })
                 Notifier.cancel(getApplication(), id)
             }
+            // So does reading a merger a followed industry flagged.
+            store.markSeen(sync.value?.events.orEmpty().filter { it.industryCode != null && it.mergerId == id }.map { it.key })
         }
+    }
+
+    // ---- industries -----------------------------------------------------------
+
+    fun loadIndustries() {
+        viewModelScope.launch { repo.refreshIndustries() }
+    }
+
+    /** The division file [code]'s node is in. */
+    fun division(code: String): StateFlow<Loaded<IndustryDivisionFile>> = repo.division(code)
+
+    fun loadIndustry(code: String) {
+        viewModelScope.launch {
+            repo.refreshDivision(code)
+            // Reading a followed industry reads its news.
+            val node = repo.division(code).value.value?.node(code) ?: return@launch
+            if (tracking.value.isIndustryTracked(code)) {
+                store.markSeen(TrackedEvents.industry(node).map { it.key })
+                Notifier.cancelIndustry(getApplication(), code)
+            }
+        }
+    }
+
+    /** Follow or unfollow an industry. Returns true if it is now followed. */
+    fun toggleIndustryFollow(code: String, name: String): Boolean {
+        val now = !tracking.value.isIndustryTracked(code)
+        viewModelScope.launch { if (now) tracker.trackIndustry(code, name) else tracker.untrackIndustry(code) }
+        return now
+    }
+
+    /** The industry list's search: name or code, every word. */
+    fun filterIndustries(all: List<IndustryEntry>, query: String): List<IndustryEntry> {
+        val tokens = query.lowercase().split(Regex("\\s+")).filter { it.isNotBlank() }
+        return all.filter { i ->
+            val text = "${i.name} ${i.code}".lowercase()
+            tokens.all { it in text }
+        }.sortedByDescending { it.merger_count }
     }
 
     fun refreshFollowing() {

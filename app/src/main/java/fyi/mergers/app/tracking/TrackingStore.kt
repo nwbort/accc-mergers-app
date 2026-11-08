@@ -12,8 +12,13 @@ import fyi.mergers.app.data.MergersJson
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.serialization.Serializable
 
 private val Context.trackingStore by preferencesDataStore(name = "tracking")
+
+/** A followed industry: its ANZSIC code, and its name for showing before its file loads. */
+@Serializable
+data class FollowedIndustry(val code: String, val name: String)
 
 /** What the follower has chosen, and what they've already been told about. */
 data class TrackingState(
@@ -27,9 +32,17 @@ data class TrackingState(
     val autoTrackPhase2: Boolean = false,
     /** Notify about every new merger filed, followed or not. */
     val notifyNewFilings: Boolean = false,
+    /** Followed industries, oldest first: new filings and determinations in each are news. */
+    val industries: List<FollowedIndustry> = emptyList(),
 ) {
     val trackedSet: Set<String> by lazy { tracked.toSet() }
     fun isTracked(id: String) = id in trackedSet
+
+    val industryCodes: Set<String> by lazy { industries.map { it.code }.toSet() }
+    fun isIndustryTracked(code: String) = code in industryCodes
+
+    /** Nothing at all is followed, so there's nothing to check. */
+    val followsNothing: Boolean get() = tracked.isEmpty() && industries.isEmpty()
 }
 
 /**
@@ -49,6 +62,9 @@ class TrackingStore(context: Context) {
         val AUTO_TRACKED_PHASE2_IDS = stringSetPreferencesKey("auto_tracked_phase2_ids")
         val NOTIFY_NEW_FILINGS = booleanPreferencesKey("notify_new_filings")
         val KNOWN_IDS = stringSetPreferencesKey("known_merger_ids")
+        val TRACKED_INDUSTRIES = stringPreferencesKey("tracked_industries")
+        /** Followed while their file couldn't be read: their history is marked seen once it can. */
+        val INDUSTRY_BASELINE = stringSetPreferencesKey("industry_baseline_pending")
     }
 
     val state: Flow<TrackingState> = store.data.map { it.toState() }
@@ -61,7 +77,17 @@ class TrackingStore(context: Context) {
         notified = this[K.NOTIFIED].orEmpty(),
         autoTrackPhase2 = this[K.AUTO_TRACK_PHASE2] ?: false,
         notifyNewFilings = this[K.NOTIFY_NEW_FILINGS] ?: false,
+        industries = industries(),
     )
+
+    private fun Preferences.industries(): List<FollowedIndustry> =
+        this[K.TRACKED_INDUSTRIES]?.let {
+            runCatching { MergersJson.decodeFromString<List<FollowedIndustry>>(it) }.getOrNull()
+        }.orEmpty()
+
+    private fun MutablePreferences.setIndustries(list: List<FollowedIndustry>) {
+        this[K.TRACKED_INDUSTRIES] = MergersJson.encodeToString(list.distinctBy { it.code })
+    }
 
     private fun Preferences.tracked(): List<String> =
         this[K.TRACKED]?.let { runCatching { MergersJson.decodeFromString<List<String>>(it) }.getOrNull() }.orEmpty()
@@ -86,6 +112,44 @@ class TrackingStore(context: Context) {
 
     suspend fun untrack(id: String) {
         store.edit { p -> p.setTracked(p.tracked() - id) }
+    }
+
+    /**
+     * Follow an industry. [existing] are the filings and determinations it
+     * already has, marked seen so following doesn't announce the back
+     * catalogue; null when its file couldn't be read, in which case that's
+     * done on the first check that can read it.
+     */
+    suspend fun trackIndustry(code: String, name: String, existing: List<TrackedEvent>?) {
+        store.edit { p ->
+            val list = p.industries()
+            if (list.none { it.code == code }) p.setIndustries(list + FollowedIndustry(code, name))
+            if (existing == null) {
+                p[K.INDUSTRY_BASELINE] = p[K.INDUSTRY_BASELINE].orEmpty() + code
+            } else {
+                val keys = existing.map { it.key }
+                p[K.SEEN] = p[K.SEEN].orEmpty() + keys
+                p[K.NOTIFIED] = p[K.NOTIFIED].orEmpty() + keys
+            }
+        }
+    }
+
+    suspend fun untrackIndustry(code: String) {
+        store.edit { p ->
+            p.setIndustries(p.industries().filter { it.code != code })
+            p[K.INDUSTRY_BASELINE] = p[K.INDUSTRY_BASELINE].orEmpty() - code
+        }
+    }
+
+    suspend fun pendingIndustryBaselines(): Set<String> = store.data.first()[K.INDUSTRY_BASELINE].orEmpty()
+
+    /** [code]'s file has now been read: its history so far is [keys], none of it news. */
+    suspend fun settleIndustryBaseline(code: String, keys: Collection<String>) {
+        store.edit { p ->
+            p[K.SEEN] = p[K.SEEN].orEmpty() + keys
+            p[K.NOTIFIED] = p[K.NOTIFIED].orEmpty() + keys
+            p[K.INDUSTRY_BASELINE] = p[K.INDUSTRY_BASELINE].orEmpty() - code
+        }
     }
 
     /** Follow [ids] without marking anything seen, so their history is news. */

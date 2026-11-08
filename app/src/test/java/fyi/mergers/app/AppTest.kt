@@ -26,11 +26,14 @@ import androidx.compose.ui.test.performScrollToIndex
 import androidx.lifecycle.ViewModelProvider
 import androidx.work.ListenableWorker
 import androidx.work.testing.TestListenableWorkerBuilder
+import fyi.mergers.app.data.IndustryDivisionFile
+import fyi.mergers.app.data.IndustryMerger
 import fyi.mergers.app.data.MergerDetail
 import fyi.mergers.app.data.MergerEvent
 import fyi.mergers.app.data.MergersJson
 import fyi.mergers.app.notify.CheckWorker
 import fyi.mergers.app.ui.AppViewModel
+import fyi.mergers.app.ui.Route
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -89,6 +92,36 @@ class AppTest {
         compose.onNode(hasSetTextAction()).performTextClearance()
         waitForText("40 matters")
 
+        // Industries, from the list's link: searched, opened, followed, and up
+        // the breadcrumb to its division.
+        compose.onNodeWithText("By industry").performClick()
+        waitForText("350 of 350 industries", substring = true)
+        shot("2b-industries")
+        compose.onNode(hasSetTextAction()).performTextInput("supermarket")
+        waitForText("1 of 350 industries", substring = true)
+        compose.onNodeWithText("Supermarket and Grocery Stores").performClick()
+        waitForText("ANZSIC 4110")
+        waitForText("Under assessment")
+        shot("2c-industry")
+        compose.onNodeWithContentDescription("Follow industry").performClick()
+        waitUntil { Graph.store.current().isIndustryTracked("4110") }
+        compose.onNodeWithText("Retail Trade").performClick()
+        waitForText("ANZSIC G")
+        waitForText("Sub-industries")
+        shot("2d-industry-division")
+        // Down to a sub-industry and back up: the breadcrumb returns to the
+        // division already open rather than stacking another copy.
+        compose.onNodeWithText("Food Retailing").performClick()
+        waitForText("ANZSIC 41")
+        compose.onNodeWithText("Retail Trade").performClick()
+        waitForText("ANZSIC G")
+        assertEquals(
+            listOf(Route.Mergers, Route.Industries, Route.Industry("4110"), Route.Industry("G")),
+            vm.backStack.toList(),
+        )
+        back(); back(); back()
+        waitUntil { vm.backStack.size == 1 }
+
         // A live matter: open it and follow it.
         compose.onAllNodesWithText("Autosports Group", substring = true).onFirst().performClick()
         waitForText("Consultation responses due")
@@ -129,6 +162,22 @@ class AppTest {
             ) + m.events,
         )
         Fixtures.overrides["mergers/MN-20046.json"] = MergersJson.encodeToString(MergerDetail.serializer(), moved)
+
+        // And a merger is filed in the followed industry.
+        val g = MergersJson.decodeFromString(IndustryDivisionFile.serializer(), Fixtures.read("industries/G.json")!!)
+        val filed = IndustryMerger(
+            merger_id = "MN-99001",
+            merger_name = "Grocer – Corner store",
+            status = "Under assessment",
+            phase = "Phase 1",
+            notification_date = "2026-11-09T12:00:00Z",
+        )
+        val supermarkets = g.nodes.getValue("4110")
+        val grown = g.copy(
+            nodes = g.nodes + ("4110" to supermarkets.copy(mergers = listOf(filed.merger_id) + supermarkets.mergers)),
+            mergers = g.mergers + (filed.merger_id to filed),
+        )
+        Fixtures.overrides["industries/G.json"] = MergersJson.encodeToString(IndustryDivisionFile.serializer(), grown)
         val result = runBlocking { TestListenableWorkerBuilder<CheckWorker>(app).build().doWork() }
         assertEquals(ListenableWorker.Result.success(), result)
         val posted = shadowOf(app.getSystemService(NotificationManager::class.java)).allNotifications
@@ -138,6 +187,12 @@ class AppTest {
         // The new document, and the moved deadline; not the history from before the follow.
         assertTrue(text, text.startsWith("2 updates"))
         assertEquals(listOf("Determination due 15 Jan 2027", "Timeline extended by 10 business days"), lines)
+        // The industry's one new filing; nothing from before it was followed.
+        val industry = posted.single { it.extras.getCharSequence("android.title").toString() == "Supermarket and Grocery Stores" }
+        assertEquals(
+            "New merger filed: Grocer – Corner store",
+            industry.extras.getCharSequence("android.text").toString(),
+        )
 
         // A second check finds nothing new to say.
         val before = posted.size

@@ -220,7 +220,7 @@ private fun Detail(vm: AppViewModel, m: MergerDetail) {
         if (m.anzsic_codes.isNotEmpty()) {
             item {
                 SectionTitle("Industries")
-                Chips(m.anzsic_codes.map { "${it.name} (${it.code})" })
+                Chips(m.anzsic_codes.map { "${it.name} (${it.code})" to { vm.openIndustry(it.code) } })
             }
         }
 
@@ -454,12 +454,14 @@ private fun PartyLine(p: Party) {
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun Chips(labels: List<String>) {
+private fun Chips(labels: List<Pair<String, () -> Unit>>) {
     FlowRow(
         Modifier.padding(horizontal = 16.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        labels.forEach { AssistChip(onClick = {}, label = { Text(it, maxLines = 1, overflow = TextOverflow.Ellipsis) }) }
+        labels.forEach { (label, onClick) ->
+            AssistChip(onClick = onClick, label = { Text(label, maxLines = 1, overflow = TextOverflow.Ellipsis) })
+        }
     }
 }
 

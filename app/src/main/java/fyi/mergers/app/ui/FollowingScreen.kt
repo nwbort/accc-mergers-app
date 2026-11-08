@@ -31,6 +31,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -64,7 +65,9 @@ fun FollowingScreen(vm: AppViewModel) {
     val sync by vm.sync.collectAsStateWithLifecycle()
     val listState by vm.list.collectAsStateWithLifecycle()
 
-    val events = sync?.events.orEmpty().filter { tracking.isTracked(it.mergerId) }
+    val events = sync?.events.orEmpty().filter { e ->
+        e.industryCode?.let(tracking::isIndustryTracked) ?: tracking.isTracked(e.mergerId)
+    }
     val unread = events.filter { !it.upcoming && it.key !in tracking.seen }
     val earlier = events.filter { !it.upcoming && it.key in tracking.seen }.take(30)
     val upcoming = events.filter { it.upcoming }.sortedBy { it.date }
@@ -101,18 +104,22 @@ fun FollowingScreen(vm: AppViewModel) {
             LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 24.dp)) {
                 item { NotificationsBanner() }
 
-                if (tracking.tracked.isEmpty()) {
+                if (tracking.followsNothing) {
                     item {
                         Column(Modifier.fillMaxWidth().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("You're not following any mergers yet", style = MaterialTheme.typography.titleMedium)
+                            Text("You're not following anything yet", style = MaterialTheme.typography.titleMedium)
                             Text(
                                 "Follow a merger to be notified when the ACCC publishes a document, " +
-                                    "a determination or a new deadline for it.",
+                                    "a determination or a new deadline for it. Follow an industry to hear " +
+                                    "of each new merger filed and determination published in it.",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.padding(vertical = 8.dp),
                             )
-                            Button(onClick = { vm.selectTab(Route.Mergers) }) { Text("Browse mergers") }
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Button(onClick = { vm.selectTab(Route.Mergers) }) { Text("Browse mergers") }
+                                OutlinedButton(onClick = vm::openIndustries) { Text("Industries") }
+                            }
                         }
                     }
                 }
@@ -147,6 +154,18 @@ fun FollowingScreen(vm: AppViewModel) {
                         } else {
                             ListRow(id, null, null, onClick = { vm.openMerger(id) })
                         }
+                    }
+                }
+
+                if (tracking.industries.isNotEmpty()) {
+                    stickyHeader { StickyTitle("Industries you follow (${tracking.industries.size})") }
+                    items(tracking.industries.reversed(), key = { "fi-" + it.code }) { ind ->
+                        ListRow(
+                            title = ind.name,
+                            subtitle = "ANZSIC ${ind.code}",
+                            trailing = null,
+                            onClick = { vm.openIndustry(ind.code) },
+                        )
                     }
                 }
 

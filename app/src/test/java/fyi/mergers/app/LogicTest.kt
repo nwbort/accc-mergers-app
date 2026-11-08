@@ -1,5 +1,9 @@
 package fyi.mergers.app
 
+import fyi.mergers.app.data.IndustryDivisionFile
+import fyi.mergers.app.data.IndustryDivisions
+import fyi.mergers.app.data.IndustryIndex
+import fyi.mergers.app.data.IndustryPhase
 import fyi.mergers.app.data.MergerDetail
 import fyi.mergers.app.data.MergerList
 import fyi.mergers.app.data.MergersJson
@@ -7,12 +11,14 @@ import fyi.mergers.app.data.SortOrder
 import fyi.mergers.app.data.Status
 import fyi.mergers.app.data.documentUrl
 import fyi.mergers.app.data.headerStatus
+import fyi.mergers.app.data.node
 import fyi.mergers.app.data.outcomeInput
 import fyi.mergers.app.data.outcomeText
 import fyi.mergers.app.data.phaseStatus
 import fyi.mergers.app.data.sortedBy
 import fyi.mergers.app.tracking.TrackedEvents
 import fyi.mergers.app.ui.reflow
+import kotlinx.serialization.Serializable
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -105,6 +111,89 @@ class LogicTest {
             documentUrl("/mergers/MN-01016/Asahi warehouse lease.pdf", "https://accc.gov.au/x.pdf"),
         )
         assertEquals("https://accc.gov.au/x.pdf", documentUrl(null, "https://accc.gov.au/x.pdf"))
+    }
+
+    @Serializable
+    private data class DivisionCases(val cases: List<DivisionCase>)
+
+    @Serializable
+    private data class DivisionCase(val code: String, val file: String)
+
+    /**
+     * The site's golden fixture (accc-mergers: fixtures/industry-division-cases.json),
+     * which pins the same rule in its JS and Python. If this fails, the app is
+     * asking for the wrong file and industry pages come up empty.
+     */
+    @Test
+    fun industry_files_are_found_as_the_site_finds_them() {
+        val text = Fixtures::class.java.classLoader!!.getResource("fixtures/industry-division-cases.json")!!.readText()
+        val cases = MergersJson.decodeFromString(DivisionCases.serializer(), text).cases
+        assertTrue(cases.size > 50)
+        cases.forEach { c -> assertEquals(c.code, "industries/${c.file}", IndustryDivisions.path(c.code)) }
+
+        // And every node in the snapshot is in the file the rule names.
+        ('A'..'S').forEach { d ->
+            val file = division("$d")
+            assertEquals("$d", file.division)
+            file.nodes.keys.forEach { code -> assertEquals(code, "$d", IndustryDivisions.stem(code)) }
+        }
+    }
+
+    private fun division(stem: String): IndustryDivisionFile =
+        MergersJson.decodeFromString(IndustryDivisionFile.serializer(), Fixtures.read("industries/$stem.json")!!)
+
+    @Test
+    fun an_industry_node_is_unpacked_like_the_site() {
+        val g = division("G")
+        val supermarkets = g.node("4110")!!
+        assertEquals("Supermarket and Grocery Stores", supermarkets.name)
+        assertEquals("Class", supermarkets.levelLabel)
+        // The breadcrumb is rebuilt from the parents, division first.
+        assertEquals(listOf("G", "41", "411"), supermarkets.ancestors.map { it.code })
+        assertEquals("Retail Trade", supermarkets.ancestors.first().name)
+        assertEquals(26, supermarkets.mergers.size)
+        assertEquals("MN-40049", supermarkets.mergers.first().merger_id)
+        assertEquals(listOf(2, 15, 2), listOf(supermarkets.phase2Count, supermarkets.waiverCount, supermarkets.activeCount))
+
+        // Each child's count comes off its own entry.
+        val retail = g.node("G")!!
+        assertTrue(retail.ancestors.isEmpty())
+        assertEquals(listOf("39", "40", "41", "42", "43"), retail.children.map { it.code })
+        assertEquals(47, retail.children.single { it.code == "41" }.count)
+
+        // Grouped as the site groups them.
+        val phases = supermarkets.mergers.groupingBy(IndustryPhase::of).eachCount()
+        assertEquals(15, phases[IndustryPhase.WAIVER])
+        assertEquals(2, phases[IndustryPhase.PHASE_2])
+
+        assertNull(g.node("9999"))
+        assertNull(division("_orphans").node("4110"))
+
+        val index = MergersJson.decodeFromString(IndustryIndex.serializer(), Fixtures.read("industries.json")!!)
+        assertEquals(26, index.industries.single { it.code == "4110" }.merger_count)
+    }
+
+    @Test
+    fun industry_event_keys_match_the_sites() {
+        val node = division("G").node("4110")!!
+        val events = TrackedEvents.industry(node)
+        // TrackingContext.jsx: `ind_${industry_code}_${merger_id}_${date}_${display_title}`
+        val filed = events.first { it.mergerId == "MN-40049" }
+        assertEquals("ind_4110_MN-40049_2026-10-30T12:00:00Z_New merger filed", filed.key)
+        assertEquals("4110", filed.industryCode)
+        // A filing and, once decided, a determination: never anything upcoming.
+        assertEquals(node.mergers.size + node.mergers.count { it.determination_date != null }, events.size)
+        assertTrue(events.none { it.upcoming })
+    }
+
+    @Test
+    fun industry_links() {
+        assertEquals("4110", MainActivity.industryCodeFrom("https://mergers.fyi/industries/4110/supermarket-and-grocery-stores"))
+        assertEquals("G", MainActivity.industryCodeFrom("https://mergers.fyi/industries/G"))
+        assertEquals("41", MainActivity.industryCodeFrom("https://mergers.fyi/industries/41?x=1"))
+        assertNull(MainActivity.industryCodeFrom("https://mergers.fyi/industries"))
+        assertNull(MainActivity.industryCodeFrom("https://mergers.fyi/mergers/MN-01016"))
+        assertNull(MainActivity.mergerIdFrom("https://mergers.fyi/industries/4110"))
     }
 
     @Test
