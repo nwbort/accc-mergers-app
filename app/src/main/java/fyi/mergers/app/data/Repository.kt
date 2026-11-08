@@ -35,6 +35,18 @@ class Repository(private val source: DataSource) {
 
     private val details = ConcurrentHashMap<String, MutableStateFlow<Loaded<MergerDetail>>>()
 
+    private val _industries = MutableStateFlow(Loaded<IndustryIndex>())
+    val industries: StateFlow<Loaded<IndustryIndex>> = _industries.asStateFlow()
+
+    /** One per division file, shared by every node in it: a page and its breadcrumb cost one fetch. */
+    private val divisions = ConcurrentHashMap<String, MutableStateFlow<Loaded<IndustryDivisionFile>>>()
+
+    /** The file holding [code]'s node. */
+    fun division(code: String): StateFlow<Loaded<IndustryDivisionFile>> = divisionFlow(code).asStateFlow()
+
+    private fun divisionFlow(code: String) =
+        divisions.getOrPut(IndustryDivisions.stem(code)) { MutableStateFlow(Loaded()) }
+
     fun detail(id: String): StateFlow<Loaded<MergerDetail>> = detailFlow(id).asStateFlow()
 
     private fun detailFlow(id: String) = details.getOrPut(id) { MutableStateFlow(Loaded()) }
@@ -88,6 +100,16 @@ class Repository(private val source: DataSource) {
     suspend fun fetchList(): List<MergerSummary>? = runCatching {
         parse(source.fetch("mergers/list.json"), MergerList.serializer()).mergers
     }.getOrNull()?.also { v -> _list.value = Loaded(v, loading = false) }
+
+    suspend fun refreshIndustries() = load(_industries, "industries.json", IndustryIndex.serializer()) { it }
+
+    suspend fun refreshDivision(code: String) =
+        load(divisionFlow(code), IndustryDivisions.path(code), IndustryDivisionFile.serializer()) { it }
+
+    /** [code]'s division file straight from the network (or the last copy), for the background check. */
+    suspend fun fetchDivision(code: String): IndustryDivisionFile? = runCatching {
+        parse(source.fetch(IndustryDivisions.path(code)), IndustryDivisionFile.serializer())
+    }.getOrNull()?.also { v -> divisionFlow(code).value = Loaded(v, loading = false) }
 
     suspend fun fetchPhase2Current(): List<String>? = runCatching {
         parse(source.fetch("phase2.json"), Phase2Feed.serializer()).current.mapNotNull { it.merger_id }

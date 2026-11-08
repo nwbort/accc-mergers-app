@@ -6,6 +6,7 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import fyi.mergers.app.data.IndustryPhase
 import fyi.mergers.app.data.Status
 
 /** The site's own colours (tailwind.config.js): primary #335145, accent #10b981. */
@@ -97,4 +98,11 @@ fun eventTypeColors(type: String?): StatusColors {
         "tribunal_hearing", "federal_court_hearing" -> pair(0xFFFFF1F2, 0xFFE11D48, 0xFFFDA4AF) // rose
         else -> pair(0xFFF3F4F6, 0xFF4B5563, 0xFFD1D5DB) // gray
     }
+}
+
+/** The industry pages' group accents: the site's phase-2, phase-1 and waiver fills. */
+fun phaseAccent(phase: IndustryPhase): Color = when (phase) {
+    IndustryPhase.PHASE_2 -> Color(0xFF52489C)
+    IndustryPhase.PHASE_1 -> Color(0xFFB8935C)
+    IndustryPhase.WAIVER -> Color(0xFFFBBF24)
 }

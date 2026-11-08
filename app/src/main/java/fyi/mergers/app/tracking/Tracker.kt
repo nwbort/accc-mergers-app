@@ -1,8 +1,10 @@
 package fyi.mergers.app.tracking
 
+import fyi.mergers.app.data.IndustryDivisions
 import fyi.mergers.app.data.MergerDetail
 import fyi.mergers.app.data.MergerSummary
 import fyi.mergers.app.data.Repository
+import fyi.mergers.app.data.node
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
@@ -14,7 +16,7 @@ import kotlinx.coroutines.sync.withLock
 
 /** What a check found. */
 data class SyncResult(
-    /** Every event on every followed merger, newest first. */
+    /** Every event on every followed merger and in every followed industry, newest first. */
     val events: List<TrackedEvent>,
     /** Events nobody has been told about yet: these become notifications. */
     val fresh: List<TrackedEvent>,
@@ -49,7 +51,23 @@ class Tracker(private val repo: Repository, private val store: TrackingStore) {
 
     suspend fun untrack(id: String) {
         store.untrack(id)
-        _last.value = _last.value?.let { r -> r.copy(events = r.events.filter { it.mergerId != id }) }
+        _last.value = _last.value?.let { r ->
+            r.copy(events = r.events.filter { it.mergerId != id || it.industryCode != null })
+        }
+    }
+
+    /** Follow an industry, with what's already in it marked as seen. */
+    suspend fun trackIndustry(code: String, name: String) {
+        val file = repo.division(code).value.value ?: repo.fetchDivision(code)
+        // A file without the node is a code with nothing in it: nothing to mark.
+        val existing = file?.let { f -> f.node(code)?.let(TrackedEvents::industry).orEmpty() }
+        store.trackIndustry(code, name, existing)
+        _last.value = _last.value?.let { r -> r.copy(events = TrackedEvents.inboxOrder(r.events + existing.orEmpty())) }
+    }
+
+    suspend fun untrackIndustry(code: String) {
+        store.untrackIndustry(code)
+        _last.value = _last.value?.let { r -> r.copy(events = r.events.filter { it.industryCode != code }) }
     }
 
     suspend fun sync(): SyncResult = mutex.withLock {
@@ -93,15 +111,39 @@ class Tracker(private val repo: Repository, private val store: TrackingStore) {
             pending = newIds
         }
 
+        val fromIndustries = industryEvents()
+
         val state = store.current()
         val events = TrackedEvents.inboxOrder(
-            details.values.filter { state.isTracked(it.merger_id) }.flatMap(TrackedEvents::of),
+            details.values.filter { state.isTracked(it.merger_id) }.flatMap(TrackedEvents::of) + fromIndustries,
         )
         val fresh = events.filter { it.key !in state.notified && it.key !in state.seen }
 
         val newFilings = if (state.notifyNewFilings) newFilings(state) else emptyList()
 
         SyncResult(events, fresh, newFilings, failed).also { _last.value = it }
+    }
+
+    /**
+     * Filings and determinations in every followed industry. Industries under
+     * the one division share a file, so several cost one fetch.
+     */
+    private suspend fun industryEvents(): List<TrackedEvent> {
+        val followed = store.current().industries
+        if (followed.isEmpty()) return emptyList()
+        val files = coroutineScope {
+            followed.groupBy { IndustryDivisions.stem(it.code) }.values
+                .map { group -> async { IndustryDivisions.stem(group.first().code) to repo.fetchDivision(group.first().code) } }
+                .awaitAll().toMap()
+        }
+        val pending = store.pendingIndustryBaselines()
+        return followed.flatMap { ind ->
+            val file = files[IndustryDivisions.stem(ind.code)] ?: return@flatMap emptyList()
+            val events = file.node(ind.code)?.let(TrackedEvents::industry).orEmpty()
+            // Followed while offline: what was there already isn't news.
+            if (ind.code in pending) store.settleIndustryBaseline(ind.code, events.map { it.key })
+            events
+        }
     }
 
     private suspend fun fetchAll(ids: List<String>): Map<String, MergerDetail> = coroutineScope {

@@ -20,7 +20,7 @@ class CheckWorker(context: Context, params: WorkerParameters) : CoroutineWorker(
 
     override suspend fun doWork(): Result {
         val state = Graph.store.current()
-        if (state.tracked.isEmpty() && !state.autoTrackPhase2 && !state.notifyNewFilings) return Result.success()
+        if (state.followsNothing && !state.autoTrackPhase2 && !state.notifyNewFilings) return Result.success()
         val result = Graph.tracker.sync()
         // Only mark what was actually shown: with notifications off, the
         // events wait in the Following inbox instead.
