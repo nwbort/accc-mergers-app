@@ -6,6 +6,10 @@ import fyi.mergers.app.data.IndustryIndex
 import fyi.mergers.app.data.IndustryPhase
 import fyi.mergers.app.data.Manifest
 import fyi.mergers.app.data.ManifestHash
+import fyi.mergers.app.data.MergerEvent
+import fyi.mergers.app.data.Reasons
+import fyi.mergers.app.data.StatementBlock
+import fyi.mergers.app.data.TableItem
 import fyi.mergers.app.data.MergerDetail
 import fyi.mergers.app.data.MergerList
 import fyi.mergers.app.data.MergersJson
@@ -22,7 +26,6 @@ import fyi.mergers.app.notify.Push
 import fyi.mergers.app.tracking.FollowedIndustry
 import fyi.mergers.app.tracking.TrackedEvents
 import fyi.mergers.app.tracking.TrackingState
-import fyi.mergers.app.ui.reflow
 import kotlinx.serialization.Serializable
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -202,11 +205,70 @@ class LogicTest {
     }
 
     @Test
-    fun pdf_text_is_reflowed() {
+    fun reasons_drop_the_boilerplate_and_keep_the_findings() {
+        val event = detail("MN-01016").events.first { it.determination_table_content.isNotEmpty() }
+        val blocks = Reasons.forEvent(event)
         assertEquals(
-            "The ACCC has determined that the Acquisition may be put into effect.\n• there is no overlap\n• alternatives exist",
-            reflow("The ACCC has determined that the\nAcquisition may be put into effect.\n• there is no overlap\n• alternatives\nexist"),
+            Reasons.Block.Paragraph(
+                "The ACCC has determined that the Acquisition may be put into effect as it considers that the " +
+                    "Acquisition is unlikely to have the effect of substantially lessening competition in any market. " +
+                    "In reaching its decision, and based on the material before it, the ACCC makes the following findings:",
+            ),
+            blocks.first(),
         )
+        val bullets = blocks[1] as Reasons.Block.Bullets
+        assertEquals(
+            listOf(
+                "there is no horizontal competitive overlap",
+                "there are sufficient suitable alternative sites available for Asahi’s competitors",
+                "the acquisition does not otherwise limit or prevent competition from rivals.",
+            ),
+            bullets.items.map { it.text },
+        )
+        assertEquals(2, blocks.size)
+    }
+
+    @Test
+    fun waiver_reasons_keep_lettered_items() {
+        val event = detail("WA-01087").events.first { it.determination_table_content.isNotEmpty() }
+        val blocks = Reasons.forEvent(event)
+        assertTrue(blocks.none { it is Reasons.Block.Paragraph && Reasons.isBoilerplate(it.text) })
+        assertTrue((blocks.first() as Reasons.Block.Paragraph).text.startsWith("Based on the information provided"))
+        val letters = blocks.filterIsInstance<Reasons.Block.Lettered>().single()
+        assertEquals("a.", letters.items.first().first)
+    }
+
+    @Test
+    fun pdf_line_breaks_are_told_apart() {
+        assertEquals(
+            "A post-acquisition firm.\n\n• one\n\no sub point\n\nb. lettered",
+            Reasons.clean("A post-\nacquisition\nfirm.\n• one\no sub point\nb. lettered"),
+        )
+    }
+
+    @Test
+    fun statement_of_reasons_is_shown_over_the_placeholder_row() {
+        val json = """{"title": "Determination", "determination_table_content": [
+            {"item": "Reasons for determination", "details": "The reasons are set out in section 2."}],
+          "determination_statement_of_reasons": [
+            {"type": "paragraph", "number": "2.1", "text": "When making a determination in Phase 1, the Australian Competition and Consumer Commission (ACCC) undertakes"},
+            {"type": "heading", "text": "Industry background"},
+            {"type": "paragraph", "number": "2.2", "text": "Komatsu supplies trucks."},
+            {"type": "bullet_list", "items": ["one", "two"], "sub_items": [["a sub"], []]},
+            {"type": "lettered_list", "items": [{"letter": "a", "text": "Large haul trucks"}]}]}"""
+        val event = MergersJson.decodeFromString(MergerEvent.serializer(), json)
+        assertEquals(
+            listOf(
+                Reasons.Block.Heading("Industry background"),
+                Reasons.Block.Paragraph("Komatsu supplies trucks.", "2.2"),
+                Reasons.Block.Bullets(listOf(Reasons.Block.Bullet("one", listOf("a sub")), Reasons.Block.Bullet("two"))),
+                Reasons.Block.Lettered(listOf("(a)" to "Large haul trucks")),
+            ),
+            Reasons.forEvent(event),
+        )
+        // Without the statement, the placeholder alone shows nothing.
+        assertTrue(Reasons.forEvent(event.copy(determination_statement_of_reasons = emptyList<StatementBlock>())).isEmpty())
+        assertTrue(Reasons.forEvent(MergerEvent(determination_table_content = listOf(TableItem("Other", "x")))).isEmpty())
     }
 
     @Test
