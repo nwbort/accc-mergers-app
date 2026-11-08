@@ -1,6 +1,7 @@
 package fyi.mergers.app.tracking
 
 import fyi.mergers.app.data.IndustryDivisions
+import fyi.mergers.app.data.Manifest
 import fyi.mergers.app.data.MergerDetail
 import fyi.mergers.app.data.MergerSummary
 import fyi.mergers.app.data.Repository
@@ -73,11 +74,16 @@ class Tracker(private val repo: Repository, private val store: TrackingStore) {
     suspend fun sync(): SyncResult = mutex.withLock {
         val start = store.current()
 
+        // One conditional request that says which files have changed, so an
+        // unchanged site costs a single 304. Null (no manifest yet, or one this
+        // version can't read) falls back to fetching everything.
+        val manifest = repo.fetchManifest()
+
         // Opted in to following every phase 2 matter: pick up any current one
         // not acted on before. Recorded once each, so one the follower later
         // drops stays dropped; its history is marked seen like a manual follow.
         if (start.autoTrackPhase2) {
-            repo.fetchPhase2Current()?.let { current ->
+            (manifest?.phase2_current ?: repo.fetchPhase2Current())?.let { current ->
                 val done = store.autoTrackedPhase2Ids()
                 val toRecord = current.filter { it !in done }
                 toRecord.filter { !start.isTracked(it) }.forEach { track(it) }
@@ -92,7 +98,7 @@ class Tracker(private val repo: Repository, private val store: TrackingStore) {
         var pending = store.current().tracked
         var rounds = 0
         while (pending.isNotEmpty() && rounds++ < 5) {
-            val fetched = fetchAll(pending)
+            val fetched = fetchAll(pending, manifest)
             pending.forEach { id -> fetched[id]?.let { details[id] = it } ?: failed.add(id) }
             val links = store.autoTrackLinks()
             val tracked = store.current().trackedSet
@@ -111,7 +117,7 @@ class Tracker(private val repo: Repository, private val store: TrackingStore) {
             pending = newIds
         }
 
-        val fromIndustries = industryEvents()
+        val fromIndustries = industryEvents(manifest)
 
         val state = store.current()
         val events = TrackedEvents.inboxOrder(
@@ -119,7 +125,7 @@ class Tracker(private val repo: Repository, private val store: TrackingStore) {
         )
         val fresh = events.filter { it.key !in state.notified && it.key !in state.seen }
 
-        val newFilings = if (state.notifyNewFilings) newFilings(state) else emptyList()
+        val newFilings = if (state.notifyNewFilings) newFilings(state, manifest) else emptyList()
 
         SyncResult(events, fresh, newFilings, failed).also { _last.value = it }
     }
@@ -128,12 +134,12 @@ class Tracker(private val repo: Repository, private val store: TrackingStore) {
      * Filings and determinations in every followed industry. Industries under
      * the one division share a file, so several cost one fetch.
      */
-    private suspend fun industryEvents(): List<TrackedEvent> {
+    private suspend fun industryEvents(manifest: Manifest?): List<TrackedEvent> {
         val followed = store.current().industries
         if (followed.isEmpty()) return emptyList()
         val files = coroutineScope {
             followed.groupBy { IndustryDivisions.stem(it.code) }.values
-                .map { group -> async { IndustryDivisions.stem(group.first().code) to repo.fetchDivision(group.first().code) } }
+                .map { group -> async { IndustryDivisions.stem(group.first().code) to repo.divisionFor(group.first().code, manifest) } }
                 .awaitAll().toMap()
         }
         val pending = store.pendingIndustryBaselines()
@@ -146,8 +152,8 @@ class Tracker(private val repo: Repository, private val store: TrackingStore) {
         }
     }
 
-    private suspend fun fetchAll(ids: List<String>): Map<String, MergerDetail> = coroutineScope {
-        ids.map { id -> async { id to repo.fetchDetail(id) } }.awaitAll()
+    private suspend fun fetchAll(ids: List<String>, manifest: Manifest?): Map<String, MergerDetail> = coroutineScope {
+        ids.map { id -> async { id to repo.detailFor(id, manifest) } }.awaitAll()
             .mapNotNull { (id, m) -> m?.let { id to it } }.toMap()
     }
 
@@ -155,8 +161,24 @@ class Tracker(private val repo: Repository, private val store: TrackingStore) {
      * Mergers in the list that weren't there last time. The first check after
      * switching alerts on only records what's there, so it doesn't announce
      * the whole register.
+     *
+     * With a manifest, its ids say whether anything is new, and the list
+     * (~115 KB) is fetched only when something is, for the names.
      */
-    private suspend fun newFilings(state: TrackingState): List<MergerSummary> {
+    private suspend fun newFilings(state: TrackingState, manifest: Manifest?): List<MergerSummary> {
+        if (manifest != null) {
+            val ids = manifest.mergers.keys
+            val known = store.knownIds()
+            val fresh = ids - known
+            if (known.isEmpty() || fresh.isEmpty()) {
+                if (ids != known) store.setKnownIds(ids)
+                return emptyList()
+            }
+            // Not recorded until the names are in hand, so a failed fetch tries again next time.
+            val list = repo.fetchList() ?: return emptyList()
+            store.setKnownIds(ids)
+            return list.filter { it.merger_id in fresh && !state.isTracked(it.merger_id) }
+        }
         val list = repo.fetchList() ?: return emptyList()
         val known = store.knownIds()
         store.setKnownIds(list.map { it.merger_id }.toSet())

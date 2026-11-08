@@ -4,6 +4,8 @@ import fyi.mergers.app.data.IndustryDivisionFile
 import fyi.mergers.app.data.IndustryDivisions
 import fyi.mergers.app.data.IndustryIndex
 import fyi.mergers.app.data.IndustryPhase
+import fyi.mergers.app.data.Manifest
+import fyi.mergers.app.data.ManifestHash
 import fyi.mergers.app.data.MergerDetail
 import fyi.mergers.app.data.MergerList
 import fyi.mergers.app.data.MergersJson
@@ -202,5 +204,24 @@ class LogicTest {
             "The ACCC has determined that the Acquisition may be put into effect.\n• there is no overlap\n• alternatives exist",
             reflow("The ACCC has determined that the\nAcquisition may be put into effect.\n• there is no overlap\n• alternatives\nexist"),
         )
+    }
+
+    @Test
+    fun manifest_hash_matches_the_site() {
+        // Pinned by test_file_hash_is_pinned in the site's
+        // scripts/tests/test_data_manifest.py: change both or neither.
+        assertEquals("5161c4b975b1", ManifestHash.of("{\"merger_id\":\"MN-01016\",\"merger_name\":\"Asahi – Warehouse\"}"))
+    }
+
+    @Test
+    fun manifest_parses_the_site_shape() {
+        val m = MergersJson.decodeFromString(
+            Manifest.serializer(),
+            """{"format":1,"mergers":{"MN-01016":"38a5f2df2aea"},"phase2_current":["MN-01072"],"industries":{"G":"0123456789ab"},"later":true}""",
+        )
+        assertEquals(Manifest.FORMAT, m.format)
+        assertEquals(mapOf("MN-01016" to "38a5f2df2aea"), m.mergers)
+        assertEquals(listOf("MN-01072"), m.phase2_current)
+        assertEquals(mapOf("G" to "0123456789ab"), m.industries)
     }
 }

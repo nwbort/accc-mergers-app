@@ -11,6 +11,16 @@ is no backend. Status, outcome and tracking rules are ports of the site's
 `context/TrackingContext.jsx`. Keep them in step: event keys in particular
 (`tracking/TrackedEvents.kt`) decide what counts as news.
 
+The follow check (`Tracker.sync`, behind both the Following screen and the
+background `CheckWorker`) starts from `data/manifest.json`, which the site's
+`scripts/build.sh` writes at deploy time: a short SHA-256 per merger detail
+file and per industry division file, and the current Phase 2 ids. A followed
+merger or industry whose kept file hashes to the manifest's value isn't fetched, and `list.json` is fetched only when the
+manifest has ids not seen before, so an unchanged site costs one 304. The hash
+rule (`data/Manifest.kt`, `ManifestHash`) must match the site's
+`scripts/generate/data_manifest.py`; both test suites pin the same value.
+Without a usable manifest the check fetches everything, as it used to.
+
 ## Building
 
 The APK the user installs comes from GitHub Actions: every push runs
@@ -51,9 +61,18 @@ where you can add a throwaway `shot("debug-…")` and look at the PNG.
    ```groovy
    // e.g. $SCRATCHPAD/mirror.gradle — never commit it
    def mirror = "https://maven-central.storage-download.googleapis.com/maven2/"
+   // First, not last: Gradle gives up on a 429 rather than trying the next repository.
+   def first = { repos ->
+     def m = repos.maven { url mirror; name "gcsMirror" }
+     repos.remove(m); repos.add(0, m)
+   }
    settingsEvaluated { s ->
-     s.pluginManagement.repositories { maven { url mirror } }
-     s.dependencyResolutionManagement.repositories { maven { url mirror } }
+     first(s.pluginManagement.repositories)
+     first(s.dependencyResolutionManagement.repositories)
+   }
+   // Robolectric downloads its android-all jar itself, from Maven Central.
+   allprojects {
+     tasks.withType(Test).configureEach { systemProperty "robolectric.dependency.repo.url", mirror }
    }
    ```
 

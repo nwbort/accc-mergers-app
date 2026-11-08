@@ -97,6 +97,51 @@ class Repository(private val source: DataSource) {
         parse(source.fetch("mergers/$id.json"), MergerDetail.serializer())
     }.getOrNull()?.also { v -> detailFlow(id).value = Loaded(v, loading = false) }
 
+    /**
+     * The site's manifest, or null when there isn't a usable one: not deployed
+     * yet, a format this app doesn't know, or the SPA's index.html served in
+     * place of a missing file. Null means fetch everything, as before.
+     */
+    suspend fun fetchManifest(): Manifest? = runCatching {
+        parse(source.fetch(Manifest.PATH), Manifest.serializer())
+    }.getOrNull()?.takeIf { it.format == Manifest.FORMAT && it.mergers.isNotEmpty() }
+
+    /**
+     * A followed merger for the background check: the copy kept on the phone
+     * when [manifest] says it is still current, otherwise [fetchDetail].
+     */
+    suspend fun detailFor(id: String, manifest: Manifest?): MergerDetail? {
+        val want = manifest?.mergers?.get(id)
+        if (want != null) {
+            val kept = source.cached("mergers/$id.json")
+            if (kept != null && ManifestHash.of(kept) == want) {
+                runCatching { parse(kept, MergerDetail.serializer()) }.getOrNull()?.let { v ->
+                    if (detailFlow(id).value.value == null) detailFlow(id).value = Loaded(v, loading = false)
+                    return v
+                }
+            }
+        }
+        return fetchDetail(id)
+    }
+
+    /**
+     * The division file holding [code], for the background check: the kept
+     * copy when [manifest] says it is still current, otherwise [fetchDivision].
+     */
+    suspend fun divisionFor(code: String, manifest: Manifest?): IndustryDivisionFile? {
+        val want = manifest?.industries?.get(IndustryDivisions.stem(code))
+        if (want != null) {
+            val kept = source.cached(IndustryDivisions.path(code))
+            if (kept != null && ManifestHash.of(kept) == want) {
+                runCatching { parse(kept, IndustryDivisionFile.serializer()) }.getOrNull()?.let { v ->
+                    if (divisionFlow(code).value.value == null) divisionFlow(code).value = Loaded(v, loading = false)
+                    return v
+                }
+            }
+        }
+        return fetchDivision(code)
+    }
+
     suspend fun fetchList(): List<MergerSummary>? = runCatching {
         parse(source.fetch("mergers/list.json"), MergerList.serializer()).mergers
     }.getOrNull()?.also { v -> _list.value = Loaded(v, loading = false) }
