@@ -71,6 +71,9 @@ class AppTest {
     fun browse_follow_and_get_notified() {
         val app = RuntimeEnvironment.getApplication()
         shadowOf(app).grantPermissions(Manifest.permission.POST_NOTIFICATIONS)
+        // Browsing and the Following screen first run without a manifest, as
+        // before the site deployed one; the background checks below use it.
+        Fixtures.serveManifest = false
 
         // Dashboard
         waitForText("Recent determinations")
@@ -228,6 +231,7 @@ class AppTest {
             mergers = g.mergers + (filed.merger_id to filed),
         )
         Fixtures.overrides["industries/G.json"] = MergersJson.encodeToString(IndustryDivisionFile.serializer(), grown)
+        Fixtures.serveManifest = true
         val result = runBlocking { TestListenableWorkerBuilder<CheckWorker>(app).build().doWork() }
         assertEquals(ListenableWorker.Result.success(), result)
         val posted = shadowOf(app.getSystemService(NotificationManager::class.java)).allNotifications
@@ -244,13 +248,18 @@ class AppTest {
             industry.extras.getCharSequence("android.text").toString(),
         )
 
-        // A second check finds nothing new to say.
+        // A second check finds nothing new to say, and with nothing changed on
+        // the site it asks for the manifest alone: every followed merger and
+        // industry is read from the copy kept on the phone.
         val before = posted.size
+        val fetchedBefore = synchronized(Fixtures.fetched) { Fixtures.fetched.size }
         runBlocking { TestListenableWorkerBuilder<CheckWorker>(app).build().doWork() }
         assertEquals(
             before,
             shadowOf(app.getSystemService(NotificationManager::class.java)).allNotifications.size,
         )
+        val secondCheck = synchronized(Fixtures.fetched) { Fixtures.fetched.drop(fetchedBefore) }
+        assertEquals(listOf("manifest.json"), secondCheck)
 
         // A mergers.fyi link (as a notification sends) opens that merger.
         compose.activity.onNewIntent(
