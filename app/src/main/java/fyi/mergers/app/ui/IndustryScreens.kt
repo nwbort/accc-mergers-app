@@ -45,7 +45,6 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -116,8 +115,8 @@ fun IndustriesScreen(vm: AppViewModel) {
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
                 )
             }
-            PullToRefreshBox(
-                isRefreshing = state.loading && index != null,
+            RefreshBox(
+                refreshing = state.loading && index != null,
                 onRefresh = vm::loadIndustries,
                 modifier = Modifier.fillMaxSize(),
             ) {
@@ -256,8 +255,8 @@ fun IndustryScreen(vm: AppViewModel, code: String) {
             )
         },
     ) { padding ->
-        PullToRefreshBox(
-            isRefreshing = state.loading && file != null,
+        RefreshBox(
+            refreshing = state.loading && file != null,
             onRefresh = { vm.loadIndustry(code) },
             modifier = Modifier.padding(padding).fillMaxSize(),
         ) {

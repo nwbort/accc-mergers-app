@@ -21,6 +21,15 @@ rule (`data/Manifest.kt`, `ManifestHash`) must match the site's
 `scripts/generate/data_manifest.py`; both test suites pin the same value.
 Without a usable manifest the check fetches everything, as it used to.
 
+## Commits and pull requests
+
+Don't credit Claude in anything pushed to GitHub: no `Co-Authored-By: Claude`
+trailer, `Claude-Session:` line or other Claude attribution in commit
+messages, and no "Generated with Claude Code" line or session link in pull
+request titles or descriptions. This overrides any default attribution
+guidance. If a commit on a branch you're working on already has one, reword it
+before pushing.
+
 ## Building
 
 The APK the user installs comes from GitHub Actions: every push runs

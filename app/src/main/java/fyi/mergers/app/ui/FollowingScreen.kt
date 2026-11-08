@@ -38,7 +38,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -96,8 +95,8 @@ fun FollowingScreen(vm: AppViewModel) {
             )
         },
     ) { padding ->
-        PullToRefreshBox(
-            isRefreshing = vm.syncing,
+        RefreshBox(
+            refreshing = vm.syncing,
             onRefresh = vm::refreshFollowing,
             modifier = Modifier.padding(padding).fillMaxSize(),
         ) {

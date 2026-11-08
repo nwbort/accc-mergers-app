@@ -37,7 +37,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -116,8 +115,8 @@ fun DashboardScreen(vm: AppViewModel) {
             )
         },
     ) { padding ->
-        PullToRefreshBox(
-            isRefreshing = statsState.loading && stats != null,
+        RefreshBox(
+            refreshing = statsState.loading && stats != null,
             onRefresh = vm::refreshDashboard,
             modifier = Modifier.padding(padding).fillMaxSize(),
         ) {
