@@ -294,7 +294,9 @@ private fun Detail(vm: AppViewModel, m: MergerDetail) {
                     s.merger_id,
                     null,
                     onClick = { vm.openMerger(s.merger_id) },
-                    leading = s.accc_determination?.let { { StatusBadge(it) } },
+                    // Decided matters show their outcome; live ones their status
+                    // (under assessment, referred to phase 2 and so on).
+                    leading = (s.accc_determination ?: s.status)?.let { { StatusBadge(it) } },
                 )
             }
         }

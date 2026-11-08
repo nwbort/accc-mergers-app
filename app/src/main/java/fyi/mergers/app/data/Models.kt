@@ -148,6 +148,7 @@ data class SimilarMerger(
     val merger_id: String,
     val merger_name: String = "",
     val accc_determination: String? = null,
+    val status: String? = null,
 )
 
 @Serializable
@@ -237,6 +238,34 @@ data class RecentDetermination(
     val is_waiver: Boolean = false,
     val stage: String? = null,
     val has_conditions: Boolean = false,
+)
+
+// ---- analysis.json (only current_status, the /current-status page) --------
+
+@Serializable
+data class Analysis(val current_status: CurrentStatus? = null)
+
+@Serializable
+data class CurrentStatus(
+    val as_at: String? = null,
+    val windows: List<StatusWindow> = emptyList(),
+)
+
+/** Decision times for the matters decided in the last [days] days. */
+@Serializable
+data class StatusWindow(
+    val days: Int = 0,
+    val notifications: WindowDurations = WindowDurations(),
+    val waivers: WindowDurations = WindowDurations(),
+)
+
+/** Business days; [median_delta] is against the all-time median (positive is slower). */
+@Serializable
+data class WindowDurations(
+    val median: Double? = null,
+    val p90: Int? = null,
+    val count: Int = 0,
+    val median_delta: Double? = null,
 )
 
 // ---- upcoming-events.json ---------------------------------------------------

@@ -2,6 +2,10 @@ package fyi.mergers.app.ui
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -25,9 +29,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -41,6 +43,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
@@ -52,19 +59,22 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import fyi.mergers.app.data.Dates
+import fyi.mergers.app.data.SITE
 import fyi.mergers.app.data.Stats
+import fyi.mergers.app.data.StatusWindow
+import fyi.mergers.app.data.WindowDurations
 import fyi.mergers.app.data.Status
 import fyi.mergers.app.data.UpcomingEvent
 import fyi.mergers.app.ui.theme.eventTypeColors
 import java.time.format.DateTimeFormatter
 import java.util.Locale
-import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen(vm: AppViewModel) {
     val statsState by vm.stats.collectAsStateWithLifecycle()
     val upcomingState by vm.upcoming.collectAsStateWithLifecycle()
+    val recentState by vm.currentStatus.collectAsStateWithLifecycle()
     val stats = statsState.value
 
     // The name bar slides away as you scroll down the dashboard and comes
@@ -79,7 +89,16 @@ fun DashboardScreen(vm: AppViewModel) {
                 colors = TopAppBarDefaults.topAppBarColors(scrolledContainerColor = MaterialTheme.colorScheme.surface),
                 title = {
                     Column {
-                        Text("mergers.fyi", fontWeight = FontWeight.Bold)
+                        // The site's wordmark: the dot in the brand green.
+                        val dot = MaterialTheme.colorScheme.primary
+                        Text(
+                            buildAnnotatedString {
+                                append("mergers")
+                                withStyle(SpanStyle(color = dot)) { append(".") }
+                                append("fyi")
+                            },
+                            fontWeight = FontWeight.Bold,
+                        )
                         Text(
                             "Australian merger tracker",
                             style = MaterialTheme.typography.labelMedium,
@@ -98,7 +117,7 @@ fun DashboardScreen(vm: AppViewModel) {
             when {
                 stats == null && statsState.loading -> Loading()
                 stats == null -> Centered("Couldn't load the dashboard. Pull down to try again.")
-                else -> DashboardContent(vm, stats, upcomingState.value.orEmpty())
+                else -> DashboardContent(vm, stats, upcomingState.value.orEmpty(), recentState.value)
             }
         }
     }
@@ -113,7 +132,7 @@ fun Loading() {
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun DashboardContent(vm: AppViewModel, stats: Stats, upcoming: List<UpcomingEvent>) {
+private fun DashboardContent(vm: AppViewModel, stats: Stats, upcoming: List<UpcomingEvent>, recent: StatusWindow?) {
     val soon = upcoming.filter { e ->
         val n = Dates.daysUntil(e.end_date ?: e.date) ?: return@filter false
         n >= 0 && (Dates.daysUntil(e.date) ?: 0) <= 14
@@ -146,7 +165,6 @@ private fun DashboardContent(vm: AppViewModel, stats: Stats, upcoming: List<Upco
         contentPadding = PaddingValues(bottom = 24.dp),
     ) {
         item {
-            val pd = stats.phase_duration
             Column(Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 StatCard(
                     title = "Mergers",
@@ -154,19 +172,19 @@ private fun DashboardContent(vm: AppViewModel, stats: Stats, upcoming: List<Upco
                     subtitle = "${stats.total_mergers} notified and ${stats.total_waivers} waivers",
                     onClick = { vm.showMergersWithStatus(Status.UNDER_ASSESSMENT) },
                 )
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    StatCard(
-                        title = "Average phase 1",
-                        value = pd.average_business_days?.let { "${it.roundToInt()} business days" } ?: "N/A",
-                        subtitle = pd.average_days?.let { "${it.roundToInt()} calendar days" },
-                        modifier = Modifier.weight(1f),
+                recent?.let { w ->
+                    val context = LocalContext.current
+                    val open = { openUrl(context, "$SITE/current-status") }
+                    Text(
+                        "Decision times · last ${w.days} days",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 4.dp),
                     )
-                    StatCard(
-                        title = "Median phase 1",
-                        value = pd.median_business_days?.let { "${median(it)} business days" } ?: "N/A",
-                        subtitle = pd.median_days?.let { "${median(it)} calendar days" },
-                        modifier = Modifier.weight(1f),
-                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.height(IntrinsicSize.Min)) {
+                        DecisionTimeCard("Waiver", w.waivers, open, Modifier.weight(1f).fillMaxHeight())
+                        DecisionTimeCard("Notification – phase 1", w.notifications, open, Modifier.weight(1f).fillMaxHeight())
+                    }
                 }
             }
         }
@@ -215,8 +233,6 @@ private fun DashboardContent(vm: AppViewModel, stats: Stats, upcoming: List<Upco
             }
         }
 
-        stickyHeader(key = "h-Outcomes") { StickyTitle("Outcomes") }
-        item { Outcomes(stats) }
     }
 }
 
@@ -289,6 +305,81 @@ private fun EventTypeTile(type: String?, description: String?) {
 
 private fun median(v: Double): String = if (v % 1.0 == 0.0) v.toInt().toString() else "%.1f".format(v)
 
+/**
+ * One of the site's /current-status headlines: the median business days for
+ * what was decided in the window, coloured by how it sits against the all-time
+ * median (slower in the declined red, faster in the cleared green).
+ */
+@Composable
+private fun DecisionTimeCard(title: String, d: WindowDurations, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val darkTheme = isSystemInDarkTheme()
+    val delta = d.median_delta
+    val tone = when {
+        delta == null || delta == 0.0 || d.median == null -> MaterialTheme.colorScheme.onSurface
+        delta > 0 -> if (darkTheme) Color(0xFFFCA5A5) else Color(0xFFB91C1C)
+        else -> if (darkTheme) Color(0xFF6EE7B7) else Color(0xFF047857)
+    }
+    Card(
+        onClick = onClick,
+        modifier = modifier,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+    ) {
+        Column(Modifier.fillMaxWidth().padding(14.dp)) {
+            Text(title, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            val m = d.median
+            if (m == null) {
+                Text(
+                    "Nothing decided in this window.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 6.dp),
+                )
+                return@Column
+            }
+            Row(verticalAlignment = Alignment.Bottom, modifier = Modifier.padding(top = 4.dp)) {
+                Text(
+                    median(m),
+                    style = MaterialTheme.typography.headlineLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = tone,
+                    modifier = Modifier.alignByBaseline(),
+                )
+                Text(
+                    " business days",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.alignByBaseline(),
+                )
+            }
+            if (delta != null) {
+                val lead = if (delta == 0.0) "About the same as usual" else {
+                    val mag = kotlin.math.abs(delta)
+                    "${median(mag)} business ${if (mag == 1.0) "day" else "days"} ${if (delta > 0) "slower" else "faster"}"
+                }
+                Text(
+                    buildAnnotatedString {
+                        withStyle(SpanStyle(color = tone, fontWeight = FontWeight.Medium)) { append(lead) }
+                        if (delta != 0.0) {
+                            withStyle(SpanStyle(color = MaterialTheme.colorScheme.onSurfaceVariant)) { append(" than usual") }
+                        }
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(top = 6.dp),
+                )
+            }
+            d.p90?.let {
+                Text(
+                    "90% within $it BD",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 2.dp),
+                )
+            }
+        }
+    }
+}
+
 @Composable
 fun StatCard(title: String, value: String, subtitle: String?, modifier: Modifier = Modifier, onClick: (() -> Unit)? = null) {
     val content: @Composable () -> Unit = {
@@ -304,64 +395,6 @@ fun StatCard(title: String, value: String, subtitle: String?, modifier: Modifier
     val elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     if (onClick != null) Card(onClick = onClick, modifier = modifier, colors = colors, elevation = elevation) { content() }
     else Card(modifier = modifier, colors = colors, elevation = elevation) { content() }
-}
-
-/** The dashboard's closing cards: phase 1 speed and each kind of determination. */
-@Composable
-private fun Outcomes(stats: Stats) {
-    Column(Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        val p = stats.phase_duration.percentiles
-        if (p.isNotEmpty()) {
-            OutcomeCard("Phase 1 speed") {
-                listOf("day15" to "Within 15 business days", "day20" to "Within 20", "day30" to "Within 30").forEach { (k, label) ->
-                    val v = p[k] ?: return@forEach
-                    Bar(label, "${v.percentage.roundToInt()}%", (v.percentage / 100).toFloat())
-                }
-            }
-        }
-        Counts("Phase 1 determinations", stats.by_determination)
-        Counts("Phase 2 determinations", stats.by_phase_2_determination)
-        Counts("Waiver determinations", stats.by_waiver_determination)
-    }
-}
-
-@Composable
-private fun Counts(title: String, counts: Map<String, Int>) {
-    if (counts.isEmpty()) return
-    val total = counts.values.sum().coerceAtLeast(1)
-    OutcomeCard(title) {
-        counts.entries.sortedByDescending { it.value }.forEach { (label, n) ->
-            Bar(label, "$n", n.toFloat() / total, label)
-        }
-    }
-}
-
-@Composable
-private fun OutcomeCard(title: String, content: @Composable () -> Unit) {
-    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest)) {
-        Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-            HorizontalDivider()
-            content()
-        }
-    }
-}
-
-@Composable
-private fun Bar(label: String, value: String, fraction: Float, colorKey: String? = null) {
-    Column {
-        Row {
-            Text(label, style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f))
-            Text(value, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.SemiBold)
-        }
-        LinearProgressIndicator(
-            progress = { fraction.coerceIn(0f, 1f) },
-            color = colorKey?.let { fyi.mergers.app.ui.theme.statusColors(it).fill } ?: MaterialTheme.colorScheme.primary,
-            drawStopIndicator = {},
-            gapSize = 0.dp,
-            modifier = Modifier.fillMaxWidth().padding(top = 3.dp),
-        )
-    }
 }
 
 /**
