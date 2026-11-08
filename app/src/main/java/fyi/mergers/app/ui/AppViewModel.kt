@@ -36,6 +36,7 @@ sealed interface Route {
     data class Merger(val id: String) : Route
     data object Industries : Route
     data class Industry(val code: String) : Route
+    data object Search : Route
 
     /** Only on screen, never in [AppViewModel.backStack]: the root that holds all three tabs. */
     data object Tabs : Route
@@ -122,6 +123,27 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             return true
         }
         return false
+    }
+
+    // ---- search -----------------------------------------------------------------
+
+    /** What's typed into the search screen, kept while you go into a result and back. */
+    var searchQuery by mutableStateOf("")
+
+    /** Set when the search screen should take the cursor; the screen clears it. */
+    var focusSearch by mutableStateOf(false)
+
+    /** The dashboard's search button: a fresh search over mergers and industries. */
+    fun openSearch() {
+        searchQuery = ""
+        focusSearch = true
+        goTo(Route.Search)
+    }
+
+    /** Search's "See all": the merger list, filtered to [query] and nothing else. */
+    fun showAllMergersMatching(query: String) {
+        filter = ListFilter(query = query.trim(), sort = filter.sort)
+        selectTab(Route.Mergers)
     }
 
     fun showMergersWithStatus(status: String) {

@@ -7,6 +7,7 @@ import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Looper
 import androidx.compose.ui.graphics.asAndroidBitmap
+import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
@@ -82,6 +83,41 @@ class AppTest {
         compose.onNodeWithTag("dashboard").performScrollToKey("u-MN-55046-consultation_due-2026-11-12T12:00:00Z")
         shot("1c-dashboard-coming-up")
         compose.onNodeWithTag("dashboard").performScrollToIndex(0)
+
+        // Search from the dashboard's top bar: industries and mergers together,
+        // the cursor already in the field.
+        compose.onNodeWithContentDescription("Search").performClick()
+        waitUntil { vm.backStack.lastOrNull() == Route.Search && !vm.focusSearch }
+        compose.onNode(hasSetTextAction()).assertIsFocused()
+        compose.onNode(hasSetTextAction()).performTextInput("retail")
+        waitForText("Industries (26)")
+        waitForText("Mergers", substring = true)
+        shot("1d-search")
+        compose.onNodeWithText("Show all 26 industries").performClick()
+        compose.onNodeWithTag("search-results").performScrollToKey("i-4213")
+        waitForText("Houseware Retailing")
+        // An industry result opens its page; back returns to the search as it was.
+        compose.onNode(hasSetTextAction()).performTextClearance()
+        compose.onNode(hasSetTextAction()).performTextInput("supermarket")
+        waitForText("Supermarket and Grocery Stores")
+        compose.onNodeWithText("Supermarket and Grocery Stores").performClick()
+        waitForText("ANZSIC 4110")
+        assertEquals(listOf(Route.Dashboard, Route.Search, Route.Industry("4110")), vm.backStack.toList())
+        back()
+        waitForText("Supermarket and Grocery Stores")
+        // Lots of mergers match: "See all" hands the search to the merger list.
+        compose.onNode(hasSetTextAction()).performTextClearance()
+        compose.onNode(hasSetTextAction()).performTextInput("pty")
+        compose.onNodeWithTag("search-results").performScrollToKey("more-mergers")
+        compose.onNodeWithText("See all", substring = true).performClick()
+        waitUntil { vm.backStack.toList() == listOf(Route.Mergers) }
+        assertEquals("pty", vm.filter.query)
+        compose.runOnUiThread {
+            vm.filter = fyi.mergers.app.ui.ListFilter()
+            vm.selectTab(Route.Dashboard)
+        }
+        waitUntil { vm.tab == Route.Dashboard }
+        waitForText("Recent determinations")
 
         // The merger list, swiped to from the dashboard, searched and cleared.
         compose.onNodeWithTag("dashboard").performTouchInput { swipeLeft() }
