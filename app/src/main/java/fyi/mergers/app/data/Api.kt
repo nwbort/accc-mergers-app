@@ -17,6 +17,11 @@ fun mergerPageUrl(id: String) = "$SITE/mergers/$id"
 /**
  * A document link: the site's mirror (url_gh, a path on mergers.fyi, which
  * outlives the ACCC moving its files) when there is one, else the source.
+ *
+ * A plain mirror path is answered with an HTML viewer page that embeds the PDF
+ * in an <object>, which Chrome on Android can't render ("PDF preview isn't
+ * available in your browser"). `?raw=1` asks for the file itself, which the
+ * Custom Tab opens in Chrome's own PDF viewer.
  */
 fun documentUrl(urlGh: String?, url: String?): String? {
     if (!urlGh.isNullOrBlank()) {
@@ -24,7 +29,7 @@ fun documentUrl(urlGh: String?, url: String?): String? {
         val path = urlGh.split('/').joinToString("/") { seg ->
             URLEncoder.encode(seg, Charsets.UTF_8).replace("+", "%20")
         }
-        return SITE + path
+        return "$SITE$path?raw=1"
     }
     return url?.takeIf { it.isNotBlank() }
 }
