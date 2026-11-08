@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "63662839835",
+    "project_id": "mergers-fyi-app",
+    "storage_bucket": "mergers-fyi-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:63662839835:android:bb40609fa90c21e40ac0be",
+        "android_client_info": {
+          "package_name": "fyi.mergers.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBpKSKA4lGkTMsiSTNVwwUDmEUGreKfuy4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
