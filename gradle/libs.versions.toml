@@ -12,6 +12,10 @@ work = "2.12.0"
 browser = "1.10.0"
 junit = "4.13.2"
 robolectric = "4.17"
+# The Android 17 runtime Robolectric runs the tests on. It has to match what
+# this Robolectric version asks for: after bumping it, a failing AppTest names
+# the one it wants ("Failed to fetch maven artifact ...").
+robolectricAndroidAll = "17-robolectric-15733970-i7"
 espresso = "3.7.0"
 androidxTest = "1.7.0"
 
@@ -37,6 +41,7 @@ androidx-compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-te
 androidx-compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "robolectric" }
+robolectric-android-all = { group = "org.robolectric", name = "android-all-instrumented", version.ref = "robolectricAndroidAll" }
 androidx-test-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espresso" }
 androidx-test-core = { group = "androidx.test", name = "core", version.ref = "androidxTest" }
 

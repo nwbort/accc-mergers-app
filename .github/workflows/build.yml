@@ -62,9 +62,16 @@ jobs:
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v6
+        with:
+          # Lets the configuration cache carry over between runs (about 10 s
+          # of each build). Optional: without the secret it's just skipped.
+          cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
-      - name: Test and build the release APK
-        run: ./gradlew testDebugUnitTest assembleRelease --stacktrace
+      # The unit tests run in their own job, alongside this one: R8 is the
+      # slow part here, and it no longer shares the runner's 4 cores with
+      # Robolectric, so the emulator job gets its APK sooner.
+      - name: Build the release APK
+        run: ./gradlew assembleRelease --stacktrace
 
       - name: Name the APK after its version
         id: apk
@@ -81,16 +88,6 @@ jobs:
           path: dist/
           retention-days: 7
 
-      # The UI test drives every screen and saves a PNG of each.
-      - name: Upload screenshots
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: screenshots
-          path: app/build/screenshots/
-          retention-days: 7
-          if-no-files-found: ignore
-
       - name: Upload build reports on failure
         if: failure()
         uses: actions/upload-artifact@v7
@@ -102,8 +99,51 @@ jobs:
           retention-days: 7
           if-no-files-found: ignore
 
-  # The release APK, after R8, opened on a real Android emulator. Nothing is
-  # published unless the app starts and stays up.
+  # Unit tests, including the Robolectric UI test that drives every screen
+  # and saves a PNG of each.
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@v7
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
+
+      - name: Run the unit tests
+        run: ./gradlew testDebugUnitTest --stacktrace
+
+      - name: Upload screenshots
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: screenshots
+          path: app/build/screenshots/
+          retention-days: 7
+          if-no-files-found: ignore
+
+      - name: Upload test reports on failure
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-reports
+          path: |
+            app/build/reports/
+            build/reports/
+          retention-days: 7
+          if-no-files-found: ignore
+
+  # The release APK, after R8, opened on a real Android emulator. It starts
+  # as soon as the APK is built, without waiting for the unit tests. Nothing
+  # is published unless the tests pass and the app starts and stays up.
   launch:
     needs: build
     runs-on: ubuntu-latest
@@ -149,7 +189,7 @@ jobs:
   # Releases page in the phone's browser and tap the .apk. Other branches
   # stop at the APK artifact.
   publish:
-    needs: [build, launch]
+    needs: [build, test, launch]
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:

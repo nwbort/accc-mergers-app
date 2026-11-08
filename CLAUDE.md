@@ -24,9 +24,10 @@ Without a usable manifest the check fetches everything, as it used to.
 ## Building
 
 The APK the user installs comes from GitHub Actions: every push runs
-`.github/workflows/build.yml`, which runs the unit tests, builds the release
-APK, launches it on an API 37 emulator and uploads it as an artifact. Pushes
-to `main` also publish it as a GitHub release. After pushing, check that
+`.github/workflows/build.yml`. Its `build` job builds the release APK and
+uploads it as an artifact, the `test` job runs the unit tests alongside it, and
+`launch` opens the APK on an API 37 emulator as soon as it's built. Pushes to
+`main` also publish it as a GitHub release once all three pass. After pushing, check that
 workflow run and fix it if it's red.
 
 Building locally before pushing is fine
@@ -63,20 +64,20 @@ where you can add a throwaway `shot("debug-…")` and look at the PNG.
    def mirror = "https://maven-central.storage-download.googleapis.com/maven2/"
    // First, not last: Gradle gives up on a 429 rather than trying the next repository.
    def first = { repos ->
-     def m = repos.maven { url mirror; name "gcsMirror" }
+     def m = repos.maven { url = mirror; name = "gcsMirror" }
      repos.remove(m); repos.add(0, m)
    }
    settingsEvaluated { s ->
      first(s.pluginManagement.repositories)
      first(s.dependencyResolutionManagement.repositories)
    }
-   // Robolectric downloads its android-all jar itself, from Maven Central.
-   allprojects {
-     tasks.withType(Test).configureEach { systemProperty "robolectric.dependency.repo.url", mirror }
-   }
    ```
 
    Then pass it to every command: `./gradlew -I $SCRATCHPAD/mirror.gradle testDebugUnitTest`.
+
+   Robolectric's Android runtime is a Gradle dependency
+   (`robolectricAndroidAll` in `libs.versions.toml`), so it comes through the
+   mirror too and the tests run offline.
 
 3. **Run and read.** `compileDebugUnitTestKotlin` is a quick check that
    the app and tests compile. `testDebugUnitTest` runs everything (about
@@ -84,7 +85,7 @@ where you can add a throwaway `shot("debug-…")` and look at the PNG.
    failure from `app/build/reports/tests/testDebugUnitTest/*/*.html`. Screenshots
    land in `app/build/screenshots/`.
 
-When CI does fail, its `build-reports` and `screenshots` artifacts can be
+When CI does fail, its `test-reports` (or `build-reports`) and `screenshots` artifacts can be
 fetched with `gh api repos/nwbort/accc-mergers-app/actions/artifacts/<id>/zip`
 (get the ids from the run's log or the artifacts list). The screenshots show
 how far the test got before it failed.
