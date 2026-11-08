@@ -4,7 +4,10 @@ import android.content.Context
 import androidx.work.Constraints
 import androidx.work.CoroutineWorker
 import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.ExistingWorkPolicy
 import androidx.work.NetworkType
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.OutOfQuotaPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
@@ -12,9 +15,11 @@ import fyi.mergers.app.Graph
 import java.util.concurrent.TimeUnit
 
 /**
- * The background check: every couple of hours, with a network, bring the
- * follow list up to date and notify what's new. mergers.fyi refreshes several
- * times a weekday, and the ETags make an unchanged file nearly free.
+ * The background check: with a network, bring the follow list up to date and
+ * notify what's new. Run when mergers.fyi pushes word that something followed
+ * has changed ([checkNow], from [PushService]), and on a schedule as the
+ * fallback: every couple of hours until push is known to work on this phone,
+ * twice a day after. The manifest's ETag makes an unchanged site nearly free.
  */
 class CheckWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
 
@@ -33,12 +38,31 @@ class CheckWorker(context: Context, params: WorkerParameters) : CoroutineWorker(
 
     companion object {
         private const val NAME = "check"
+        private const val NOW = "check-now"
+
+        /** Hours between scheduled checks while push can't be relied on, and once it can. */
+        private const val POLL_HOURS = 2L
+        private const val FALLBACK_HOURS = 12L
 
         fun schedule(context: Context) {
-            val request = PeriodicWorkRequestBuilder<CheckWorker>(2, TimeUnit.HOURS, 30, TimeUnit.MINUTES)
+            val hours = if (Push.ready(context)) FALLBACK_HOURS else POLL_HOURS
+            val request = PeriodicWorkRequestBuilder<CheckWorker>(hours, TimeUnit.HOURS, 30, TimeUnit.MINUTES)
                 .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build())
                 .build()
             WorkManager.getInstance(context).enqueueUniquePeriodicWork(NAME, ExistingPeriodicWorkPolicy.UPDATE, request)
+        }
+
+        /**
+         * Check as soon as there's a network. A deploy that changes several
+         * followed files sends one message for each; a check already waiting
+         * covers them all, since every message goes out after the deploy is live.
+         */
+        fun checkNow(context: Context) {
+            val request = OneTimeWorkRequestBuilder<CheckWorker>()
+                .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build())
+                .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
+                .build()
+            WorkManager.getInstance(context).enqueueUniqueWork(NOW, ExistingWorkPolicy.KEEP, request)
         }
     }
 }

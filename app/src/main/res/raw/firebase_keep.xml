@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Firebase looks its configuration up by name (FirebaseOptions.fromResource),
+     which the resource shrinker can't see. These come from google-services.json
+     (see app/build.gradle.kts); keeping a name that isn't there is harmless. -->
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@string/google_app_id,@string/gcm_defaultSenderId,@string/google_api_key,@string/project_id,@string/google_storage_bucket" />

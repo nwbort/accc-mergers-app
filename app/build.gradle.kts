@@ -30,6 +30,35 @@ val robolectricJars = tasks.register<Sync>("robolectricJars") {
     into(robolectricJarsDir)
 }
 
+// Push notifications (notify/Push.kt) come through Firebase Cloud Messaging,
+// configured by the Firebase project's google-services.json: committed at
+// app/google-services.json, or written there by CI from the
+// GOOGLE_SERVICES_JSON secret. Its values aren't secret (they ship inside
+// every APK). Rather than the Google Services Gradle plugin, which would fail
+// every build without the file, this reads the few values Firebase needs into
+// the string resources that plugin would have written. Without the file the
+// app builds as before and falls back to checking every couple of hours.
+val firebaseConfig: Map<String, String> = rootProject.file("app/google-services.json")
+    .takeIf { it.isFile }
+    ?.let { file ->
+        @Suppress("UNCHECKED_CAST")
+        val json = groovy.json.JsonSlurper().parse(file) as Map<String, Any?>
+        val project = json["project_info"] as Map<String, Any?>
+        val clients = json["client"] as List<Map<String, Any?>>
+        fun packageOf(c: Map<String, Any?>) =
+            ((c["client_info"] as Map<*, *>)["android_client_info"] as Map<*, *>)["package_name"]
+        val client = clients.firstOrNull { packageOf(it) == "fyi.mergers.app" } ?: clients.first()
+        val apiKey = (client["api_key"] as List<Map<String, Any?>>).first()["current_key"] as String
+        buildMap {
+            put("google_app_id", (client["client_info"] as Map<*, *>)["mobilesdk_app_id"] as String)
+            put("gcm_defaultSenderId", project["project_number"] as String)
+            put("project_id", project["project_id"] as String)
+            put("google_api_key", apiKey)
+            (project["storage_bucket"] as String?)?.let { put("google_storage_bucket", it) }
+        }
+    }
+    .orEmpty()
+
 android {
     namespace = "fyi.mergers.app"
     compileSdk = 37
@@ -41,6 +70,7 @@ android {
         targetSdk = 37
         versionCode = buildNumber
         versionName = buildVersionName
+        firebaseConfig.forEach { (name, value) -> resValue("string", name, value) }
     }
 
     signingConfigs {
@@ -75,6 +105,8 @@ android {
 
     buildFeatures {
         compose = true
+        // The Firebase config (google-services.json) arrives as resValues.
+        resValues = true
     }
 
     packaging {
@@ -118,6 +150,8 @@ dependencies {
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.androidx.work.runtime)
     implementation(libs.androidx.browser)
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.messaging)
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 

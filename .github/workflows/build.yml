@@ -54,6 +54,23 @@ jobs:
             echo "::warning::SIGNING_KEYSTORE_BASE64 / SIGNING_PASSWORD aren't set, so this APK is signed with a debug key and won't update one signed with the real key."
           fi
 
+      # Push notifications (notify/Push.kt) need the Firebase project's
+      # google-services.json: committed as app/google-services.json, or here
+      # from the GOOGLE_SERVICES_JSON secret. Without either the APK just
+      # checks on a schedule. The unit tests never get it.
+      - name: Write the Firebase config
+        env:
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        run: |
+          if [ -n "$GOOGLE_SERVICES_JSON" ]; then
+            printf '%s' "$GOOGLE_SERVICES_JSON" > app/google-services.json
+            echo "Firebase config from the GOOGLE_SERVICES_JSON secret"
+          elif [ -f app/google-services.json ]; then
+            echo "Firebase config from app/google-services.json"
+          else
+            echo "::notice::No Firebase config (GOOGLE_SERVICES_JSON or app/google-services.json), so this APK has no push and checks every 2 hours."
+          fi
+
       - name: Set up JDK 21
         uses: actions/setup-java@v6
         with:

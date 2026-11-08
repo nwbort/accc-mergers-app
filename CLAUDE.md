@@ -21,6 +21,16 @@ rule (`data/Manifest.kt`, `ManifestHash`) must match the site's
 `scripts/generate/data_manifest.py`; both test suites pin the same value.
 Without a usable manifest the check fetches everything, as it used to.
 
+Push (`notify/Push.kt`): the site's `android-push.yml` diffs the manifest
+between deploys and sends a "check now" message over FCM to a topic per
+changed file; each phone subscribes to the topics for what it follows
+(`TopicSyncWorker`), and `PushService` runs `CheckWorker.checkNow`. The topic
+names must match `scripts/push/fcm.py`; both test suites pin them. Firebase is
+configured from `app/google-services.json` (or the `GOOGLE_SERVICES_JSON`
+secret in CI), read in `app/build.gradle.kts` without the Google Services
+plugin. Without it there's no push and the schedule stays at 2 hours; once a
+phone has subscribed, it drops to 12.
+
 ## Commits and pull requests
 
 Don't credit Claude in anything pushed to GitHub: no `Co-Authored-By: Claude`
