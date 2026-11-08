@@ -2,6 +2,7 @@ package fyi.mergers.app.data
 
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonElement
 
 /**
  * The JSON mergers.fyi publishes under /data/, field for field as the
@@ -137,11 +138,27 @@ data class MergerEvent(
     val is_appeal: Boolean = false,
     val appeal_base_title: String? = null,
     val determination_table_content: List<TableItem> = emptyList(),
-    val determination_statement_of_reasons: List<TableItem> = emptyList(),
+    val determination_statement_of_reasons: List<StatementBlock> = emptyList(),
 )
 
 @Serializable
 data class TableItem(val item: String? = null, val details: String? = null)
+
+/**
+ * One block of a detailed determination's "Statement of reasons", as the
+ * site's parser (scripts/parse/parse_determination.py) classifies it:
+ * `heading`, `paragraph` (with an optional `number`), `bullet_list` (`items`
+ * are strings, `sub_items` aligned with them) or `lettered_list` (`items` are
+ * `{letter, text}` objects).
+ */
+@Serializable
+data class StatementBlock(
+    val type: String? = null,
+    val text: String? = null,
+    val number: String? = null,
+    val items: List<JsonElement> = emptyList(),
+    val sub_items: List<List<String>> = emptyList(),
+)
 
 @Serializable
 data class SimilarMerger(

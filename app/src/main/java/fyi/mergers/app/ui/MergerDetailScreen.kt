@@ -76,7 +76,7 @@ import fyi.mergers.app.data.Dates
 import fyi.mergers.app.data.MergerDetail
 import fyi.mergers.app.data.MergerEvent
 import fyi.mergers.app.data.Party
-import fyi.mergers.app.data.TableItem
+import fyi.mergers.app.data.Reasons
 import fyi.mergers.app.data.documentUrl
 import fyi.mergers.app.data.headerStatus
 import fyi.mergers.app.data.mergerPageUrl
@@ -471,8 +471,7 @@ private fun Chips(labels: List<Pair<String, () -> Unit>>) {
 private fun EventRow(e: MergerEvent, last: Boolean, open: (String) -> Unit) {
     val doc = documentUrl(e.url_gh, e.url)
     var expanded by rememberSaveable(e.date, e.title) { mutableStateOf(false) }
-    val reasons: List<TableItem> = (e.determination_statement_of_reasons + e.determination_table_content)
-        .filter { !it.details.isNullOrBlank() }
+    val reasons: List<Reasons.Block> = remember(e) { Reasons.forEvent(e) }
     val accent = when {
         e.is_appeal -> AppealIndigo.fill
         e.is_determination_event -> MaterialTheme.colorScheme.secondary
@@ -532,10 +531,7 @@ private fun EventRow(e: MergerEvent, last: Boolean, open: (String) -> Unit) {
                             .background(MaterialTheme.colorScheme.surfaceContainer).padding(10.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
-                        reasons.forEach { r ->
-                            r.item?.let { Text(it, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold) }
-                            Text(reflow(r.details!!), style = MaterialTheme.typography.bodySmall)
-                        }
+                        reasons.forEach { ReasonBlock(it) }
                     }
                 }
             }
@@ -543,21 +539,36 @@ private fun EventRow(e: MergerEvent, last: Boolean, open: (String) -> Unit) {
     }
 }
 
-/**
- * Text pulled out of a PDF breaks every line at the page's width. Join those
- * back up, keeping real breaks: blank lines and bullets.
- */
-fun reflow(text: String): String {
-    val out = StringBuilder()
-    text.lines().forEach { raw ->
-        val line = raw.trim()
-        val bullet = line.startsWith("•") || line.startsWith("- ") || Regex("^\\(?[a-z0-9]{1,3}[.)]\\s").containsMatchIn(line)
-        when {
-            line.isEmpty() -> out.append("\n\n")
-            out.isEmpty() || out.endsWith("\n") -> out.append(line)
-            bullet -> out.append('\n').append(line)
-            else -> out.append(' ').append(line)
+/** One block of a determination's reasons: a heading, a paragraph or a list. */
+@Composable
+private fun ReasonBlock(b: Reasons.Block) {
+    val body = MaterialTheme.typography.bodySmall
+    when (b) {
+        is Reasons.Block.Heading -> Text(b.text, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
+        is Reasons.Block.Paragraph -> Text(if (b.number != null) "${b.number}  ${b.text}" else b.text, style = body)
+        is Reasons.Block.Bullets -> Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            b.items.forEach { item ->
+                ListItemRow("•", item.text)
+                item.children.forEach { child ->
+                    Box(Modifier.padding(start = 14.dp)) { ListItemRow("◦", child) }
+                }
+            }
+        }
+        is Reasons.Block.Lettered -> Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            b.items.forEach { (letter, text) -> ListItemRow(letter, text, bold = true) }
         }
     }
-    return out.toString().replace(Regex("\n{3,}"), "\n\n").trim()
+}
+
+@Composable
+private fun ListItemRow(marker: String, text: String, bold: Boolean = false) {
+    Row {
+        Text(
+            marker,
+            style = MaterialTheme.typography.bodySmall,
+            fontWeight = if (bold) FontWeight.Medium else FontWeight.Normal,
+            modifier = Modifier.padding(end = 6.dp),
+        )
+        Text(text, style = MaterialTheme.typography.bodySmall)
+    }
 }
