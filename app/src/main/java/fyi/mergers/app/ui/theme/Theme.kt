@@ -75,6 +75,10 @@ fun statusColors(label: String?): StatusColors = when (label) {
 /** The wash a matter under appeal or judicial review takes, as on the site. */
 val AppealIndigo = StatusColors(Color(0xFF4338CA), Color.White)
 
+/** The site's solid WaiverBadge and RefiledBadge. */
+val WaiverAmber = StatusColors(Color(0xFFFBBF24), Color(0xFF451A03))
+val RefiledAmber = StatusColors(Color(0xFFB45309), Color.White)
+
 /**
  * An upcoming event's tile: each kind of deadline has its own accent, as the
  * site's Coming up list (EVENT_TYPES in UpcomingEventsTimeline.jsx). Tailwind's

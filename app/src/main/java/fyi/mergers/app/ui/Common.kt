@@ -7,12 +7,14 @@ import android.net.Uri
 import androidx.browser.customtabs.CustomTabsIntent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -53,6 +55,10 @@ import fyi.mergers.app.data.Status
 import fyi.mergers.app.data.headerStatus
 import fyi.mergers.app.data.outcomeInput
 import fyi.mergers.app.data.outcomeText
+import fyi.mergers.app.ui.theme.AppealIndigo
+import fyi.mergers.app.ui.theme.RefiledAmber
+import fyi.mergers.app.ui.theme.StatusColors
+import fyi.mergers.app.ui.theme.WaiverAmber
 import fyi.mergers.app.ui.theme.statusColors
 
 /** Open a link in a Custom Tab (documents, the ACCC's page), or whatever can handle it. */
@@ -74,8 +80,15 @@ fun share(context: Context, title: String, url: String) {
 
 /** The site's solid status badge: an uppercase label on the outcome's colour. */
 @Composable
-fun StatusBadge(label: String, modifier: Modifier = Modifier, colorKey: String = label) {
-    val c = statusColors(colorKey)
+fun StatusBadge(label: String, modifier: Modifier = Modifier, colorKey: String = label) =
+    SolidBadge(label, statusColors(colorKey), "Status: $label", modifier)
+
+/**
+ * The solid badge shape every chip on a merger card shares, so a waiver or
+ * appeal reads at the same size and weight as the status beside it.
+ */
+@Composable
+fun SolidBadge(label: String, c: StatusColors, description: String = label, modifier: Modifier = Modifier) {
     Text(
         label.uppercase(),
         color = c.onFill,
@@ -87,7 +100,7 @@ fun StatusBadge(label: String, modifier: Modifier = Modifier, colorKey: String =
             .clip(RoundedCornerShape(6.dp))
             .background(c.fill)
             .padding(horizontal = 8.dp, vertical = 3.dp)
-            .semantics { role = Role.Image; contentDescription = "Status: $label" },
+            .semantics { role = Role.Image; contentDescription = description },
     )
 }
 
@@ -157,27 +170,46 @@ fun partiesLine(acquirers: List<Party>, targets: List<Party>): String? {
  * One merger in a list: the outcome first (a solid badge, and a rail down the
  * left edge in the same colour), then the name, as the site's merger list does.
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun MergerCard(m: MergerSummary, followed: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun MergerCard(
+    m: MergerSummary,
+    followed: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    onLongClick: (() -> Unit)? = null,
+) {
     val input = m.outcomeInput()
     val header = input.headerStatus()
     val label = input.outcomeText() ?: m.status ?: "Unknown"
     val color = statusColors(header?.label ?: m.status)
     Card(
-        onClick = onClick,
         modifier = modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
     ) {
-        Row(Modifier.height(IntrinsicSize.Min)) {
+        Row(
+            Modifier
+                .height(IntrinsicSize.Min)
+                .combinedClickable(
+                    onClick = onClick,
+                    onLongClick = onLongClick,
+                    onLongClickLabel = if (followed) "Stop following" else "Follow",
+                ),
+        ) {
             Box(Modifier.width(4.dp).fillMaxHeight().background(color.fill))
             Column(Modifier.weight(1f).padding(horizontal = 14.dp, vertical = 12.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    StatusBadge(label, colorKey = header?.label ?: m.status ?: "")
-                    if (m.is_waiver) Tag("Waiver")
-                    if (m.under_appeal) Tag("Under appeal")
-                    if (m.is_refiled) Tag("Re-filed")
-                    Spacer(Modifier.weight(1f))
+                Row(verticalAlignment = Alignment.Top) {
+                    FlowRow(
+                        Modifier.weight(1f),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        StatusBadge(label, colorKey = header?.label ?: m.status ?: "")
+                        if (m.is_waiver) SolidBadge("Waiver", WaiverAmber)
+                        if (m.under_appeal) SolidBadge("Under appeal", AppealIndigo)
+                        if (m.is_refiled) SolidBadge("Re-filed", RefiledAmber)
+                    }
                     if (followed) {
                         Icon(
                             Icons.Filled.Bookmark,
@@ -217,20 +249,6 @@ fun MergerCard(m: MergerSummary, followed: Boolean, onClick: () -> Unit, modifie
             }
         }
     }
-}
-
-@Composable
-fun Tag(text: String) {
-    Text(
-        text,
-        style = MaterialTheme.typography.labelSmall,
-        color = MaterialTheme.colorScheme.onSecondaryContainer,
-        modifier = Modifier
-            .padding(start = 6.dp)
-            .clip(RoundedCornerShape(6.dp))
-            .background(MaterialTheme.colorScheme.secondaryContainer)
-            .padding(horizontal = 6.dp, vertical = 2.dp),
-    )
 }
 
 /** A short list row: a title, a line under it and a trailing date. */

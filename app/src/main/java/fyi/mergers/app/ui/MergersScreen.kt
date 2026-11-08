@@ -47,6 +47,23 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.outlined.BookmarkAdd
+import androidx.compose.material.icons.outlined.BookmarkRemove
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import android.Manifest
+import android.content.pm.PackageManager
+import fyi.mergers.app.data.mergerPageUrl
+import kotlinx.coroutines.launch
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
@@ -75,7 +92,31 @@ fun MergersScreen(vm: AppViewModel) {
         }
     }
 
-    Scaffold(contentWindowInsets = WindowInsets(0)) { padding ->
+    // Press and hold a card for a menu to follow it without opening it.
+    val context = LocalContext.current
+    val haptics = LocalHapticFeedback.current
+    val snackbar = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    val notifyPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {}
+    var menuFor by remember { mutableStateOf<String?>(null) }
+    val toggleFollow = { id: String ->
+        val now = vm.toggleFollow(id)
+        if (now && context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            notifyPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
+        scope.launch {
+            snackbar.currentSnackbarData?.dismiss()
+            val undo = snackbar.showSnackbar(
+                if (now) "Following: you'll be notified of updates" else "No longer following",
+                actionLabel = "Undo",
+                duration = SnackbarDuration.Short,
+            )
+            if (undo == SnackbarResult.ActionPerformed) vm.toggleFollow(id)
+        }
+        Unit
+    }
+
+    Scaffold(contentWindowInsets = WindowInsets(0), snackbarHost = { SnackbarHost(snackbar) }) { padding ->
         Column(Modifier.padding(padding).statusBarsPadding()) {
             OutlinedTextField(
                 value = f.query,
@@ -127,7 +168,32 @@ fun MergersScreen(vm: AppViewModel) {
                         modifier = Modifier.fillMaxSize(),
                     ) {
                         items(shown, key = { it.merger_id }) { m ->
-                            MergerCard(m, tracking.isTracked(m.merger_id), onClick = { vm.openMerger(m.merger_id) })
+                            val followed = tracking.isTracked(m.merger_id)
+                            Box {
+                                MergerCard(
+                                    m,
+                                    followed,
+                                    onClick = { vm.openMerger(m.merger_id) },
+                                    onLongClick = {
+                                        haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                                        menuFor = m.merger_id
+                                    },
+                                )
+                                DropdownMenu(expanded = menuFor == m.merger_id, onDismissRequest = { menuFor = null }) {
+                                    DropdownMenuItem(
+                                        text = { Text(if (followed) "Stop following" else "Follow") },
+                                        leadingIcon = {
+                                            Icon(if (followed) Icons.Outlined.BookmarkRemove else Icons.Outlined.BookmarkAdd, contentDescription = null)
+                                        },
+                                        onClick = { menuFor = null; toggleFollow(m.merger_id) },
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text("Share") },
+                                        leadingIcon = { Icon(Icons.Filled.Share, contentDescription = null) },
+                                        onClick = { menuFor = null; share(context, m.merger_name, mergerPageUrl(m.merger_id)) },
+                                    )
+                                }
+                            }
                         }
                     }
                 }

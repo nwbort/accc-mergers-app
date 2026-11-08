@@ -25,6 +25,11 @@ class Repository(private val source: DataSource) {
     private val _upcoming = MutableStateFlow(Loaded<List<UpcomingEvent>>())
     val upcoming: StateFlow<Loaded<List<UpcomingEvent>>> = _upcoming.asStateFlow()
 
+    private val _currentStatus = MutableStateFlow(Loaded<StatusWindow>())
+
+    /** The site's /current-status headline: the last 30 days' decision times. */
+    val currentStatus: StateFlow<Loaded<StatusWindow>> = _currentStatus.asStateFlow()
+
     private val _list = MutableStateFlow(Loaded<List<MergerSummary>>())
     val list: StateFlow<Loaded<List<MergerSummary>>> = _list.asStateFlow()
 
@@ -73,7 +78,13 @@ class Repository(private val source: DataSource) {
     suspend fun refreshDashboard() = coroutineScope {
         val a = async { load(_stats, "stats.json", Stats.serializer()) { it } }
         val b = async { load(_upcoming, "upcoming-events.json", UpcomingEvents.serializer()) { it.events } }
-        a.await(); b.await()
+        val c = async {
+            load(_currentStatus, "analysis.json", Analysis.serializer()) { analysis ->
+                val windows = analysis.current_status?.windows.orEmpty()
+                windows.firstOrNull { it.days == 30 } ?: windows.firstOrNull() ?: error("No current_status in analysis.json")
+            }
+        }
+        a.await(); b.await(); c.await()
     }
 
     suspend fun refreshList() = load(_list, "mergers/list.json", MergerList.serializer()) { it.mergers }

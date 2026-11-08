@@ -20,6 +20,7 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performScrollToKey
 import androidx.compose.ui.test.swipeLeft
+import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.performScrollToIndex
@@ -92,23 +93,36 @@ class AppTest {
         compose.onNode(hasSetTextAction()).performTextClearance()
         waitForText("40 matters")
 
+        // Press and hold a card to follow it from the list.
+        compose.onNode(hasSetTextAction()).performTextInput("MN-01068")
+        waitForText("1 matter")
+        compose.onAllNodesWithText("Kalgoorlie", substring = true).onFirst().performTouchInput { longClick() }
+        waitForText("Follow")
+        shot("2b-mergers-hold")
+        compose.onNodeWithText("Follow").performClick()
+        waitUntil { Graph.store.current().isTracked("MN-01068") }
+        compose.runOnUiThread { vm.toggleFollow("MN-01068") }
+        waitUntil { !Graph.store.current().isTracked("MN-01068") }
+        compose.onNode(hasSetTextAction()).performTextClearance()
+        waitForText("40 matters")
+
         // Industries, from the list's link: searched, opened, followed, and up
         // the breadcrumb to its division.
         compose.onNodeWithText("By industry").performClick()
         waitForText("350 of 350 industries", substring = true)
-        shot("2b-industries")
+        shot("2c-industries")
         compose.onNode(hasSetTextAction()).performTextInput("supermarket")
         waitForText("1 of 350 industries", substring = true)
         compose.onNodeWithText("Supermarket and Grocery Stores").performClick()
         waitForText("ANZSIC 4110")
         waitForText("Under assessment")
-        shot("2c-industry")
+        shot("2d-industry")
         compose.onNodeWithContentDescription("Follow industry").performClick()
         waitUntil { Graph.store.current().isIndustryTracked("4110") }
         compose.onNodeWithText("Retail Trade").performClick()
         waitForText("ANZSIC G")
         waitForText("Sub-industries")
-        shot("2d-industry-division")
+        shot("2e-industry-division")
         // Down to a sub-industry and back up: the breadcrumb returns to the
         // division already open rather than stacking another copy.
         compose.onNodeWithText("Food Retailing").performClick()
