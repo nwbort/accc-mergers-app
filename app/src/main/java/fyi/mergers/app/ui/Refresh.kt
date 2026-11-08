@@ -16,7 +16,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 
 /** How long a pull keeps the spinner up, however quickly the data comes back. */
-private const val MIN_SPIN_MS = 700L
+internal const val MIN_SPIN_MS = 700L
 
 /**
  * [PullToRefreshBox] that answers a pull. Most refreshes are one 304, so
