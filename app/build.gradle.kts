@@ -18,6 +18,18 @@ val buildVersionName = System.getenv("VERSION_NAME") ?: "0-local"
 val sideloadKeystore = rootProject.file("signing/sideload.keystore")
 val signingPassword: String? = System.getenv("SIGNING_PASSWORD")
 
+// Robolectric fetches its Android runtime (a 240 MB jar) from Maven Central by
+// itself, into ~/.m2, when the tests start: on every CI run, since nothing
+// caches ~/.m2, and often refused with 429 Too Many Requests. Resolving it as
+// a Gradle dependency puts it in Gradle's cache (which CI keeps) and through
+// the same repositories as everything else; the tests then run offline.
+val robolectricRuntime: Configuration by configurations.creating
+val robolectricJarsDir = layout.buildDirectory.dir("robolectric-jars")
+val robolectricJars = tasks.register<Sync>("robolectricJars") {
+    from(robolectricRuntime)
+    into(robolectricJarsDir)
+}
+
 android {
     namespace = "fyi.mergers.app"
     compileSdk = 37
@@ -65,11 +77,23 @@ android {
         compose = true
     }
 
+    packaging {
+        // Two AndroidX native libraries AGP can't strip without an NDK; they
+        // ship as they come either way, so don't try (or warn about it).
+        jniLibs.keepDebugSymbols += setOf(
+            "**/libandroidx.graphics.path.so",
+            "**/libdatastore_shared_counter.so",
+        )
+    }
+
     testOptions {
         // Robolectric needs the merged resources.
         unitTests.isIncludeAndroidResources = true
         unitTests.all {
             // Robolectric's Android sandbox reaches into JDK internals.
+            it.dependsOn(robolectricJars)
+            it.systemProperty("robolectric.offline", "true")
+            it.systemProperty("robolectric.dependency.dir", robolectricJarsDir.get().asFile.path)
             it.jvmArgs(
                 "--add-exports=java.base/jdk.internal.access=ALL-UNNAMED",
                 "--add-opens=java.base/java.io=ALL-UNNAMED",
@@ -99,6 +123,7 @@ dependencies {
 
     testImplementation(libs.junit)
     testImplementation(libs.robolectric)
+    robolectricRuntime(libs.robolectric.android.all)
     testImplementation(platform(libs.androidx.compose.bom))
     testImplementation(libs.androidx.compose.ui.test.junit4)
     // Newer than the Compose test library pulls in: 3.5 can't idle on Android 17.

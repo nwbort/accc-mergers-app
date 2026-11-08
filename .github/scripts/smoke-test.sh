@@ -24,9 +24,9 @@ trap 'status=$?; if [ $status -ne 0 ]; then echo "--- emulator.log (tail)"; tail
 
 echo "Installing $image"
 # `yes` dies of SIGPIPE once sdkmanager stops reading, which pipefail would
-# otherwise count as the install failing.
-{ yes || true; } | "$sdk/cmdline-tools/latest/bin/sdkmanager" --install "$image" emulator platform-tools > "$out/sdkmanager.log"
-echo no | "$sdk/cmdline-tools/latest/bin/avdmanager" create avd --force -n smoke -k "$image"
+# otherwise count as the install failing (and it would say "Broken pipe").
+{ yes 2>/dev/null || true; } | "$sdk/cmdline-tools/latest/bin/sdkmanager" --install "$image" emulator platform-tools > "$out/sdkmanager.log"
+echo no | "$sdk/cmdline-tools/latest/bin/avdmanager" create avd --force -n smoke -k "$image" > "$out/avdmanager.log"
 # The API 37 image's default data partition is too small to install into
 # ("Requested internal only, but not enough space"); give it room.
 echo "disk.dataPartition.size=6G" >> "$ANDROID_AVD_HOME/smoke.avd/config.ini"
