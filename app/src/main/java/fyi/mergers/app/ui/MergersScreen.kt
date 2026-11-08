@@ -36,7 +36,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -152,8 +151,8 @@ fun MergersScreen(vm: AppViewModel) {
                     Text("By industry", Modifier.padding(start = 6.dp))
                 }
             }
-            PullToRefreshBox(
-                isRefreshing = listState.loading && all != null,
+            RefreshBox(
+                refreshing = listState.loading && all != null,
                 onRefresh = vm::refreshList,
                 modifier = Modifier.fillMaxSize(),
             ) {
