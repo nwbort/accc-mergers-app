@@ -64,16 +64,12 @@ where you can add a throwaway `shot("debug-…")` and look at the PNG.
    def mirror = "https://maven-central.storage-download.googleapis.com/maven2/"
    // First, not last: Gradle gives up on a 429 rather than trying the next repository.
    def first = { repos ->
-     def m = repos.maven { url mirror; name "gcsMirror" }
+     def m = repos.maven { url = mirror; name = "gcsMirror" }
      repos.remove(m); repos.add(0, m)
    }
    settingsEvaluated { s ->
      first(s.pluginManagement.repositories)
      first(s.dependencyResolutionManagement.repositories)
-   }
-   // Robolectric downloads its android-all jar itself, from Maven Central.
-   allprojects {
-     tasks.withType(Test).configureEach { systemProperty "robolectric.dependency.repo.url", mirror }
    }
    ```
 
