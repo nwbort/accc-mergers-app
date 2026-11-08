@@ -23,8 +23,12 @@ import fyi.mergers.app.notify.Notifier
 import fyi.mergers.app.tracking.SyncResult
 import fyi.mergers.app.tracking.TrackedEvents
 import fyi.mergers.app.tracking.TrackingState
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -65,7 +69,17 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     val currentStatus get() = repo.currentStatus
     val list get() = repo.list
     val industries: StateFlow<Loaded<IndustryIndex>> get() = repo.industries
-    val sync: StateFlow<SyncResult?> get() = tracker.last
+
+    /**
+     * What a quiet check ([checkFollowing]) holds on screen while it runs, so
+     * the list doesn't change under you without the spinner saying so.
+     */
+    private val held = MutableStateFlow<SyncResult?>(null)
+
+    /** The follow check's latest result, as the screen should show it. */
+    val sync: StateFlow<SyncResult?> =
+        combine(tracker.last, held) { last, h -> h ?: last }
+            .stateIn(viewModelScope, SharingStarted.Eagerly, tracker.last.value)
 
     var filter by mutableStateOf(ListFilter())
 
@@ -86,7 +100,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         if (backStack.size == 1 && backStack.first() == tab) return
         backStack.clear()
         backStack.add(tab)
-        if (tab == Route.Following) refreshFollowing()
+        if (tab == Route.Following) checkFollowing()
     }
 
     fun openMerger(id: String) {
@@ -214,13 +228,52 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         }.sortedByDescending { it.merger_count }
     }
 
+    /** How many checks want the spinner up: a pull's and a quiet check's can overlap. */
+    private var spinning = 0
+        set(n) {
+            field = n
+            syncing = n > 0
+        }
+
+    /** A pull, or a check with nothing on screen yet: the spinner shows throughout. */
     fun refreshFollowing() {
+        // A pull answers with the latest, whatever a quiet check is holding back.
+        held.value = null
         viewModelScope.launch {
-            syncing = true
+            spinning++
             try {
                 tracker.sync()
             } finally {
-                syncing = false
+                spinning--
+            }
+        }
+    }
+
+    private var quiet: Job? = null
+
+    /**
+     * Opening the Following tab: the same check, but out of sight. Usually
+     * nothing has changed (one 304) and nothing is shown at all. If something
+     * has, the spinner comes up for as long as a pull's and then the list changes.
+     */
+    fun checkFollowing() {
+        val before = sync.value
+        if (before == null) return refreshFollowing()
+        if (syncing || quiet?.isActive == true) return
+        held.value = before
+        quiet = viewModelScope.launch {
+            var spun = false
+            try {
+                val after = tracker.sync()
+                // Unless a pull has taken over meanwhile.
+                if (held.value === before && after.events != before.events) {
+                    spun = true
+                    spinning++
+                    delay(MIN_SPIN_MS)
+                }
+            } finally {
+                if (held.value === before) held.value = null
+                if (spun) spinning--
             }
         }
     }
