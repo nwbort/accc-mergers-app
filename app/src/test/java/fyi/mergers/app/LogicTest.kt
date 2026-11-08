@@ -18,7 +18,10 @@ import fyi.mergers.app.data.outcomeInput
 import fyi.mergers.app.data.outcomeText
 import fyi.mergers.app.data.phaseStatus
 import fyi.mergers.app.data.sortedBy
+import fyi.mergers.app.notify.Push
+import fyi.mergers.app.tracking.FollowedIndustry
 import fyi.mergers.app.tracking.TrackedEvents
+import fyi.mergers.app.tracking.TrackingState
 import fyi.mergers.app.ui.reflow
 import kotlinx.serialization.Serializable
 import org.junit.Assert.assertEquals
@@ -223,5 +226,31 @@ class LogicTest {
         assertEquals(mapOf("MN-01016" to "38a5f2df2aea"), m.mergers)
         assertEquals(listOf("MN-01072"), m.phase2_current)
         assertEquals(mapOf("G" to "0123456789ab"), m.industries)
+    }
+
+    @Test
+    fun push_topics_follow_what_is_followed() {
+        // Nothing followed: no topics, so no token is ever asked for.
+        assertEquals(emptySet<String>(), Push.topics(TrackingState()))
+
+        val state = TrackingState(
+            tracked = listOf("MN-01016", "WA-01087"),
+            industries = listOf(
+                FollowedIndustry("4511", "Cafes and Restaurants"),
+                FollowedIndustry("H", "Accommodation and Food Services"),
+                FollowedIndustry("9999", "Not an industry"),
+            ),
+        )
+        // Names scripts/push/fcm.py sends to; industries by their division file.
+        assertEquals(
+            setOf("all", "merger-MN-01016", "merger-WA-01087", "industry-H", "industry-_orphans"),
+            Push.topics(state),
+        )
+        assertEquals(setOf("all", "list"), Push.topics(TrackingState(notifyNewFilings = true)))
+        assertTrue("list" in Push.topics(state.copy(autoTrackPhase2 = true)))
+
+        // Every name is one FCM accepts.
+        val valid = Regex("[A-Za-z0-9_.~%-]+")
+        Push.topics(state.copy(autoTrackPhase2 = true)).forEach { assertTrue(it, valid.matches(it)) }
     }
 }

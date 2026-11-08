@@ -7,6 +7,7 @@ import fyi.mergers.app.data.HttpDataSource
 import fyi.mergers.app.data.Repository
 import fyi.mergers.app.notify.CheckWorker
 import fyi.mergers.app.notify.Notifier
+import fyi.mergers.app.notify.Push
 import fyi.mergers.app.tracking.Tracker
 import fyi.mergers.app.tracking.TrackingStore
 import kotlinx.coroutines.CoroutineScope
@@ -30,6 +31,7 @@ open class MergersApp : Application() {
             Graph.init(this, dataSource())
             Notifier.createChannels(this)
             scheduleChecks()
+            startPush()
         } catch (e: Throwable) {
             CrashReport.save(this, e)
         }
@@ -39,6 +41,9 @@ open class MergersApp : Application() {
     protected open fun dataSource(): DataSource = HttpDataSource(File(cacheDir, "data"))
 
     protected open fun scheduleChecks() = CheckWorker.schedule(this)
+
+    /** Firebase push, when this build has a project configured (notify/Push.kt). */
+    protected open fun startPush() = Push.start(this)
 }
 
 /** The app's few singletons. The background check reaches them here too. */

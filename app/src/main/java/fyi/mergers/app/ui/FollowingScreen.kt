@@ -55,6 +55,7 @@ import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import fyi.mergers.app.data.Dates
 import fyi.mergers.app.notify.Notifier
+import fyi.mergers.app.notify.Push
 import fyi.mergers.app.tracking.TrackedEvent
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
@@ -258,8 +259,13 @@ private fun Settings(vm: AppViewModel) {
             trailingContent = { Switch(checked = tracking.notifyNewFilings, onCheckedChange = vm::setNotifyNewFilings) },
             colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surface),
         )
+        val pushed = Push.ready(LocalContext.current)
         Text(
-            "Checked about every two hours. mergers.fyi refreshes from the ACCC register several times a weekday.",
+            if (pushed) {
+                "Checked as soon as mergers.fyi publishes a change, which it does several times a weekday from the ACCC register."
+            } else {
+                "Checked about every two hours. mergers.fyi refreshes from the ACCC register several times a weekday."
+            },
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),

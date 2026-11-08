@@ -42,7 +42,7 @@ interface DataSource {
  * mergers.fyi over HTTPS, keeping each file on disk with its ETag. Cloudflare
  * answers a matching If-None-Match with an empty 304, so checking a followed
  * merger that hasn't moved costs a few hundred bytes, which is what makes
- * checking every couple of hours in the background cheap.
+ * the background check cheap.
  */
 class HttpDataSource(private val cacheDir: File, private val base: String = "$SITE/data/") : DataSource {
 

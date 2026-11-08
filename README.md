@@ -13,8 +13,9 @@ needs no server of its own.
   reviews, the full timeline with documents and determination reasons, and
   similar mergers.
 - **Following**: follow a merger (as the site's Track button does) and the
-  app checks mergers.fyi about every two hours, notifying new documents,
-  determinations and moved deadlines. Following a declined waiver also follows
+  app is told within minutes of mergers.fyi publishing a change to it
+  ([push](#push-notifications)), notifying new documents, determinations and
+  moved deadlines. Following a declined waiver also follows
   the notification it's re-filed as. Optionally follow every phase 2 matter, or
   be told about every new filing.
 
@@ -41,6 +42,21 @@ secrets (Settings → Secrets and variables → Actions):
 Without them CI still builds, signed with a throwaway debug key and with a
 warning on the run. An APK signed one way won't install over one signed the
 other way, so add the secrets before the first install you mean to keep.
+
+## Push notifications
+
+mergers.fyi messages the app over Firebase Cloud Messaging when something it
+follows changes, so it checks then; without push it checks every two hours.
+Each phone subscribes to one topic per thing it follows (`merger-MN-01016`,
+`industry-G`, `list`, `all`), so the follow list never leaves the phone. The
+site's side is `.github/workflows/android-push.yml` in nwbort/accc-mergers,
+whose `docs/android-push.md` has the one-off Firebase setup. For this repo:
+
+| Where | What |
+|---|---|
+| `app/google-services.json`, or the `GOOGLE_SERVICES_JSON` secret | the Firebase project's Android config (not secret: it's inside every APK) |
+
+Without it the app builds and works as before, checking on its schedule.
 
 ## Building locally
 

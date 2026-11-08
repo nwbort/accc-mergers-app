@@ -69,7 +69,7 @@ object Fixtures : DataSource {
     override suspend fun cached(path: String): String? = kept[path]
 }
 
-/** The app with the fixtures for a network and no background schedule. */
+/** The app with the fixtures for a network, no background schedule and no push. */
 class TestApp : MergersApp() {
     override fun onCreate() {
         Fixtures.pinToday()
@@ -79,4 +79,6 @@ class TestApp : MergersApp() {
     override fun dataSource(): DataSource = Fixtures
 
     override fun scheduleChecks() {}
+
+    override fun startPush() {}
 }
