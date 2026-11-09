@@ -75,6 +75,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import fyi.mergers.app.data.Dates
 import fyi.mergers.app.data.MergerDetail
 import fyi.mergers.app.data.MergerEvent
+import fyi.mergers.app.data.MergerIds
 import fyi.mergers.app.data.Party
 import fyi.mergers.app.data.Reasons
 import fyi.mergers.app.data.documentUrl
@@ -100,6 +101,11 @@ fun MergerDetailScreen(vm: AppViewModel, id: String) {
 
     val m = state.value
     val followed = tracking.isTracked(id)
+    // Not a failure to load: a followed id still waiting, or a well-formed one
+    // the register doesn't list (a link to it, say).
+    val listState by vm.list.collectAsStateWithLifecycle()
+    val unlisted = tracking.isAwaiting(id) ||
+        MergerIds.parse(id) == id && listState.value?.none { it.merger_id == id } == true
     val notifyPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {}
 
     val toggleFollow = {
@@ -165,6 +171,9 @@ fun MergerDetailScreen(vm: AppViewModel, id: String) {
         ) {
             when {
                 m == null && state.loading -> Loading()
+                m == null && unlisted -> LazyColumn(Modifier.fillMaxSize()) {
+                    item { NotOnRegister(vm, id, followed, Modifier.padding(top = 8.dp)) }
+                }
                 m == null -> Centered("Couldn't load $id. Pull down to try again.")
                 else -> Detail(vm, m)
             }

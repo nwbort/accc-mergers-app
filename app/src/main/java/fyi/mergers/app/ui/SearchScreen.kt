@@ -44,6 +44,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import fyi.mergers.app.data.MergerIds
 
 /** Industries shown before "Show all": enough to find one by name, short enough to leave room for mergers. */
 private const val INDUSTRIES_SHOWN = 4
@@ -66,9 +67,17 @@ fun SearchScreen(vm: AppViewModel) {
 
     val query = vm.searchQuery
     val blank = query.isBlank()
+    // A merger id however it's typed ("wa01087"), so it finds the one merger,
+    // or, if the register hasn't got it, offers to follow it anyway.
+    val typedId = remember(query) { MergerIds.parse(query) }
+    val exact = typedId?.let { id -> listState.value?.firstOrNull { it.merger_id == id } }
+    val unlisted = typedId?.takeIf { listState.value != null && exact == null }
     val mergers = remember(listState.value, query, tracking.trackedSet) {
         if (blank) emptyList()
-        else listState.value?.let { vm.applyFilter(it, ListFilter(query = query), tracking.trackedSet) }.orEmpty()
+        else listState.value?.let { all ->
+            val found = vm.applyFilter(all, ListFilter(query = query), tracking.trackedSet)
+            if (exact != null && exact !in found) listOf(exact) + found else found
+        }.orEmpty()
     }
     val industries = remember(industriesState.value, query) {
         if (blank) emptyList()
@@ -132,12 +141,15 @@ fun SearchScreen(vm: AppViewModel) {
             )
             when {
                 blank -> Centered("Search mergers by name, merger ID or party, and industries by name or ANZSIC code.")
-                mergers.isEmpty() && industries.isEmpty() && loading -> Loading()
-                mergers.isEmpty() && industries.isEmpty() -> Centered("Nothing matches.")
+                unlisted == null && mergers.isEmpty() && industries.isEmpty() && loading -> Loading()
+                unlisted == null && mergers.isEmpty() && industries.isEmpty() -> Centered("Nothing matches.")
                 else -> LazyColumn(
                     Modifier.fillMaxSize().testTag("search-results"),
                     contentPadding = PaddingValues(bottom = 24.dp),
                 ) {
+                    if (unlisted != null) {
+                        item(key = "unlisted") { NotOnRegister(vm, unlisted, tracking.isTracked(unlisted)) }
+                    }
                     if (industries.isNotEmpty()) {
                         item(key = "h-industries") { SectionTitle(count("Industries", industries.size)) }
                         val shown = if (allIndustries) industries else industries.take(INDUSTRIES_SHOWN)

@@ -10,6 +10,7 @@ import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithText
@@ -34,10 +35,12 @@ import fyi.mergers.app.data.MergerDetail
 import fyi.mergers.app.data.MergerEvent
 import fyi.mergers.app.data.MergersJson
 import fyi.mergers.app.notify.CheckWorker
+import fyi.mergers.app.notify.Push
 import fyi.mergers.app.ui.AppViewModel
 import fyi.mergers.app.ui.Route
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -275,6 +278,60 @@ class AppTest {
         assertEquals(Intent.ACTION_VIEW, handedOn.action)
         assertEquals(phase2, handedOn.dataString)
         waitForText("Asahi – Warehouse site on Tilburn Rd, Deer Park (Vic)")
+
+        // A number someone knows before the register has it (a waiver appears
+        // only once decided): search says so, and offers to follow it anyway.
+        compose.runOnUiThread { vm.openSearch() }
+        waitUntil { vm.backStack.lastOrNull() == Route.Search }
+        compose.onNode(hasSetTextAction()).performTextInput("wa 99001")
+        waitForText("WA-99001 isn't on the register")
+        shot("8-search-unlisted")
+        compose.onNodeWithText("Follow anyway").performClick()
+        waitUntil { Graph.store.current().isAwaiting("WA-99001") }
+        waitForText("Following WA-99001")
+        // Typed without the hyphen, a number the register has finds that merger.
+        compose.onNode(hasSetTextAction()).performTextClearance()
+        compose.onNode(hasSetTextAction()).performTextInput("mn01016")
+        waitForText("Asahi", substring = true)
+        assertTrue(compose.onAllNodesWithTag("not-on-register").fetchSemanticsNodes().isEmpty())
+
+        // Checks before it appears neither ask for its file nor count it a failure to retry.
+        val fetchedBeforeWaiting = synchronized(Fixtures.fetched) { Fixtures.fetched.size }
+        assertEquals(
+            ListenableWorker.Result.success(),
+            runBlocking { TestListenableWorkerBuilder<CheckWorker>(app).build().doWork() },
+        )
+        assertTrue("mergers/WA-99001.json" !in synchronized(Fixtures.fetched) { Fixtures.fetched.drop(fetchedBeforeWaiting) })
+        assertTrue(runBlocking { Graph.store.current() }.isAwaiting("WA-99001"))
+        // Its arrival is a new id, which the site announces on "list" alone.
+        assertTrue("list" in Push.topics(runBlocking { Graph.store.current() }))
+
+        compose.runOnUiThread { vm.selectTab(Route.Following) }
+        compose.onNodeWithTag("following").performScrollToKey("f-WA-99001")
+        waitForText("Not on the register yet")
+        shot("9-following-waiting")
+        compose.onNodeWithText("Not on the register yet").performClick()
+        waitForText("It isn't on the register yet", substring = true)
+        shot("10-detail-waiting")
+
+        // It's decided and published: the next check tells the follower.
+        val template = MergersJson.decodeFromString(MergerDetail.serializer(), Fixtures.read("mergers/WA-01087.json")!!)
+        Fixtures.overrides["mergers/WA-99001.json"] = MergersJson.encodeToString(
+            MergerDetail.serializer(),
+            template.copy(merger_id = "WA-99001", merger_name = "Acquirer – Waited-for target", related_merger = null),
+        )
+        val shownBefore = shadowOf(app.getSystemService(NotificationManager::class.java)).allNotifications.size
+        runBlocking { TestListenableWorkerBuilder<CheckWorker>(app).build().doWork() }
+        val nowPosted = shadowOf(app.getSystemService(NotificationManager::class.java)).allNotifications
+        assertTrue(nowPosted.size > shownBefore)
+        assertTrue(nowPosted.any { it.extras.getCharSequence("android.title").toString() == "Acquirer – Waited-for target" })
+        assertFalse(runBlocking { Graph.store.current() }.isAwaiting("WA-99001"))
+        assertFalse("list" in Push.topics(runBlocking { Graph.store.current() }))
+        Fixtures.overrides.remove("mergers/WA-99001.json")
+
+        // A link to a number the register doesn't have says so, rather than failing to load.
+        compose.activity.onNewIntent(Intent(Intent.ACTION_VIEW, Uri.parse("https://mergers.fyi/mergers/MN-99999")))
+        waitForText("MN-99999 isn't on the register")
     }
 
     private fun waitForText(text: String, substring: Boolean = false) =

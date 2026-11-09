@@ -40,10 +40,16 @@ class Tracker(private val repo: Repository, private val store: TrackingStore) {
     /** The latest result, for the Following screen. */
     val last: StateFlow<SyncResult?> = _last.asStateFlow()
 
-    /** Follow [id], with its history marked as already seen. */
+    /**
+     * Follow [id], with its history marked as already seen. An id with no file
+     * to read is taken to be one not on the register yet (see
+     * [TrackingState.awaiting]); the next check corrects that if it was only
+     * offline.
+     */
     suspend fun track(id: String) {
         val detail = repo.detail(id).value.value ?: repo.fetchDetail(id)
         store.track(id, detail?.let(TrackedEvents::of).orEmpty())
+        if (detail == null) store.updateAwaiting(add = listOf(id)) else store.updateAwaiting(remove = listOf(id))
         _last.value = _last.value?.let { r ->
             val added = detail?.let(TrackedEvents::of).orEmpty()
             r.copy(events = TrackedEvents.inboxOrder(r.events + added))
@@ -93,13 +99,29 @@ class Tracker(private val repo: Repository, private val store: TrackingStore) {
 
         // Fetch every followed merger, then follow any re-filing they point
         // forward to (once per link), and fetch those too, down the chain.
+        // A followed id the manifest doesn't have isn't on the register yet:
+        // there's no file to ask for, and its arrival is a new id (see Push).
+        // Without a manifest, one already known to be waiting that still has
+        // no file is taken to be waiting still, not a failure to retry.
         val details = LinkedHashMap<String, MergerDetail>()
         val failed = mutableListOf<String>()
+        val wasAwaiting = store.current().awaiting
+        val awaiting = mutableSetOf<String>()
         var pending = store.current().tracked
         var rounds = 0
         while (pending.isNotEmpty() && rounds++ < 5) {
-            val fetched = fetchAll(pending, manifest)
-            pending.forEach { id -> fetched[id]?.let { details[id] = it } ?: failed.add(id) }
+            val (unpublished, published) =
+                if (manifest == null) emptyList<String>() to pending else pending.partition { it !in manifest.mergers }
+            awaiting += unpublished
+            val fetched = fetchAll(published, manifest)
+            published.forEach { id ->
+                val m = fetched[id]
+                when {
+                    m != null -> details[id] = m
+                    manifest == null && id in wasAwaiting -> awaiting += id
+                    else -> failed += id
+                }
+            }
             val links = store.autoTrackLinks()
             val tracked = store.current().trackedSet
             val newLinks = mutableListOf<String>()
@@ -116,6 +138,12 @@ class Tracker(private val repo: Repository, private val store: TrackingStore) {
             store.trackQuietly(newIds)
             pending = newIds
         }
+
+        // Arrived (or found to be waiting): the arrival's history is all news,
+        // since nothing of it was marked seen when it was followed.
+        store.updateAwaiting(add = awaiting, remove = details.keys)
+        // And the list, so it shows on the merger list and in the Following screen by name.
+        if (details.keys.any { it in wasAwaiting }) repo.fetchList()
 
         val fromIndustries = industryEvents(manifest)
 

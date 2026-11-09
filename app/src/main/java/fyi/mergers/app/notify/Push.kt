@@ -63,9 +63,13 @@ object Push {
         fun industry(code: String) = "industry-${IndustryDivisions.stem(code)}"
     }
 
-    /** The topics a phone in [state] should be subscribed to. */
+    /**
+     * The topics a phone in [state] should be subscribed to. A followed id not
+     * yet on the register needs [Topics.LIST] too: its first appearance is a
+     * new id, which the site announces there rather than on its own topic.
+     */
     fun topics(state: TrackingState): Set<String> {
-        val wantsList = state.autoTrackPhase2 || state.notifyNewFilings
+        val wantsList = state.autoTrackPhase2 || state.notifyNewFilings || state.tracked.any(state::isAwaiting)
         if (state.followsNothing && !wantsList) return emptySet()
         return buildSet {
             add(Topics.ALL)
