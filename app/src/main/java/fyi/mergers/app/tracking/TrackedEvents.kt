@@ -130,10 +130,15 @@ object TrackedEvents {
      * determination published. Keyed as the site keys them, scoped to the
      * industry ("ind_{code}_…"), so the same merger under two followed
      * industries, or followed itself as well, stays distinct.
+     *
+     * A waiver application only reaches the register once it has been
+     * decided, so a decided waiver is flagged once, by its outcome ("Waiver
+     * approved"), not as a new filing as well.
      */
     fun industry(node: IndustryNode): List<TrackedEvent> = node.mergers.flatMap { m ->
+        val decidedWaiver = m.is_waiver && m.determination_date != null
         listOfNotNull(
-            m.notification_date?.let { INDUSTRY_NEW_MERGER to it },
+            m.notification_date?.takeUnless { decidedWaiver }?.let { INDUSTRY_NEW_MERGER to it },
             m.determination_date?.let { INDUSTRY_DETERMINATION to it },
         ).map { (title, date) ->
             TrackedEvent(

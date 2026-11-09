@@ -3,6 +3,7 @@ package fyi.mergers.app
 import fyi.mergers.app.data.IndustryDivisionFile
 import fyi.mergers.app.data.IndustryDivisions
 import fyi.mergers.app.data.IndustryIndex
+import fyi.mergers.app.data.IndustryMerger
 import fyi.mergers.app.data.IndustryPhase
 import fyi.mergers.app.data.Manifest
 import fyi.mergers.app.data.ManifestHash
@@ -191,9 +192,32 @@ class LogicTest {
         assertEquals("ind_4110_MN-40049_2026-10-30T12:00:00Z_New merger filed", filed.key)
         assertEquals("4110", filed.industryCode)
         // A filing and, once decided, a determination: never anything upcoming.
-        assertEquals(node.mergers.size + node.mergers.count { it.determination_date != null }, events.size)
+        // (A decided waiver is flagged by its outcome alone.)
+        val decidedWaivers = node.mergers.count { it.is_waiver && it.determination_date != null }
+        assertEquals(node.mergers.size + node.mergers.count { it.determination_date != null } - decidedWaivers, events.size)
         assertTrue(events.none { it.upcoming })
         assertEquals("New merger: ${filed.mergerName}", filed.short)
+    }
+
+    @Test
+    fun a_waiver_is_news_for_its_outcome_not_its_filing() {
+        // Waivers reach the register already decided, so the filing line says how.
+        val waivers = MergersJson.decodeFromString(MergerList.serializer(), Fixtures.read("mergers/list.json")!!)
+            .mergers.filter { it.is_waiver }
+        assertEquals(setOf("Waiver approved", "Waiver not approved"), waivers.map(Wording::newFiling).toSet())
+        val merger = waivers.first().copy(is_waiver = false)
+        assertEquals("New merger notified", Wording.newFiling(merger))
+
+        // A followed industry flags a decided waiver once, by its outcome.
+        val node = division("G").node("4110")!!
+        val waiver = IndustryMerger(
+            merger_id = "WA-01234", merger_name = "Acme – Widgets", is_waiver = true,
+            status = Status.ASSESSMENT_COMPLETED, determination = Status.NOT_APPROVED, phase = "Waiver",
+            notification_date = "2026-11-01T12:00:00Z", determination_date = "2026-11-04T12:00:00Z",
+        )
+        val events = TrackedEvents.industry(node.copy(mergers = listOf(waiver)))
+        assertEquals(listOf(TrackedEvents.INDUSTRY_DETERMINATION), events.map { it.title })
+        assertEquals("Waiver not approved: Acme – Widgets", events.single().short)
     }
 
     @Test
