@@ -63,7 +63,11 @@ object Push {
         fun industry(code: String) = "industry-${IndustryDivisions.stem(code)}"
     }
 
-    /** The topics a phone in [state] should be subscribed to. */
+    /**
+     * The topics a phone in [state] should be subscribed to. A followed id not
+     * yet on the register needs nothing extra: the site messages its
+     * merger topic when its file first appears.
+     */
     fun topics(state: TrackingState): Set<String> {
         val wantsList = state.autoTrackPhase2 || state.notifyNewFilings
         if (state.followsNothing && !wantsList) return emptySet()

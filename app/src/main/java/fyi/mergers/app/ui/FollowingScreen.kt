@@ -49,6 +49,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LifecycleResumeEffect
@@ -101,7 +102,7 @@ fun FollowingScreen(vm: AppViewModel) {
             onRefresh = vm::refreshFollowing,
             modifier = Modifier.padding(padding).fillMaxSize(),
         ) {
-            LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 24.dp)) {
+            LazyColumn(Modifier.fillMaxSize().testTag("following"), contentPadding = PaddingValues(bottom = 24.dp)) {
                 item { NotificationsBanner() }
 
                 if (tracking.followsNothing) {
@@ -152,7 +153,15 @@ fun FollowingScreen(vm: AppViewModel) {
                                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 5.dp),
                             )
                         } else {
-                            ListRow(id, null, null, onClick = { vm.openMerger(id) })
+                            // Not in the list (yet): a number followed before the
+                            // register has it, or one that's only just arrived.
+                            val name = sync?.events?.firstOrNull { it.mergerId == id && it.industryCode == null }?.mergerName
+                            ListRow(
+                                title = name ?: id,
+                                subtitle = if (tracking.isAwaiting(id)) "Not on the register yet" else name?.let { id },
+                                trailing = null,
+                                onClick = { vm.openMerger(id) },
+                            )
                         }
                     }
                 }

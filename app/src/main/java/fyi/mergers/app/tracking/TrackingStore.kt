@@ -34,9 +34,18 @@ data class TrackingState(
     val notifyNewFilings: Boolean = false,
     /** Followed industries, oldest first: new filings and determinations in each are news. */
     val industries: List<FollowedIndustry> = emptyList(),
+    /**
+     * Followed ids that aren't on the register yet: typed in by someone who
+     * knows the number before the ACCC publishes it (a waiver appears only
+     * once it's decided). Their arrival is the news.
+     */
+    val awaiting: Set<String> = emptySet(),
 ) {
     val trackedSet: Set<String> by lazy { tracked.toSet() }
     fun isTracked(id: String) = id in trackedSet
+
+    /** Followed, but not on the register yet. */
+    fun isAwaiting(id: String) = id in awaiting && id in trackedSet
 
     val industryCodes: Set<String> by lazy { industries.map { it.code }.toSet() }
     fun isIndustryTracked(code: String) = code in industryCodes
@@ -65,6 +74,7 @@ class TrackingStore(context: Context) {
         val TRACKED_INDUSTRIES = stringPreferencesKey("tracked_industries")
         /** Followed while their file couldn't be read: their history is marked seen once it can. */
         val INDUSTRY_BASELINE = stringSetPreferencesKey("industry_baseline_pending")
+        val AWAITING = stringSetPreferencesKey("awaiting_ids")
     }
 
     val state: Flow<TrackingState> = store.data.map { it.toState() }
@@ -78,6 +88,7 @@ class TrackingStore(context: Context) {
         autoTrackPhase2 = this[K.AUTO_TRACK_PHASE2] ?: false,
         notifyNewFilings = this[K.NOTIFY_NEW_FILINGS] ?: false,
         industries = industries(),
+        awaiting = this[K.AWAITING].orEmpty(),
     )
 
     private fun Preferences.industries(): List<FollowedIndustry> =
@@ -111,7 +122,19 @@ class TrackingStore(context: Context) {
     }
 
     suspend fun untrack(id: String) {
-        store.edit { p -> p.setTracked(p.tracked() - id) }
+        store.edit { p ->
+            p.setTracked(p.tracked() - id)
+            p[K.AWAITING] = p[K.AWAITING].orEmpty() - id
+        }
+    }
+
+    /** Which followed ids aren't on the register yet: [add] are now known not to be, [remove] now are. */
+    suspend fun updateAwaiting(add: Collection<String> = emptyList(), remove: Collection<String> = emptyList()) {
+        if (add.isEmpty() && remove.isEmpty()) return
+        store.edit { p ->
+            val now = p[K.AWAITING].orEmpty() - remove.toSet() + add
+            if (now != p[K.AWAITING].orEmpty()) p[K.AWAITING] = now
+        }
     }
 
     /**

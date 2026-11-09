@@ -12,6 +12,7 @@ import fyi.mergers.app.data.Reasons
 import fyi.mergers.app.data.StatementBlock
 import fyi.mergers.app.data.TableItem
 import fyi.mergers.app.data.MergerDetail
+import fyi.mergers.app.data.MergerIds
 import fyi.mergers.app.data.MergerList
 import fyi.mergers.app.data.MergersJson
 import fyi.mergers.app.data.SortOrder
@@ -386,8 +387,22 @@ class LogicTest {
         assertEquals(setOf("all", "list"), Push.topics(TrackingState(notifyNewFilings = true)))
         assertTrue("list" in Push.topics(state.copy(autoTrackPhase2 = true)))
 
+        // A followed number not on the register yet is told of its arrival on its own topic.
+        assertEquals(Push.topics(state), Push.topics(state.copy(awaiting = setOf("WA-01087"))))
+
         // Every name is one FCM accepts.
         val valid = Regex("[A-Za-z0-9_.~%-]+")
         Push.topics(state.copy(autoTrackPhase2 = true)).forEach { assertTrue(it, valid.matches(it)) }
+    }
+
+    @Test
+    fun merger_ids_are_read_however_they_are_typed() {
+        listOf("WA-01087", "wa-01087", "WA01087", "wa 01087", " WA – 01087 ").forEach {
+            assertEquals(it, "WA-01087", MergerIds.parse(it))
+        }
+        assertEquals("MN-20013", MergerIds.parse("mn20013"))
+        listOf("", "WA-0108", "WA-010877", "XX-01087", "MN-01087x", "01087", "MN--01087", "asahi").forEach {
+            assertNull(it, MergerIds.parse(it))
+        }
     }
 }

@@ -34,7 +34,10 @@ object Fixtures : DataSource {
     /** The manifest the site would build from the snapshot as it stands (overrides included), as data_manifest.py would. */
     private fun manifest(): String {
         val dir = File(Fixtures::class.java.classLoader!!.getResource("data/mergers")!!.toURI())
-        val ids = dir.list()!!.filter { Regex("^(MN|WA)-\\d+\\.json$").matches(it) }.map { it.removeSuffix(".json") }
+        val file = Regex("^(MN|WA)-\\d+\\.json$")
+        // A merger a test has put on the register, as well as the snapshot's.
+        val added = overrides.keys.filter { it.startsWith("mergers/") }.map { it.removePrefix("mergers/") }
+        val ids = (dir.list()!!.toList() + added).filter { file.matches(it) }.map { it.removeSuffix(".json") }.distinct()
         val phase2 = MergersJson.decodeFromString(Phase2Feed.serializer(), read("phase2.json")!!)
             .current.mapNotNull { it.merger_id }
         val m = Manifest(

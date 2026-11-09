@@ -31,6 +31,13 @@ secret in CI), read in `app/build.gradle.kts` without the Google Services
 plugin. Without it there's no push and the schedule stays at 2 hours; once a
 phone has subscribed, it drops to 12.
 
+A followed id can be one the register doesn't have yet (typed into search:
+"Follow anyway"; `MergerIds.parse` checks it's MN/WA plus five digits). It's
+kept in `TrackingState.awaiting`, isn't fetched while the manifest lacks it,
+and isn't a failure to retry. `fcm.py` messages `merger-{id}` when an id
+first appears, so its usual topic covers it. When it appears, nothing of it
+was marked seen, so its whole history is the news.
+
 Links: the manifest claims mergers.fyi's `/`, `/mergers`, `/mergers/…` and
 `/industries…` (PDFs under them excluded), verified by the site's
 `frontend/public/.well-known/assetlinks.json`, which names the release key's
