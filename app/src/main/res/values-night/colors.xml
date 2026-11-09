@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="widget_surface">#181F1C</color>
+    <color name="widget_on_surface">#E1E3E0</color>
+    <color name="widget_muted">#A9B1AC</color>
+    <color name="widget_primary">#9FD3B8</color>
+
+    <!-- In the dark, the 300 shade on a faint wash of itself (16%). -->
+    <color name="event_blue_tint">#2993C5FD</color>
+    <color name="event_blue_ink">#93C5FD</color>
+    <color name="event_amber_tint">#29FCD34D</color>
+    <color name="event_amber_ink">#FCD34D</color>
+    <color name="event_teal_tint">#295EEAD4</color>
+    <color name="event_teal_ink">#5EEAD4</color>
+    <color name="event_purple_tint">#29D8B4FE</color>
+    <color name="event_purple_ink">#D8B4FE</color>
+    <color name="event_rose_tint">#29FDA4AF</color>
+    <color name="event_rose_ink">#FDA4AF</color>
+    <color name="event_gray_tint">#29D1D5DB</color>
+    <color name="event_gray_ink">#D1D5DB</color>
+</resources>

@@ -64,6 +64,39 @@
             </intent-filter>
         </activity>
 
+        <!-- Home-screen widgets (widget/). Coming up asks which mergers and
+             which kinds of date when it's added, and again from press-and-hold. -->
+        <receiver
+            android:name=".widget.UpcomingWidget"
+            android:exported="false"
+            android:label="@string/widget_upcoming_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_upcoming" />
+        </receiver>
+        <activity
+            android:name=".widget.UpcomingWidgetConfigActivity"
+            android:exported="false"
+            android:label="@string/widget_upcoming_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
+        <receiver
+            android:name=".widget.SearchWidget"
+            android:exported="false"
+            android:label="@string/widget_search_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_search" />
+        </receiver>
+
         <!-- Push: a message from mergers.fyi saying followed data changed. -->
         <service
             android:name=".notify.PushService"

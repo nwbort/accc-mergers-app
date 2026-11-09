@@ -50,6 +50,10 @@ class MainActivity : ComponentActivity() {
      * sitting on a screen that has nothing to do with the link.
      */
     private fun handle(intent: Intent, fresh: Boolean = false) {
+        if (intent.action == ACTION_SEARCH) {
+            vm.openSearch()
+            return
+        }
         if (intent.action != Intent.ACTION_VIEW) return
         val url = intent.data?.toString() ?: return
         when (val link = SiteLink.from(url)) {
@@ -63,6 +67,9 @@ class MainActivity : ComponentActivity() {
     }
 
     companion object {
+        /** The Search widget: straight to search, with the cursor in the field. */
+        const val ACTION_SEARCH = "fyi.mergers.app.action.SEARCH"
+
         /** "https://mergers.fyi/mergers/MN-01016/asahi-…" → "MN-01016". */
         fun mergerIdFrom(url: String?): String? = (SiteLink.from(url) as? SiteLink.Merger)?.id
 

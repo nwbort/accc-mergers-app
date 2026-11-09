@@ -1,5 +1,20 @@
 package fyi.mergers.app
 
+import android.app.Activity
+import android.appwidget.AppWidgetHostView
+import android.appwidget.AppWidgetManager
+import android.graphics.Canvas
+import android.view.View
+import android.widget.RemoteViews
+import androidx.compose.ui.test.isRoot
+import androidx.compose.ui.test.onLast
+import fyi.mergers.app.widget.EventKind
+import fyi.mergers.app.widget.SearchWidget
+import fyi.mergers.app.widget.UpcomingConfig
+import fyi.mergers.app.widget.UpcomingWidget
+import fyi.mergers.app.widget.UpcomingWidgetConfigActivity
+import fyi.mergers.app.widget.WidgetPrefs
+import org.robolectric.Robolectric
 import android.Manifest
 import android.app.NotificationManager
 import android.content.Intent
@@ -29,6 +44,7 @@ import androidx.compose.ui.test.performScrollToIndex
 import androidx.lifecycle.ViewModelProvider
 import androidx.work.ListenableWorker
 import androidx.work.testing.TestListenableWorkerBuilder
+import androidx.work.testing.WorkManagerTestInitHelper
 import fyi.mergers.app.data.IndustryDivisionFile
 import fyi.mergers.app.data.IndustryMerger
 import fyi.mergers.app.data.MergerDetail
@@ -331,6 +347,76 @@ class AppTest {
         // A link to a number the register doesn't have says so, rather than failing to load.
         compose.activity.onNewIntent(Intent(Intent.ACTION_VIEW, Uri.parse("https://mergers.fyi/mergers/MN-99999")))
         waitForText("MN-99999 isn't on the register")
+
+        // ---- home-screen widgets ----------------------------------------------
+
+        // The Search widget's tap lands in search, cursor in the field.
+        widgetShot("9-widget-search", SearchWidget.views(app), 380, 56)
+        compose.activity.onNewIntent(Intent(MainActivity.ACTION_SEARCH))
+        waitUntil { vm.backStack.lastOrNull() == Route.Search && !vm.focusSearch }
+        compose.onNode(hasSetTextAction()).assertIsFocused()
+
+        // Coming up as it's added: every merger, every kind of date.
+        val events = runBlocking { Graph.repo.keptUpcoming() }!!
+        val followed = runBlocking { Graph.store.current() }.trackedSet
+        widgetShot("9b-widget-upcoming", UpcomingWidget.views(app, UpcomingConfig(), events, followed), 380, 420)
+        // Nothing kept yet, and nothing followed.
+        widgetShot("9c-widget-upcoming-empty", UpcomingWidget.views(app, UpcomingConfig(), null, followed), 380, 200)
+
+        // Its settings: leave out consultations, and keep to what's followed.
+        // (Putting one on the home screen draws it from what's kept, and
+        // queues a fetch for when there's a network.)
+        WorkManagerTestInitHelper.initializeTestWorkManager(app)
+        val widgetId = shadowOf(AppWidgetManager.getInstance(app))
+            .createWidget(UpcomingWidget::class.java, R.layout.widget_upcoming)
+        val config = Robolectric.buildActivity(
+            UpcomingWidgetConfigActivity::class.java,
+            Intent().putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, widgetId),
+        ).setup()
+        waitForText("Dates to show")
+        compose.onNodeWithText("Consultation responses due").performClick()
+        compose.onNodeWithText("Only mergers I follow").performClick()
+        compose.waitForIdle()
+        File("build/screenshots/9d-widget-settings.png").outputStream().use {
+            compose.onAllNodes(isRoot()).onLast().captureToImage().asAndroidBitmap()
+                .compress(Bitmap.CompressFormat.PNG, 100, it)
+        }
+        compose.onNodeWithText("Done").performClick()
+        waitUntil { config.get().isFinishing }
+        assertEquals(Activity.RESULT_OK, shadowOf(config.get()).resultCode)
+        val saved = WidgetPrefs.upcoming(app, widgetId)
+        assertEquals(UpcomingConfig(followedOnly = true, hidden = setOf(EventKind.CONSULTATION)), saved)
+        config.pause().stop().destroy()
+        widgetShot("9e-widget-upcoming-filtered", UpcomingWidget.views(app, saved, events, followed), 380, 300)
+
+        // Taking the widget off the home screen forgets its settings.
+        UpcomingWidget().onDeleted(app, intArrayOf(widgetId))
+        assertEquals(UpcomingConfig(), WidgetPrefs.upcoming(app, widgetId))
+    }
+
+    /** A widget as the launcher would draw it, at [widthDp] by [heightDp]. */
+    private fun widgetShot(name: String, views: RemoteViews, widthDp: Int, heightDp: Int) {
+        val activity = compose.activity
+        val density = activity.resources.displayMetrics.density
+        val w = (widthDp * density).toInt()
+        val h = (heightDp * density).toInt()
+        val bitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+        compose.runOnUiThread {
+            // A list only takes its rows inside a widget host.
+            val parent = AppWidgetHostView(activity)
+            parent.addView(views.apply(activity, parent))
+            repeat(2) {
+                parent.measure(
+                    View.MeasureSpec.makeMeasureSpec(w, View.MeasureSpec.EXACTLY),
+                    View.MeasureSpec.makeMeasureSpec(h, View.MeasureSpec.EXACTLY),
+                )
+                parent.layout(0, 0, w, h)
+                shadowOf(Looper.getMainLooper()).idle()
+            }
+            parent.draw(Canvas(bitmap))
+        }
+        val dir = File("build/screenshots").apply { mkdirs() }
+        File(dir, "$name.png").outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
     }
 
     private fun waitForText(text: String, substring: Boolean = false) =

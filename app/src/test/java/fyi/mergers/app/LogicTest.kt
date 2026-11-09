@@ -1,5 +1,13 @@
 package fyi.mergers.app
 
+import fyi.mergers.app.data.Dates
+import fyi.mergers.app.data.UpcomingEvents
+import fyi.mergers.app.widget.EventKind
+import fyi.mergers.app.widget.Upcoming
+import fyi.mergers.app.widget.UpcomingConfig
+import fyi.mergers.app.widget.UpcomingRow
+import java.time.Clock
+import java.time.Instant
 import fyi.mergers.app.data.IndustryDivisionFile
 import fyi.mergers.app.data.IndustryDivisions
 import fyi.mergers.app.data.IndustryIndex
@@ -404,5 +412,47 @@ class LogicTest {
         listOf("", "WA-0108", "WA-010877", "XX-01087", "MN-01087x", "01087", "MN--01087", "asahi").forEach {
             assertNull(it, MergerIds.parse(it))
         }
+    }
+
+    @Test
+    fun coming_up_widget_shows_what_it_was_set_to() {
+        val all = MergersJson.decodeFromString(UpcomingEvents.serializer(), Fixtures.read("upcoming-events.json")!!).events
+        // Everything, soonest first, as much as a widget holds.
+        val everything = Upcoming.events(all, UpcomingConfig(), emptySet())
+        assertEquals(Upcoming.MAX, everything.size)
+        assertEquals(everything.sortedBy { it.date }, everything)
+        val rows = Upcoming.rows(everything)
+        assertEquals(UpcomingRow.Day("Today"), rows.first())
+        assertEquals(listOf("Today", "Mon 9 Nov", "Tue 10 Nov"), rows.filterIsInstance<UpcomingRow.Day>().take(3).map { it.label })
+        // A hearing that runs for days says until when.
+        val hearing = rows.filterIsInstance<UpcomingRow.Event>().first { it.event.type == "tribunal_hearing" }
+        assertEquals("Tribunal hearing · until 19 Nov", hearing.detail)
+
+        // Without consultations: none of them, and the rest still there.
+        val quiet = UpcomingConfig(hidden = setOf(EventKind.CONSULTATION))
+        val shown = Upcoming.events(all, quiet, emptySet())
+        assertTrue(shown.none { it.type == "consultation_due" })
+        assertTrue(shown.any { it.type == "determination_due" } && shown.any { it.type == "tribunal_hearing" })
+        assertEquals("No consultations", quiet.summary)
+
+        // Only what's followed, and only its hearings.
+        val mine = UpcomingConfig(followedOnly = true, hidden = EventKind.choices.toSet() - EventKind.HEARING)
+        assertEquals(
+            listOf("MN-65005" to "tribunal_hearing"),
+            Upcoming.events(all, mine, setOf("MN-65005")).map { it.merger_id to it.type },
+        )
+        assertEquals("Mergers you follow · Hearings", mine.summary)
+        assertNull(UpcomingConfig().summary)
+        assertEquals("You aren't following any mergers yet.", Upcoming.emptyText(true, mine, emptySet()))
+
+        // Once it's over it's gone; while a hearing runs it's listed under today.
+        Dates.clock = Clock.fixed(Instant.parse("2026-11-12T01:00:00Z"), Dates.SYDNEY)
+        val later = Upcoming.rows(Upcoming.events(all, UpcomingConfig(), emptySet()))
+        assertEquals("Today", (later.first() as UpcomingRow.Day).label)
+        assertTrue(later.filterIsInstance<UpcomingRow.Event>().first().event.merger_id == "MN-01068")
+        assertTrue(later.filterIsInstance<UpcomingRow.Event>().none { it.event.date!! < "2026-11-09" })
+
+        // A kind of date the app doesn't know yet is shown whatever is ticked.
+        assertEquals(EventKind.OTHER, EventKind.of("something_new"))
     }
 }
