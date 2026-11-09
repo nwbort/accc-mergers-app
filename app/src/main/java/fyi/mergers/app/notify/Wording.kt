@@ -55,8 +55,8 @@ object Wording {
             }
             t.contains("draft s87b undertaking", true) -> "Draft undertaking"
             t.contains("remedy offer", true) -> "Remedy offered"
-            t.contains("phase 2 review", true) || t.contains("phase 2 notice", true) -> "Moved to Phase 2"
-            t.contains("notice of competition concerns", true) -> "Competition concerns notice"
+            t.contains("phase 2 review", true) || t.contains("phase 2 notice", true) -> "Referred to Phase 2"
+            t.contains("notice of competition concerns", true) -> "Notice of competition concerns"
             rx("""phase 1 consul?t?ation""").containsMatchIn(t) -> "Phase 1 consultation"
             else -> t
         }
