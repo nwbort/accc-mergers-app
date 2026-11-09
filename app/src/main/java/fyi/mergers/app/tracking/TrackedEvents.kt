@@ -1,6 +1,7 @@
 package fyi.mergers.app.tracking
 
 import fyi.mergers.app.data.Dates
+import fyi.mergers.app.data.IndustryMerger
 import fyi.mergers.app.data.IndustryNode
 import fyi.mergers.app.data.MergerDetail
 import fyi.mergers.app.data.MergerEvent
@@ -22,6 +23,8 @@ data class TrackedEvent(
     /** Set on a filing or determination surfaced by a followed industry, rather than a followed merger. */
     val industryCode: String? = null,
     val industryName: String? = null,
+    /** A notification's wording when the app writes its own (a followed industry's lines); not part of the key. */
+    val short: String? = null,
 )
 
 /**
@@ -142,8 +145,17 @@ object TrackedEvents {
                 upcoming = false,
                 industryCode = node.code,
                 industryName = node.name,
+                short = "${industryLabel(m, title)}: ${m.merger_name}",
             )
         }
+    }
+
+    /** "New merger", "New waiver", "Phase 1 approved", "Waiver not approved", "Phase 2 approved with conditions". */
+    private fun industryLabel(m: IndustryMerger, title: String): String {
+        if (title == INDUSTRY_NEW_MERGER) return if (m.is_waiver) "New waiver" else "New merger"
+        val stage = m.phase ?: if (m.is_waiver) "Waiver" else "Determination"
+        val outcome = m.determination?.lowercase() ?: return "$stage determined"
+        return "$stage $outcome" + if (m.has_conditions && outcome == "approved") " with conditions" else ""
     }
 
     /** The newer matters a followed merger was re-filed as. */

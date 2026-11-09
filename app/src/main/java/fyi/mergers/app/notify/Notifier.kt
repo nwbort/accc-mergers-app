@@ -68,12 +68,44 @@ object Notifier {
     fun notificationId(mergerId: String) = mergerId.hashCode()
 
     /**
-     * A line for one event: "Phase 1 determination: Approved", "Determination
+     * A line for one event in the Following inbox: the register's full title
+     * ("Phase 1 - initial assessment determination: Approved"), "Determination
      * due 12 Dec", or for a followed industry "New merger filed · Retail Trade".
      */
     fun line(e: TrackedEvent): String =
         if (e.industryCode != null) "${e.title} · ${e.industryName ?: e.industryCode}"
-        else if (e.upcoming) "${e.title} ${Dates.format(e.date, compact = true) ?: ""}".trim() else e.title
+        else if (e.upcoming) due(e) else e.title
+
+    /**
+     * The same event in a notification, short enough for the collapsed line:
+     * "Phase 1: Approved", "Determination due 12 Dec", or for a followed
+     * industry "Phase 1 approved: Coles – Kalgoorlie".
+     */
+    fun short(e: TrackedEvent): String = e.short ?: if (e.upcoming) due(e) else Wording.short(e.title)
+
+    private fun due(e: TrackedEvent) = "${e.title} ${Dates.format(e.date, compact = true) ?: ""}".trim()
+
+    /** What happened, newest first, then what's due, soonest first. */
+    private fun ordered(events: List<TrackedEvent>): List<TrackedEvent> {
+        val (due, happened) = events.partition { it.upcoming }
+        return happened.sortedByDescending { it.date ?: "" } + due.sortedBy { it.date ?: "" }
+    }
+
+    /** "Phase 1: Approved", or with more, "Phase 1: Approved +2 more". */
+    private fun collapsed(lines: List<String>) =
+        if (lines.size == 1) lines.first() else "${lines.first()} +${lines.size - 1} more"
+
+    /**
+     * One event: its full wording when the expanded view adds something.
+     * Several: a line each, up to six.
+     */
+    private fun style(title: String, events: List<TrackedEvent>, lines: List<String>, full: (TrackedEvent) -> String): NotificationCompat.Style {
+        if (events.size == 1) return NotificationCompat.BigTextStyle().setBigContentTitle(title).bigText(full(events.first()))
+        val style = NotificationCompat.InboxStyle().setBigContentTitle(title)
+        lines.take(6).forEach { style.addLine(it) }
+        if (lines.size > 6) style.setSummaryText("+${lines.size - 6} more")
+        return style
+    }
 
     /** Returns false when notifications are off, so the caller knows nothing was shown. */
     fun postTracked(context: Context, fresh: List<TrackedEvent>): Boolean {
@@ -90,15 +122,13 @@ object Notifier {
         val byMerger = fresh.groupBy { it.mergerId }
         byMerger.forEach { (id, events) ->
             val name = events.first().mergerName
-            val lines = events.map(::line)
-            val style = NotificationCompat.InboxStyle().setBigContentTitle(name)
-            lines.take(6).forEach { style.addLine(it) }
-            if (lines.size > 6) style.setSummaryText("+${lines.size - 6} more")
+            val sorted = ordered(events)
+            val lines = sorted.map(::short)
             val n = NotificationCompat.Builder(context, CHANNEL_TRACKED)
                 .setSmallIcon(R.drawable.ic_stat_merger)
                 .setContentTitle(name)
-                .setContentText(if (lines.size == 1) lines.first() else "${lines.size} updates: ${lines.first()}")
-                .setStyle(style)
+                .setContentText(collapsed(lines))
+                .setStyle(style(name, sorted, lines) { if (it.upcoming) due(it) else it.title })
                 .setSubText(id)
                 .setContentIntent(open(context, id))
                 .setAutoCancel(true)
@@ -111,22 +141,20 @@ object Notifier {
         if (byMerger.size > 1) summary(context, GROUP_TRACKED, CHANNEL_TRACKED, "${byMerger.size} followed mergers updated")
     }
 
-    /** One per industry, its filings and determinations as lines: "New merger filed: Coles – …". */
+    /** One per industry, its filings and determinations as lines: "New merger: Coles – …". */
     private fun postIndustries(context: Context, fresh: List<TrackedEvent>) {
         if (fresh.isEmpty()) return
         val nm = NotificationManagerCompat.from(context)
         val byIndustry = fresh.groupBy { it.industryCode!! }
         byIndustry.forEach { (code, events) ->
             val name = events.first().industryName ?: code
-            val lines = events.map { "${it.title}: ${it.mergerName}" }
-            val style = NotificationCompat.InboxStyle().setBigContentTitle(name)
-            lines.take(6).forEach { style.addLine(it) }
-            if (lines.size > 6) style.setSummaryText("+${lines.size - 6} more")
+            val sorted = ordered(events)
+            val lines = sorted.map(::short)
             val n = NotificationCompat.Builder(context, CHANNEL_INDUSTRIES)
                 .setSmallIcon(R.drawable.ic_stat_merger)
                 .setContentTitle(name)
-                .setContentText(if (lines.size == 1) lines.first() else "${lines.size} updates: ${lines.first()}")
-                .setStyle(style)
+                .setContentText(collapsed(lines))
+                .setStyle(style(name, sorted, lines, ::short))
                 .setSubText("ANZSIC $code")
                 .setContentIntent(openUrl(context, industryPageUrl(code)))
                 .setAutoCancel(true)

@@ -23,6 +23,7 @@ import fyi.mergers.app.data.outcomeText
 import fyi.mergers.app.data.phaseStatus
 import fyi.mergers.app.data.sortedBy
 import fyi.mergers.app.notify.Push
+import fyi.mergers.app.notify.Wording
 import fyi.mergers.app.tracking.FollowedIndustry
 import fyi.mergers.app.tracking.TrackedEvents
 import fyi.mergers.app.tracking.TrackingState
@@ -192,6 +193,35 @@ class LogicTest {
         // A filing and, once decided, a determination: never anything upcoming.
         assertEquals(node.mergers.size + node.mergers.count { it.determination_date != null }, events.size)
         assertTrue(events.none { it.upcoming })
+        assertEquals("New merger: ${filed.mergerName}", filed.short)
+    }
+
+    @Test
+    fun notifications_use_short_wording() {
+        mapOf(
+            "Phase 1 - initial assessment determination: Approved" to "Phase 1: Approved",
+            "Phase 2 - detailed assessment determination: Not approved" to "Phase 2: Not approved",
+            "Waiver application determination: Approved" to "Waiver: Approved",
+            "Merger notified to ACCC" to "Merger notified",
+            "Timeline extended by 15 business days – following request by parties" to "Extended by 15 business days",
+            "Timeline extended by 15 business days – following request by Notifying Party to extend the period to respond to the ACCC's Notice of Competition Concerns"
+                to "Extended by 15 business days",
+            "Questionnaire released for Coles acquisition of supermarket and liquor site in Kalgoorlie, WA" to "Questionnaire released",
+            "Remedy Offer Questionnaire - IAG - RACI" to "Remedy questionnaire",
+            "Remedy Offer - 1 July 2026 - IAG - RACI" to "Remedy offered",
+            "ACCC decided notification is subject to Phase 2 review" to "Referred to Phase 2",
+            "Trescal - TR Calibration - Phase 2 Notice" to "Referred to Phase 2",
+            "Summary of Notice of Competition Concerns" to "Notice of competition concerns",
+            "Phase 1 consulation" to "Phase 1 consultation",
+            "Consideration of Notification ceased – Phase 2 fee not paid by due date" to "Assessment ceased",
+            "Tribunal appeal – Determination" to "Tribunal: Determination",
+            "Federal Court – Orders" to "Federal Court: Orders",
+            "IAG-RACI - Phase 2 Annexure A" to "IAG-RACI - Phase 2 Annexure A",
+        ).forEach { (title, short) -> assertEquals(title, short, Wording.short(title)) }
+
+        val determined = division("G").node("4110")!!.let(TrackedEvents::industry)
+            .first { it.title == TrackedEvents.INDUSTRY_DETERMINATION }
+        assertTrue(determined.short, determined.short!!.matches(Regex("""(Phase \d|Waiver) (not )?approved( with conditions)?: .+""")))
     }
 
     @Test
