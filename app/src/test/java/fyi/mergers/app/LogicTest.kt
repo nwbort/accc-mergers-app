@@ -195,6 +195,27 @@ class LogicTest {
     }
 
     @Test
+    fun site_links() {
+        assertEquals(SiteLink.Dashboard, SiteLink.from("https://mergers.fyi"))
+        assertEquals(SiteLink.Dashboard, SiteLink.from("https://mergers.fyi/"))
+        assertEquals(SiteLink.Mergers, SiteLink.from("https://mergers.fyi/mergers"))
+        assertEquals(SiteLink.Mergers, SiteLink.from("https://mergers.fyi/mergers/?status=under_assessment"))
+        assertEquals(SiteLink.Industries, SiteLink.from("https://www.mergers.fyi/industries"))
+        assertEquals(SiteLink.Merger("MN-01016"), SiteLink.from("https://www.mergers.fyi/mergers/mn-01016#event-3"))
+        assertEquals(SiteLink.Industry("4110"), SiteLink.from("https://mergers.fyi/industries/4110/"))
+        // Documents, pages with no screen here, and look-alikes are the browser's.
+        assertNull(SiteLink.from("https://mergers.fyi/mergers/MN-01016/Asahi%20warehouse%20lease.pdf?raw=1"))
+        assertNull(SiteLink.from("https://mergers.fyi/mergers/MN-01016/notice.PDF"))
+        assertNull(SiteLink.from("https://mergers.fyi/mergers/not-a-matter"))
+        assertNull(SiteLink.from("https://mergers.fyi/industriesx"))
+        assertNull(SiteLink.from("https://mergers.fyi/industries/4110/a/b"))
+        assertNull(SiteLink.from("https://mergers.fyi/phase-2"))
+        assertNull(SiteLink.from("https://mergers.fyi/parties/abc"))
+        assertNull(SiteLink.from("https://mergers.fyi.example.com/mergers/MN-01016"))
+        assertNull(SiteLink.from(null))
+    }
+
+    @Test
     fun industry_links() {
         assertEquals("4110", MainActivity.industryCodeFrom("https://mergers.fyi/industries/4110/supermarket-and-grocery-stores"))
         assertEquals("G", MainActivity.industryCodeFrom("https://mergers.fyi/industries/G"))
