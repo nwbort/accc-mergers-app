@@ -104,6 +104,11 @@ class AppTest {
         // Partway down a day in Coming up, that day stays pinned too.
         compose.onNodeWithTag("dashboard").performScrollToKey("u-MN-55046-consultation_due-2026-11-12T12:00:00Z")
         shot("1c-dashboard-coming-up")
+        // Recent events, below Coming up: newest day first, its day pinned too.
+        compose.onNodeWithTag("dashboard").performScrollToKey("h-Recent events")
+        shot("1d-dashboard-recent-events")
+        compose.onNodeWithTag("dashboard").performScrollToKey("r-MN-55024-remedy_offer-2026-11-04T12:00:00Z-PSP Investments - AAA Egg Company - remedy offer - 4 November 2026")
+        shot("1e-dashboard-recent-events-day")
         compose.onNodeWithTag("dashboard").performScrollToIndex(0)
 
         // Search from the dashboard's top bar: industries and mergers together,

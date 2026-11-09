@@ -66,6 +66,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         store.state.stateIn(viewModelScope, SharingStarted.Eagerly, TrackingState())
     val stats get() = repo.stats
     val upcoming get() = repo.upcoming
+    val recentEvents get() = repo.recent
     val currentStatus get() = repo.currentStatus
     val list get() = repo.list
     val industries: StateFlow<Loaded<IndustryIndex>> get() = repo.industries

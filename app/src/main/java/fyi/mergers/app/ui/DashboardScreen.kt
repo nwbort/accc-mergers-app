@@ -22,7 +22,20 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.automirrored.outlined.ArrowForward
+import androidx.compose.material.icons.outlined.AccountBalance
+import androidx.compose.material.icons.outlined.AddCircleOutline
+import androidx.compose.material.icons.outlined.Approval
 import androidx.compose.material.icons.outlined.Balance
+import androidx.compose.material.icons.outlined.Block
+import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.Description
+import androidx.compose.material.icons.outlined.ErrorOutline
+import androidx.compose.material.icons.outlined.Handshake
+import androidx.compose.material.icons.outlined.HistoryEdu
+import androidx.compose.material.icons.outlined.HourglassEmpty
+import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.VolunteerActivism
 import androidx.compose.material.icons.outlined.Forum
 import androidx.compose.material.icons.outlined.Gavel
 import androidx.compose.material.icons.outlined.WarningAmber
@@ -60,6 +73,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import fyi.mergers.app.data.Dates
+import fyi.mergers.app.data.RecentEvent
+import fyi.mergers.app.data.RecentEventDays
+import fyi.mergers.app.data.RecentEventType
 import fyi.mergers.app.data.SITE
 import fyi.mergers.app.data.Stats
 import fyi.mergers.app.data.StatusWindow
@@ -67,6 +83,7 @@ import fyi.mergers.app.data.WindowDurations
 import fyi.mergers.app.data.Status
 import fyi.mergers.app.data.UpcomingEvent
 import fyi.mergers.app.ui.theme.eventTypeColors
+import fyi.mergers.app.ui.theme.recentEventColors
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
@@ -76,6 +93,7 @@ fun DashboardScreen(vm: AppViewModel) {
     val statsState by vm.stats.collectAsStateWithLifecycle()
     val upcomingState by vm.upcoming.collectAsStateWithLifecycle()
     val recentState by vm.currentStatus.collectAsStateWithLifecycle()
+    val recentEventsState by vm.recentEvents.collectAsStateWithLifecycle()
     val stats = statsState.value
 
     // The name bar slides away as you scroll down the dashboard and comes
@@ -123,7 +141,9 @@ fun DashboardScreen(vm: AppViewModel) {
             when {
                 stats == null && statsState.loading -> Loading()
                 stats == null -> Centered("Couldn't load the dashboard. Pull down to try again.")
-                else -> DashboardContent(vm, stats, upcomingState.value.orEmpty(), recentState.value)
+                else -> DashboardContent(
+                    vm, stats, upcomingState.value.orEmpty(), recentState.value, recentEventsState.value.orEmpty(),
+                )
             }
         }
     }
@@ -138,21 +158,33 @@ fun Loading() {
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun DashboardContent(vm: AppViewModel, stats: Stats, upcoming: List<UpcomingEvent>, recent: StatusWindow?) {
+private fun DashboardContent(
+    vm: AppViewModel,
+    stats: Stats,
+    upcoming: List<UpcomingEvent>,
+    recent: StatusWindow?,
+    recentEvents: List<RecentEvent>,
+) {
     val soon = upcoming.filter { e ->
         val n = Dates.daysUntil(e.end_date ?: e.date) ?: return@filter false
         n >= 0 && (Dates.daysUntil(e.date) ?: 0) <= 14
     }.sortedBy { it.date }
     val days = soon.groupBy { it.date?.take(10) }
+    val pastDays = remember(recentEvents) { RecentEventDays.of(recentEvents) }
 
-    // Which day each Coming up item belongs to, by key, so a day header can
-    // tell when it's the one pinned at the top (it then carries the section's
-    // title too, since it has pushed the title itself off).
-    val dayOfKey = remember(days) {
+    // Which day header each Coming up and Recent events item sits under, by
+    // key, so a day header can tell when it's the one pinned at the top (it
+    // then carries the section's title too, since it has pushed the title
+    // itself off).
+    val dayOfKey = remember(days, pastDays) {
         buildMap {
             days.forEach { (day, events) ->
-                put(dayKey(day), day)
-                events.forEach { put(eventKey(it), day) }
+                put(dayKey(day), dayKey(day))
+                events.forEach { put(eventKey(it), dayKey(day)) }
+            }
+            pastDays.forEach { (day, events) ->
+                put(pastDayKey(day), pastDayKey(day))
+                events.forEach { put(eventKey(it), pastDayKey(day)) }
             }
         }
     }
@@ -226,7 +258,7 @@ private fun DashboardContent(vm: AppViewModel, stats: Stats, upcoming: List<Upco
         if (soon.isNotEmpty()) {
             stickyHeader(key = "h-Coming up") { StickyTitle("Coming up") }
             days.forEach { (day, events) ->
-                stickyHeader(key = dayKey(day)) { DayHeader(day, pinned = pinnedDay == day) }
+                stickyHeader(key = dayKey(day)) { DayHeader("Coming up", day, pinned = pinnedDay == dayKey(day)) }
                 items(events, key = ::eventKey) { e ->
                     ListRow(
                         title = e.merger_name,
@@ -234,6 +266,25 @@ private fun DashboardContent(vm: AppViewModel, stats: Stats, upcoming: List<Upco
                         trailing = null,
                         onClick = { vm.openMerger(e.merger_id) },
                         leading = { EventTypeTile(e.type, e.event_type_display) },
+                    )
+                }
+            }
+        }
+
+        // What has just happened on the register, newest day first: the site's
+        // Recent events, with the same types left out (RecentEventType.shown).
+        if (pastDays.isNotEmpty()) {
+            stickyHeader(key = "h-Recent events") { StickyTitle("Recent events") }
+            pastDays.forEach { (day, events) ->
+                stickyHeader(key = pastDayKey(day)) { DayHeader("Recent events", day, pinned = pinnedDay == pastDayKey(day)) }
+                items(events, key = ::eventKey) { e ->
+                    val type = RecentEventType.of(e.type)
+                    ListRow(
+                        title = e.merger_name,
+                        subtitle = e.title ?: type.label,
+                        trailing = null,
+                        onClick = { vm.openMerger(e.merger_id) },
+                        leading = { RecentEventTile(type) },
                     )
                 }
             }
@@ -248,19 +299,25 @@ private fun dayKey(day: String?) = "u-$day"
 
 private fun eventKey(e: UpcomingEvent) = "u-${e.merger_id}-${e.type}-${e.date}"
 
+private fun pastDayKey(day: String) = "r-$day"
+
+// Two events of a type can share a matter and a day (two Tribunal filings), so the title is in the key too.
+private fun eventKey(e: RecentEvent) = "r-${e.merger_id}-${e.type}-${e.date}-${e.title}"
+
 /**
- * A day in Coming up. Sticky like the section titles: while its events
- * scroll under it, it's pinned at the top, and as it has pushed "Coming up"
- * off by then, it says so itself.
+ * A day in Coming up or Recent events. Sticky like the section titles: while
+ * its events scroll under it, it's pinned at the top, and as it has pushed
+ * the [section]'s title off by then, it says so itself.
  */
 @Composable
-private fun DayHeader(day: String?, pinned: Boolean) {
+private fun DayHeader(section: String, day: String?, pinned: Boolean) {
     val d = Dates.day(day)
     val label = when {
         d == null -> "Undated"
         else -> when (Dates.daysUntil(day)) {
             0L -> "Today"
             1L -> "Tomorrow"
+            -1L -> "Yesterday"
             else -> dayFormat.format(d)
         }
     }
@@ -273,7 +330,7 @@ private fun DayHeader(day: String?, pinned: Boolean) {
     ) {
         if (pinned) {
             Text(
-                "Coming up · ",
+                "$section · ",
                 style = MaterialTheme.typography.labelLarge,
                 fontWeight = FontWeight.SemiBold,
             )
@@ -314,6 +371,43 @@ internal fun EventTypeTile(type: String?, description: String?) {
         contentAlignment = Alignment.Center,
     ) {
         Icon(eventTypeIcon(type), contentDescription = null, tint = c.onFill, modifier = Modifier.size(18.dp))
+    }
+}
+
+/** What kind of register event a recent event is, as the site's icons (constants/recentEventTypes.js). */
+private fun recentEventIcon(type: RecentEventType): ImageVector = when (type) {
+    RecentEventType.TRIBUNAL -> Icons.Outlined.Balance
+    RecentEventType.FEDERAL_COURT -> Icons.Outlined.AccountBalance
+    RecentEventType.PHASE_2_DETERMINATION, RecentEventType.PHASE_1_DETERMINATION -> Icons.Outlined.Gavel
+    RecentEventType.REASONS -> Icons.Outlined.Description
+    RecentEventType.UNDERTAKING_ACCEPTED -> Icons.Outlined.HistoryEdu
+    RecentEventType.CEASED -> Icons.Outlined.Block
+    RecentEventType.PHASE_2_REFERRAL -> Icons.AutoMirrored.Outlined.ArrowForward
+    RecentEventType.COMPETITION_CONCERNS -> Icons.Outlined.WarningAmber
+    RecentEventType.PUBLIC_BENEFIT -> Icons.Outlined.VolunteerActivism
+    RecentEventType.REMEDY_OFFER -> Icons.Outlined.Handshake
+    RecentEventType.REMEDY_QUESTIONNAIRE, RecentEventType.PHASE_2_CONSULTATION,
+    RecentEventType.QUESTIONNAIRE -> Icons.Outlined.Forum
+    RecentEventType.MATERIALLY_INCOMPLETE -> Icons.Outlined.ErrorOutline
+    RecentEventType.NOTIFICATION_COMPLETED -> Icons.Outlined.CheckCircle
+    RecentEventType.TIMELINE_EXTENSION -> Icons.Outlined.HourglassEmpty
+    RecentEventType.WAIVER_DETERMINATION -> Icons.Outlined.Approval
+    RecentEventType.NOTIFIED -> Icons.Outlined.AddCircleOutline
+    RecentEventType.OTHER -> Icons.Outlined.Info
+}
+
+@Composable
+private fun RecentEventTile(type: RecentEventType) {
+    val c = recentEventColors(type)
+    Box(
+        Modifier
+            .size(32.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(c.fill)
+            .semantics { role = Role.Image; contentDescription = type.label },
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(recentEventIcon(type), contentDescription = null, tint = c.onFill, modifier = Modifier.size(18.dp))
     }
 }
 
