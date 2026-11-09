@@ -238,13 +238,13 @@ class AppTest {
         val autosports = posted.single { it.extras.getCharSequence("android.title").toString().startsWith("Autosports") }
         val text = autosports.extras.getCharSequence("android.text").toString()
         val lines = autosports.extras.getCharSequenceArray("android.textLines").orEmpty().map { it.toString() }
-        // The new document, and the moved deadline; not the history from before the follow.
-        assertTrue(text, text.startsWith("2 updates"))
-        assertEquals(listOf("Determination due 15 Jan 2027", "Timeline extended by 10 business days"), lines)
+        // The new document, then the moved deadline; not the history from before the follow.
+        assertEquals("Extended by 10 business days +1 more", text)
+        assertEquals(listOf("Extended by 10 business days", "Determination due 15 Jan 2027"), lines)
         // The industry's one new filing; nothing from before it was followed.
         val industry = posted.single { it.extras.getCharSequence("android.title").toString() == "Supermarket and Grocery Stores" }
         assertEquals(
-            "New merger filed: Grocer – Corner store",
+            "New merger: Grocer – Corner store",
             industry.extras.getCharSequence("android.text").toString(),
         )
 
