@@ -115,7 +115,7 @@ class LogicTest {
         assertNull(MainActivity.mergerIdFrom("https://mergers.fyi/mergers"))
         assertNull(MainActivity.mergerIdFrom("https://example.com/mergers/MN-01016"))
         assertEquals(
-            "https://mergers.fyi/mergers/MN-01016/Asahi%20warehouse%20lease.pdf",
+            "https://mergers.fyi/mergers/MN-01016/Asahi%20warehouse%20lease.pdf?raw=1",
             documentUrl("/mergers/MN-01016/Asahi warehouse lease.pdf", "https://accc.gov.au/x.pdf"),
         )
         assertEquals("https://accc.gov.au/x.pdf", documentUrl(null, "https://accc.gov.au/x.pdf"))
