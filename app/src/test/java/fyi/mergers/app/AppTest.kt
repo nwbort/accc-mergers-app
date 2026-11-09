@@ -303,8 +303,8 @@ class AppTest {
         )
         assertTrue("mergers/WA-99001.json" !in synchronized(Fixtures.fetched) { Fixtures.fetched.drop(fetchedBeforeWaiting) })
         assertTrue(runBlocking { Graph.store.current() }.isAwaiting("WA-99001"))
-        // Its arrival is a new id, which the site announces on "list" alone.
-        assertTrue("list" in Push.topics(runBlocking { Graph.store.current() }))
+        // The site messages its own topic when it first appears.
+        assertTrue("merger-WA-99001" in Push.topics(runBlocking { Graph.store.current() }))
 
         compose.runOnUiThread { vm.selectTab(Route.Following) }
         compose.onNodeWithTag("following").performScrollToKey("f-WA-99001")
@@ -326,7 +326,6 @@ class AppTest {
         assertTrue(nowPosted.size > shownBefore)
         assertTrue(nowPosted.any { it.extras.getCharSequence("android.title").toString() == "Acquirer – Waited-for target" })
         assertFalse(runBlocking { Graph.store.current() }.isAwaiting("WA-99001"))
-        assertFalse("list" in Push.topics(runBlocking { Graph.store.current() }))
         Fixtures.overrides.remove("mergers/WA-99001.json")
 
         // A link to a number the register doesn't have says so, rather than failing to load.

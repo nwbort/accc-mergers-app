@@ -363,9 +363,8 @@ class LogicTest {
         assertEquals(setOf("all", "list"), Push.topics(TrackingState(notifyNewFilings = true)))
         assertTrue("list" in Push.topics(state.copy(autoTrackPhase2 = true)))
 
-        // A followed number not on the register yet arrives as a new id, sent to "list".
-        assertTrue("list" in Push.topics(state.copy(awaiting = setOf("WA-01087"))))
-        assertFalse("list" in Push.topics(state.copy(awaiting = setOf("WA-99999"))))
+        // A followed number not on the register yet is told of its arrival on its own topic.
+        assertEquals(Push.topics(state), Push.topics(state.copy(awaiting = setOf("WA-01087"))))
 
         // Every name is one FCM accepts.
         val valid = Regex("[A-Za-z0-9_.~%-]+")

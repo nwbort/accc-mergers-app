@@ -65,11 +65,11 @@ object Push {
 
     /**
      * The topics a phone in [state] should be subscribed to. A followed id not
-     * yet on the register needs [Topics.LIST] too: its first appearance is a
-     * new id, which the site announces there rather than on its own topic.
+     * yet on the register needs nothing extra: the site messages its
+     * merger topic when its file first appears.
      */
     fun topics(state: TrackingState): Set<String> {
-        val wantsList = state.autoTrackPhase2 || state.notifyNewFilings || state.tracked.any(state::isAwaiting)
+        val wantsList = state.autoTrackPhase2 || state.notifyNewFilings
         if (state.followsNothing && !wantsList) return emptySet()
         return buildSet {
             add(Topics.ALL)
