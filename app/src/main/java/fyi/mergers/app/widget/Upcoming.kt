@@ -11,16 +11,16 @@ import java.util.Locale
  * (EVENT_TYPES in UpcomingEventsTimeline.jsx), grouped as their tiles are
  * coloured. A type the app doesn't know yet is [OTHER], which is always shown.
  */
-enum class EventKind(val label: String, val short: String, val types: List<String>) {
-    DETERMINATION("Determinations due", "determinations", listOf("determination_due")),
-    CONSULTATION("Consultation responses due", "consultations", listOf("consultation_due")),
-    CONCERNS("Notices of competition concerns", "competition concerns", listOf("notice_of_competition_concerns")),
+enum class EventKind(val label: String, val types: List<String>) {
+    DETERMINATION("Determinations due", listOf("determination_due")),
+    CONSULTATION("Consultation responses due", listOf("consultation_due")),
+    CONCERNS("Notices of competition concerns", listOf("notice_of_competition_concerns")),
     PUBLIC_BENEFIT(
-        "Public benefit assessments", "public benefit",
+        "Public benefit assessments",
         listOf("public_benefit_assessment", "public_benefit_response_due"),
     ),
-    HEARING("Tribunal and court hearings", "hearings", listOf("tribunal_hearing", "federal_court_hearing")),
-    OTHER("Other dates", "other dates", emptyList());
+    HEARING("Tribunal and court hearings", listOf("tribunal_hearing", "federal_court_hearing")),
+    OTHER("Other dates", emptyList());
 
     companion object {
         /** The kinds there's a choice about. */
@@ -32,18 +32,11 @@ enum class EventKind(val label: String, val short: String, val types: List<Strin
 
 /** One Coming up widget's settings. Kinds are stored by what's hidden, so a new kind shows. */
 data class UpcomingConfig(val followedOnly: Boolean = false, val hidden: Set<EventKind> = emptySet()) {
-    /** What the widget says under its title, or null when it shows everything. */
-    val summary: String?
-        get() {
-            val kinds = when {
-                hidden.isEmpty() -> null
-                hidden.size <= 2 -> "No " + hidden.sorted().joinToString(" or ") { it.short }
-                else -> (EventKind.choices - hidden).joinToString(", ") { it.short }
-                    .replaceFirstChar { it.uppercase() }
-            }
-            return listOfNotNull("Mergers you follow".takeIf { followedOnly }, kinds)
-                .joinToString(" · ").ifEmpty { null }
-        }
+    /**
+     * What the widget says under its title: only that it's keeping to the
+     * followed mergers. Which kinds of date it leaves out goes unsaid.
+     */
+    val summary: String? get() = if (followedOnly) "Mergers you follow" else null
 }
 
 /** A line of the widget's list: a day, then what falls on it. */

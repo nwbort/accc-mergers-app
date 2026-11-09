@@ -433,7 +433,8 @@ class LogicTest {
         val shown = Upcoming.events(all, quiet, emptySet())
         assertTrue(shown.none { it.type == "consultation_due" })
         assertTrue(shown.any { it.type == "determination_due" } && shown.any { it.type == "tribunal_hearing" })
-        assertEquals("No consultations", quiet.summary)
+        // The widget doesn't say which kinds it leaves out, only when it keeps to the followed.
+        assertNull(quiet.summary)
 
         // Only what's followed, and only its hearings.
         val mine = UpcomingConfig(followedOnly = true, hidden = EventKind.choices.toSet() - EventKind.HEARING)
@@ -441,7 +442,7 @@ class LogicTest {
             listOf("MN-65005" to "tribunal_hearing"),
             Upcoming.events(all, mine, setOf("MN-65005")).map { it.merger_id to it.type },
         )
-        assertEquals("Mergers you follow · Hearings", mine.summary)
+        assertEquals("Mergers you follow", mine.summary)
         assertNull(UpcomingConfig().summary)
         assertEquals("You aren't following any mergers yet.", Upcoming.emptyText(true, mine, emptySet()))
 
