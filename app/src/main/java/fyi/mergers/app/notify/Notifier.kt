@@ -171,7 +171,7 @@ object Notifier {
         if (filings.isEmpty() || !canPost(context)) return false
         val nm = NotificationManagerCompat.from(context)
         filings.take(10).forEach { m ->
-            val kind = if (m.is_waiver) "New waiver application" else "New merger notified"
+            val kind = Wording.newFiling(m)
             val n = NotificationCompat.Builder(context, CHANNEL_NEW)
                 .setSmallIcon(R.drawable.ic_stat_merger)
                 .setContentTitle(m.merger_name)

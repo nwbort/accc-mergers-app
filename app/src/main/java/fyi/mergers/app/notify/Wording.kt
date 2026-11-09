@@ -1,5 +1,9 @@
 package fyi.mergers.app.notify
 
+import fyi.mergers.app.data.MergerSummary
+import fyi.mergers.app.data.outcomeInput
+import fyi.mergers.app.data.phaseStatus
+
 /**
  * Short labels for a notification's collapsed line, which fits about 40
  * characters. A followed merger's events carry the ACCC register's own
@@ -61,4 +65,13 @@ object Wording {
             else -> t
         }
     }
+
+    /**
+     * A new filing's line. A waiver application only reaches the register once
+     * it has been decided, so it says how: "Waiver approved", "Waiver not
+     * approved". A merger is just "New merger notified".
+     */
+    fun newFiling(m: MergerSummary): String =
+        if (m.is_waiver) m.outcomeInput().phaseStatus() ?: "Waiver application"
+        else "New merger notified"
 }
