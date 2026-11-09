@@ -267,6 +267,14 @@ class AppTest {
         )
         waitForText("Asahi – Warehouse site on Tilburn Rd, Deer Park (Vic)")
         shot("7-detail-decided")
+
+        // A page the app has no screen for goes to the browser, and the app stays put.
+        val phase2 = "https://mergers.fyi/phase-2"
+        compose.activity.onNewIntent(Intent(Intent.ACTION_VIEW, Uri.parse(phase2)))
+        val handedOn = shadowOf(compose.activity).nextStartedActivity
+        assertEquals(Intent.ACTION_VIEW, handedOn.action)
+        assertEquals(phase2, handedOn.dataString)
+        waitForText("Asahi – Warehouse site on Tilburn Rd, Deer Park (Vic)")
     }
 
     private fun waitForText(text: String, substring: Boolean = false) =

@@ -12,6 +12,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import fyi.mergers.app.ui.AppViewModel
 import fyi.mergers.app.ui.MergersApp
+import fyi.mergers.app.ui.Route
+import fyi.mergers.app.ui.openInBrowser
 import fyi.mergers.app.ui.theme.MergersTheme
 
 class MainActivity : ComponentActivity() {
@@ -20,7 +22,8 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        if (savedInstanceState == null) handle(intent)
+        if (savedInstanceState == null) handle(intent, fresh = true)
+        if (isFinishing) return
         val crash = CrashReport.read(this)
         setContent {
             // After a crash, show what happened before touching any app state.
@@ -41,27 +44,29 @@ class MainActivity : ComponentActivity() {
     }
 
     /**
-     * A mergers.fyi merger or industry link (from a notification, or shared
-     * from anywhere) opens that page.
+     * A mergers.fyi link (from a notification, or tapped anywhere) opens the
+     * page it names. One the app has no screen for goes to the browser, and
+     * if it's what launched the app, the app closes behind it rather than
+     * sitting on a screen that has nothing to do with the link.
      */
-    private fun handle(intent: Intent) {
-        val url = intent.data?.toString()
-        mergerIdFrom(url)?.let { vm.openMerger(it); return }
-        industryCodeFrom(url)?.let { vm.openIndustry(it); return }
-        if (url != null && INDUSTRIES_LINK.matches(url)) vm.openIndustries()
+    private fun handle(intent: Intent, fresh: Boolean = false) {
+        if (intent.action != Intent.ACTION_VIEW) return
+        val url = intent.data?.toString() ?: return
+        when (val link = SiteLink.from(url)) {
+            is SiteLink.Merger -> vm.openMerger(link.id)
+            is SiteLink.Industry -> vm.openIndustry(link.code)
+            SiteLink.Industries -> vm.openIndustries()
+            SiteLink.Mergers -> vm.selectTab(Route.Mergers)
+            SiteLink.Dashboard -> vm.selectTab(Route.Dashboard)
+            null -> if (openInBrowser(this, url) && fresh) finish()
+        }
     }
 
     companion object {
-        private val MERGER_LINK = Regex("^https?://(?:www\\.)?mergers\\.fyi/mergers/([A-Za-z]{2}-\\d+)(?:[/?#].*)?$")
-
         /** "https://mergers.fyi/mergers/MN-01016/asahi-…" → "MN-01016". */
-        fun mergerIdFrom(url: String?): String? = url?.let { MERGER_LINK.find(it)?.groupValues?.get(1)?.uppercase() }
-
-        /** A division letter, or a 2 to 4 digit subdivision, group or class. */
-        private val INDUSTRY_LINK = Regex("^https?://(?:www\\.)?mergers\\.fyi/industries/([A-Za-z]|\\d{2,4})(?:[/?#].*)?$")
-        private val INDUSTRIES_LINK = Regex("^https?://(?:www\\.)?mergers\\.fyi/industries/?(?:[?#].*)?$")
+        fun mergerIdFrom(url: String?): String? = (SiteLink.from(url) as? SiteLink.Merger)?.id
 
         /** "https://mergers.fyi/industries/4110/supermarket-…" → "4110". */
-        fun industryCodeFrom(url: String?): String? = url?.let { INDUSTRY_LINK.find(it)?.groupValues?.get(1)?.uppercase() }
+        fun industryCodeFrom(url: String?): String? = (SiteLink.from(url) as? SiteLink.Industry)?.code
     }
 }

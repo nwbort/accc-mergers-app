@@ -3,6 +3,7 @@ package fyi.mergers.app.ui
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import androidx.browser.customtabs.CustomTabsIntent
 import androidx.compose.foundation.background
@@ -61,14 +62,49 @@ import fyi.mergers.app.ui.theme.StatusColors
 import fyi.mergers.app.ui.theme.WaiverAmber
 import fyi.mergers.app.ui.theme.statusColors
 
-/** Open a link in a Custom Tab (documents, the ACCC's page), or whatever can handle it. */
+/**
+ * Open a link in a Custom Tab (documents, the site, the ACCC's page), or
+ * failing that in the browser. Always in a browser, never back in this app:
+ * the app is the phone's handler for mergers.fyi links, so a "view on the
+ * site" left to the system would land right back here.
+ */
 fun openUrl(context: Context, url: String) {
     val uri = Uri.parse(url)
+    val browser = browserPackage(context)
     try {
-        CustomTabsIntent.Builder().setShowTitle(true).build().launchUrl(context, uri)
+        CustomTabsIntent.Builder().setShowTitle(true).build()
+            .apply { browser?.let { intent.setPackage(it) } }
+            .launchUrl(context, uri)
     } catch (_: ActivityNotFoundException) {
-        runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, uri).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+        openInBrowser(context, url)
     }
+}
+
+/** Hand [url] to the browser in its own task. False when there's no browser to take it. */
+fun openInBrowser(context: Context, url: String): Boolean {
+    val view = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+        .addCategory(Intent.CATEGORY_BROWSABLE)
+        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    browserPackage(context)?.let { view.setPackage(it) }
+    return runCatching { context.startActivity(view) }.isSuccess
+}
+
+/**
+ * The browser to send links to: the default one if it's been chosen, else
+ * the first installed, and never this app. Asked about a page on another
+ * site, so the answer is the browser and not whoever handles mergers.fyi.
+ */
+private fun browserPackage(context: Context): String? {
+    val pm = context.packageManager
+    val probe = Intent(Intent.ACTION_VIEW, Uri.parse("https://example.com/")).addCategory(Intent.CATEGORY_BROWSABLE)
+    val ours = context.packageName
+    // "android" is the chooser, which is what resolves when no default is set.
+    pm.resolveActivity(probe, PackageManager.MATCH_DEFAULT_ONLY)?.activityInfo?.packageName
+        ?.takeIf { it != "android" && it != ours }
+        ?.let { return it }
+    return pm.queryIntentActivities(probe, PackageManager.MATCH_ALL)
+        .map { it.activityInfo.packageName }
+        .firstOrNull { it != ours }
 }
 
 fun share(context: Context, title: String, url: String) {

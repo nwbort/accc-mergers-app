@@ -6,6 +6,16 @@
     <!-- Updates on followed mergers. Asked for the first time you follow one. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
+    <!-- Which app is the browser, so links the app passes on reach one
+         (and not back here). -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.BROWSABLE" />
+            <data android:scheme="https" />
+        </intent>
+    </queries>
+
     <application
         android:name=".MergersApp"
         android:allowBackup="true"
@@ -27,17 +37,30 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-            <!-- Merger and industry pages on the site open here. Without a Digital Asset
-                 Links file on mergers.fyi the phone asks (or it can be turned
-                 on under the app's "Open by default" settings). -->
-            <intent-filter>
+            <!-- The site's pages open here: the dashboard, the merger list, a merger,
+                 the industries and an industry. Verified against
+                 https://mergers.fyi/.well-known/assetlinks.json (the site's
+                 frontend/public/.well-known/), which names the release key, so
+                 they open without asking. www only redirects to the bare domain,
+                 so it can't verify; claimed anyway so a phone that's told to can
+                 open it. Anything else claimed here that the app has no screen
+                 for (SiteLink) is handed back to the browser. -->
+            <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="https" />
                 <data android:host="mergers.fyi" />
+                <data android:host="www.mergers.fyi" />
+                <data android:path="/" />
+                <data android:path="/mergers" />
                 <data android:pathPrefix="/mergers/" />
                 <data android:pathPrefix="/industries" />
+                <!-- A matter's documents live under its page's path
+                     (/mergers/MN-01016/notice.pdf): those are the browser's. -->
+                <uri-relative-filter-group android:allow="false">
+                    <data android:pathAdvancedPattern=".*[.][pP][dD][fF]" />
+                </uri-relative-filter-group>
             </intent-filter>
         </activity>
 

@@ -31,6 +31,13 @@ secret in CI), read in `app/build.gradle.kts` without the Google Services
 plugin. Without it there's no push and the schedule stays at 2 hours; once a
 phone has subscribed, it drops to 12.
 
+Links: the manifest claims mergers.fyi's `/`, `/mergers`, `/mergers/…` and
+`/industries…` (PDFs under them excluded), verified by the site's
+`frontend/public/.well-known/assetlinks.json`, which names the release key's
+SHA-256. `SiteLink.from` maps a link to a screen; one it can't place goes back
+to the browser. `openUrl` always pins a browser package, or a "view on the
+site" would come straight back into the app.
+
 ## Commits and pull requests
 
 Don't credit Claude in anything pushed to GitHub: no `Co-Authored-By: Claude`
