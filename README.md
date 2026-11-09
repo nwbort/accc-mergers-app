@@ -18,6 +18,10 @@ needs no server of its own.
   moved deadlines. Following a declined waiver also follows
   the notification it's re-filed as. Optionally follow every phase 2 matter, or
   be told about every new filing.
+- **Widgets**: *Coming up* puts the next dates on the home screen, for every
+  merger or only the ones you follow, and only the kinds of date you choose
+  (determinations, consultations, competition concerns, public benefit,
+  hearings); *Search* is a bar that opens the app's search.
 
 Android 17 (API 37) only. Kotlin, Jetpack Compose with Material 3,
 Navigation 3, WorkManager, DataStore and kotlinx.serialization.

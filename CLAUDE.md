@@ -45,6 +45,18 @@ SHA-256. `SiteLink.from` maps a link to a screen; one it can't place goes back
 to the browser. `openUrl` always pins a browser package, or a "view on the
 site" would come straight back into the app.
 
+Widgets (`widget/`): plain `RemoteViews`, no Glance. Coming up
+(`UpcomingWidget`) lists `upcoming-events.json` from the copy kept on the
+phone, filtered by each widget's `UpcomingConfig` (followed only, and the
+`EventKind`s hidden; set in `UpcomingWidgetConfigActivity`). It redraws when
+the app's copy or the follow list changes, and hourly, which also queues a
+fetch (`UpcomingRefreshWorker`). `EventKind` groups the site's event types as
+`eventTypeColors` colours them; its tiles are drawn from `res/` (the launcher
+picks day or night), so a new type or colour goes in both places. Search
+(`SearchWidget`) sends `MainActivity.ACTION_SEARCH`. In `AppTest`, `widgetShot`
+draws a widget's `RemoteViews` inside an `AppWidgetHostView` (a list takes no
+rows anywhere else).
+
 ## Commits and pull requests
 
 Don't credit Claude in anything pushed to GitHub: no `Co-Authored-By: Claude`

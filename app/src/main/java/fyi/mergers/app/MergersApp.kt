@@ -10,6 +10,7 @@ import fyi.mergers.app.notify.Notifier
 import fyi.mergers.app.notify.Push
 import fyi.mergers.app.tracking.Tracker
 import fyi.mergers.app.tracking.TrackingStore
+import fyi.mergers.app.widget.UpcomingWidget
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -32,6 +33,7 @@ open class MergersApp : Application() {
             Notifier.createChannels(this)
             scheduleChecks()
             startPush()
+            UpcomingWidget.watch(this, Graph.scope)
         } catch (e: Throwable) {
             CrashReport.save(this, e)
         }

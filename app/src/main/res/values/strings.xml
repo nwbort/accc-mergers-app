@@ -1,4 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">mergers.fyi</string>
+
+    <!-- The home-screen widgets, as the launcher's picker names them. -->
+    <string name="widget_upcoming_name">Coming up</string>
+    <string name="widget_upcoming_description">The next dates on the ACCC merger register: for every merger or the ones you follow, and only the kinds of date you choose.</string>
+    <string name="widget_search_name">Search</string>
+    <string name="widget_search_description">Search mergers and industries.</string>
+    <string name="widget_search_hint">Search mergers and industries</string>
 </resources>

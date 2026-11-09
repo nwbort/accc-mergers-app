@@ -286,7 +286,11 @@ private fun DayHeader(day: String?, pinned: Boolean) {
     }
 }
 
-/** What kind of deadline an upcoming event is, as the site's icon tiles (UpcomingEventsTimeline). */
+/**
+ * What kind of deadline an upcoming event is, as the site's icon tiles
+ * (UpcomingEventsTimeline). The Coming up widget draws the same ones from
+ * res/drawable (widget/UpcomingWidget.kt): keep the two in step.
+ */
 private fun eventTypeIcon(type: String?): ImageVector = when (type) {
     "consultation_due", "public_benefit_response_due" -> Icons.Outlined.Forum
     "notice_of_competition_concerns" -> Icons.Outlined.WarningAmber
@@ -295,14 +299,18 @@ private fun eventTypeIcon(type: String?): ImageVector = when (type) {
 }
 
 @Composable
-private fun EventTypeTile(type: String?, description: String?) {
+internal fun EventTypeTile(type: String?, description: String?) {
     val c = eventTypeColors(type)
     Box(
         Modifier
             .size(32.dp)
             .clip(RoundedCornerShape(8.dp))
             .background(c.fill)
-            .semantics { role = Role.Image; contentDescription = description ?: "Event" },
+            .then(
+                // Beside its own label (the widget's settings) it's decoration.
+                if (description == null) Modifier
+                else Modifier.semantics { role = Role.Image; contentDescription = description },
+            ),
         contentAlignment = Alignment.Center,
     ) {
         Icon(eventTypeIcon(type), contentDescription = null, tint = c.onFill, modifier = Modifier.size(18.dp))

@@ -19,6 +19,10 @@ data class Loaded<out T>(val value: T? = null, val loading: Boolean = true, val 
  */
 class Repository(private val source: DataSource) {
 
+    private companion object {
+        const val UPCOMING = "upcoming-events.json"
+    }
+
     private val _stats = MutableStateFlow(Loaded<Stats>())
     val stats: StateFlow<Loaded<Stats>> = _stats.asStateFlow()
 
@@ -77,7 +81,7 @@ class Repository(private val source: DataSource) {
 
     suspend fun refreshDashboard() = coroutineScope {
         val a = async { load(_stats, "stats.json", Stats.serializer()) { it } }
-        val b = async { load(_upcoming, "upcoming-events.json", UpcomingEvents.serializer()) { it.events } }
+        val b = async { load(_upcoming, UPCOMING, UpcomingEvents.serializer()) { it.events } }
         val c = async {
             load(_currentStatus, "analysis.json", Analysis.serializer()) { analysis ->
                 val windows = analysis.current_status?.windows.orEmpty()
@@ -86,6 +90,17 @@ class Repository(private val source: DataSource) {
         }
         a.await(); b.await(); c.await()
     }
+
+    /** upcoming-events.json from the network (or the last copy), for the Coming up widget. */
+    suspend fun fetchUpcoming(): List<UpcomingEvent>? = runCatching {
+        parse(source.fetch(UPCOMING), UpcomingEvents.serializer()).events
+    }.getOrNull()?.also { v -> _upcoming.value = Loaded(v, loading = false) }
+
+    /** The upcoming events as last loaded or kept on the phone, without touching the network. */
+    suspend fun keptUpcoming(): List<UpcomingEvent>? = _upcoming.value.value
+        ?: source.cached(UPCOMING)?.let { text ->
+            runCatching { parse(text, UpcomingEvents.serializer()).events }.getOrNull()
+        }
 
     suspend fun refreshList() = load(_list, "mergers/list.json", MergerList.serializer()) { it.mergers }
 

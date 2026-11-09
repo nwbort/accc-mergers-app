@@ -1,4 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="launcher_background">#335145</color>
+
+    <!-- The home-screen widgets: the app's own surface and text (ui/theme/Theme.kt).
+         Resources, not code, because the launcher draws them and picks day or night. -->
+    <color name="widget_surface">#F8FAF9</color>
+    <color name="widget_on_surface">#191C1B</color>
+    <color name="widget_muted">#5A625E</color>
+    <color name="widget_primary">#335145</color>
+
+    <!-- An upcoming event's tile, by kind: eventTypeColors in Theme.kt. -->
+    <color name="event_blue_tint">#EFF6FF</color>
+    <color name="event_blue_ink">#2563EB</color>
+    <color name="event_amber_tint">#FFFBEB</color>
+    <color name="event_amber_ink">#B45309</color>
+    <color name="event_teal_tint">#F0FDFA</color>
+    <color name="event_teal_ink">#0F766E</color>
+    <color name="event_purple_tint">#FAF5FF</color>
+    <color name="event_purple_ink">#9333EA</color>
+    <color name="event_rose_tint">#FFF1F2</color>
+    <color name="event_rose_ink">#E11D48</color>
+    <color name="event_gray_tint">#F3F4F6</color>
+    <color name="event_gray_ink">#4B5563</color>
 </resources>
