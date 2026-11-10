@@ -132,6 +132,25 @@ class LogicTest {
     }
 
     @Test
+    fun a_followed_merger_is_notified_once_not_again_by_its_industry() {
+        fun ev(id: String, industry: String?) = fyi.mergers.app.tracking.TrackedEvent(
+            key = "$id-$industry", mergerId = id, mergerName = id, date = "2026-11-10",
+            title = "Merger notified to ACCC", upcoming = false, industryCode = industry,
+        )
+        val fresh = listOf(ev("MN-20100", null), ev("MN-20100", "C"), ev("MN-20101", "C"))
+            .map { if (it.industryCode != null) it.copy(key = "ind_C_${it.mergerId}") else it }
+        // The same filing under a second followed industry.
+        val again = ev("MN-20101", "G").copy(key = "ind_G_MN-20101")
+        val shown = TrackedEvents.toNotify(fresh + again, followed = setOf("MN-20100"))
+        assertEquals(listOf("MN-20100-null", "ind_C_MN-20101"), shown.map { it.key })
+        val state = TrackingState(
+            tracked = listOf("MN-20100"),
+            industries = listOf(FollowedIndustry("C", "Manufacturing"), FollowedIndustry("G", "Retail Trade")),
+        )
+        assertEquals(listOf("MN-20100-null", "ind_C_MN-20101"), TrackedEvents.inbox(fresh + again, state).map { it.key })
+    }
+
+    @Test
     fun only_forward_refilings_are_followed() {
         assertEquals("MN-20013", TrackedEvents.forwardRefile(detail("WA-01087")))
         assertNull(TrackedEvents.forwardRefile(detail("MN-20013")))

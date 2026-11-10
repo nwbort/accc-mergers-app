@@ -58,6 +58,7 @@ import fyi.mergers.app.data.Dates
 import fyi.mergers.app.notify.Notifier
 import fyi.mergers.app.notify.Push
 import fyi.mergers.app.tracking.TrackedEvent
+import fyi.mergers.app.tracking.TrackedEvents
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -66,9 +67,7 @@ fun FollowingScreen(vm: AppViewModel) {
     val sync by vm.sync.collectAsStateWithLifecycle()
     val listState by vm.list.collectAsStateWithLifecycle()
 
-    val events = sync?.events.orEmpty().filter { e ->
-        e.industryCode?.let(tracking::isIndustryTracked) ?: tracking.isTracked(e.mergerId)
-    }
+    val events = TrackedEvents.inbox(sync?.events.orEmpty(), tracking)
     val unread = events.filter { !it.upcoming && it.key !in tracking.seen }
     val earlier = events.filter { !it.upcoming && it.key in tracking.seen }.take(30)
     val upcoming = events.filter { it.upcoming }.sortedBy { it.date }
