@@ -167,6 +167,14 @@ object TrackedEvents {
     fun forwardRefile(m: MergerDetail): String? =
         m.related_merger?.takeIf { it.relationship in FORWARD_REFILE }?.merger_id
 
+    /**
+     * What to notify of [fresh]: a followed industry's line about a merger
+     * that's followed itself is left out, since the merger's own notification
+     * says the same (or will, if its file couldn't be read this time).
+     */
+    fun toNotify(fresh: List<TrackedEvent>, followed: Set<String>): List<TrackedEvent> =
+        fresh.filter { it.industryCode == null || it.mergerId !in followed }
+
     /** Newest first, and each event once. */
     fun inboxOrder(events: List<TrackedEvent>): List<TrackedEvent> =
         events.distinctBy { it.key }.sortedByDescending { it.date ?: "" }

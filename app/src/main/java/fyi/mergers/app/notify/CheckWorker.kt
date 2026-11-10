@@ -12,6 +12,7 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import fyi.mergers.app.Graph
+import fyi.mergers.app.tracking.TrackedEvents
 import java.util.concurrent.TimeUnit
 
 /**
@@ -28,8 +29,10 @@ class CheckWorker(context: Context, params: WorkerParameters) : CoroutineWorker(
         if (state.followsNothing && !state.autoTrackPhase2 && !state.notifyNewFilings) return Result.success()
         val result = Graph.tracker.sync()
         // Only mark what was actually shown: with notifications off, the
-        // events wait in the Following inbox instead.
-        if (Notifier.postTracked(applicationContext, result.fresh)) {
+        // events wait in the Following inbox instead. An industry's line about
+        // a merger that's followed itself counts as shown by the merger's own.
+        val toPost = TrackedEvents.toNotify(result.fresh, Graph.store.current().trackedSet)
+        if (toPost.isEmpty() || Notifier.postTracked(applicationContext, toPost)) {
             Graph.store.markNotified(result.fresh.map { it.key })
         }
         Notifier.postNewFilings(applicationContext, result.newFilings)
