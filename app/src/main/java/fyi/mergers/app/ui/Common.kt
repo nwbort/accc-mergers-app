@@ -39,6 +39,8 @@ import androidx.compose.material3.toShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import fyi.mergers.app.ui.theme.isDarkTheme
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.runtime.getValue
 import androidx.compose.foundation.interaction.collectIsPressedAsState
@@ -259,9 +261,11 @@ fun SectionTitle(text: String, modifier: Modifier = Modifier, trailing: @Composa
 }
 
 /**
- * One merger in a list: the outcome's glyph (its [outcomeShape], colour and
- * symbol) leading the outcome's words, then the name. A press squishes the
- * card on a spring.
+ * One merger in a list, the card tinted with its status colour (the site's
+ * fill as a pale wash; in the dark, the lighter glyph shade), the outcome's
+ * glyph (its [outcomeShape], colour and symbol) leading the outcome's words,
+ * then the name. Flat: the colour sets it off, not a shadow. A press
+ * squishes the card on a spring.
  */
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -276,6 +280,11 @@ fun MergerCard(
     val header = input.headerStatus()
     val key = header?.label ?: m.status
     val label = input.outcomeText() ?: m.status ?: "Unknown"
+    val tint = if (isDarkTheme()) {
+        statusGlyphColors(key).fill.copy(alpha = 0.14f).compositeOver(MaterialTheme.colorScheme.surfaceContainerLow)
+    } else {
+        statusColors(key).fill.copy(alpha = 0.10f).compositeOver(MaterialTheme.colorScheme.surfaceContainerLowest)
+    }
 
     val presses = remember { MutableInteractionSource() }
     val pressed by presses.collectIsPressedAsState()
@@ -291,8 +300,7 @@ fun MergerCard(
             .sharedMerger(m.merger_id)
             .graphicsLayer { scaleX = squish; scaleY = squish },
         shape = MaterialTheme.shapes.large,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        colors = CardDefaults.cardColors(containerColor = tint),
     ) {
         Box(
             Modifier.combinedClickable(
@@ -318,13 +326,13 @@ fun MergerCard(
                             Modifier
                                 .size(28.dp)
                                 .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.primaryContainer),
+                                .background(MaterialTheme.colorScheme.surfaceContainerLowest),
                             contentAlignment = Alignment.Center,
                         ) {
                             Icon(
                                 Icons.Filled.Bookmark,
                                 contentDescription = "Following",
-                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                tint = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(16.dp),
                             )
                         }
