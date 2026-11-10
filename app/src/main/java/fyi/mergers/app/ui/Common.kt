@@ -16,11 +16,8 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -42,6 +39,18 @@ import androidx.compose.material3.toShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import fyi.mergers.app.ui.theme.isDarkTheme
+import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.Color
+import androidx.compose.runtime.getValue
+import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.layout.requiredSize
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.LocalIndication
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.runtime.remember
@@ -255,8 +264,12 @@ fun SectionTitle(text: String, modifier: Modifier = Modifier, trailing: @Composa
 }
 
 /**
- * One merger in a list: the outcome first (a solid badge, and a rail down the
- * left edge in the same colour), then the name, as the site's merger list does.
+ * One merger in a list, in the app's shape language: the outcome's glyph
+ * (its [outcomeShape], colour and symbol) leading the outcome's words, the
+ * same shape large and faint off the top corner (as on the merger's own
+ * header, which the card grows into), then the name. The faint shape sits at
+ * an angle of its own per merger, so a list doesn't read as stamped out. A
+ * press squishes the card on a spring.
  */
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -269,46 +282,91 @@ fun MergerCard(
 ) {
     val input = m.outcomeInput()
     val header = input.headerStatus()
+    val key = header?.label ?: m.status
     val label = input.outcomeText() ?: m.status ?: "Unknown"
-    val color = statusColors(header?.label ?: m.status)
+    val color = statusColors(key)
+    val dark = isDarkTheme()
+    // In the dark the status fills are deep, so the wash is lifted toward white to show.
+    val wash = (if (dark) lerp(color.fill, Color.White, 0.35f).copy(alpha = 0.14f) else color.fill.copy(alpha = 0.12f))
+    val angle = remember(m.merger_id) { (m.merger_id.hashCode() and 0x7fffffff) % 72 - 36f }
+
+    val presses = remember { MutableInteractionSource() }
+    val pressed by presses.collectIsPressedAsState()
+    val squish by animateFloatAsState(
+        if (pressed) 0.96f else 1f,
+        MaterialTheme.motionScheme.fastSpatialSpec(),
+        label = "squish",
+    )
+
     Card(
-        modifier = modifier.fillMaxWidth().sharedMerger(m.merger_id),
+        modifier = modifier
+            .fillMaxWidth()
+            .sharedMerger(m.merger_id)
+            .graphicsLayer { scaleX = squish; scaleY = squish },
+        shape = MaterialTheme.shapes.large,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
     ) {
-        Row(
-            Modifier
-                .height(IntrinsicSize.Min)
-                .combinedClickable(
-                    onClick = onClick,
-                    onLongClick = onLongClick,
-                    onLongClickLabel = if (followed) "Stop following" else "Follow",
-                ),
+        Box(
+            Modifier.combinedClickable(
+                interactionSource = presses,
+                indication = LocalIndication.current,
+                onClick = onClick,
+                onLongClick = onLongClick,
+                onLongClickLabel = if (followed) "Stop following" else "Follow",
+            ),
         ) {
-            Box(Modifier.width(4.dp).fillMaxHeight().background(color.fill))
-            Column(Modifier.weight(1f).padding(horizontal = 14.dp, vertical = 12.dp)) {
-                Row(verticalAlignment = Alignment.Top) {
+            Box(
+                Modifier
+                    .matchParentSize()
+                    .wrapContentSize(Alignment.TopEnd, unbounded = true)
+                    .offset(x = 34.dp, y = (-34).dp)
+                    .requiredSize(124.dp)
+                    .graphicsLayer { rotationZ = angle }
+                    .clip(outcomeShape(key).toShape())
+                    .background(wash),
+            )
+            Column(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 14.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    StatusGlyph(key, conditions = label.contains("conditions", ignoreCase = true), size = 30.dp)
+                    Text(
+                        label,
+                        style = MaterialTheme.typography.labelLargeEmphasized,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.padding(start = 10.dp).weight(1f),
+                    )
+                    if (followed) {
+                        Box(
+                            Modifier
+                                .size(28.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.primaryContainer),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(
+                                Icons.Filled.Bookmark,
+                                contentDescription = "Following",
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                modifier = Modifier.size(16.dp),
+                            )
+                        }
+                    }
+                }
+                val flags = listOfNotNull(
+                    ("Waiver" to WaiverAmber).takeIf { m.is_waiver },
+                    ("Under appeal" to AppealIndigo).takeIf { m.under_appeal },
+                    ("Re-filed" to RefiledAmber).takeIf { m.is_refiled },
+                )
+                if (flags.isNotEmpty()) {
                     FlowRow(
-                        Modifier.weight(1f),
+                        Modifier.padding(top = 8.dp),
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
                         verticalArrangement = Arrangement.spacedBy(6.dp),
                     ) {
-                        StatusBadge(label, colorKey = header?.label ?: m.status ?: "")
-                        if (m.is_waiver) SolidBadge("Waiver", WaiverAmber)
-                        if (m.under_appeal) SolidBadge("Under appeal", AppealIndigo)
-                        if (m.is_refiled) SolidBadge("Re-filed", RefiledAmber)
-                    }
-                    if (followed) {
-                        Icon(
-                            Icons.Filled.Bookmark,
-                            contentDescription = "Following",
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(18.dp),
-                        )
+                        flags.forEach { (text, c) -> FlagPill(text, c) }
                     }
                 }
-                // The name alone: it carries the parties that matter, and search
-                // still finds every party. A size up, in the room the parties left.
                 Text(
                     m.merger_name,
                     style = MaterialTheme.typography.titleMediumEmphasized,
@@ -321,13 +379,29 @@ fun MergerCard(
                 ).joinToString(" · ")
                 Text(
                     dates,
-                    style = MaterialTheme.typography.labelSmall,
+                    style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = 6.dp),
                 )
             }
         }
     }
+}
+
+/** A merger's flag beside its outcome (waiver, under appeal, re-filed): a small pill in the site's solid colours. */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+private fun FlagPill(text: String, c: StatusColors) {
+    Text(
+        text,
+        color = c.onFill,
+        style = MaterialTheme.typography.labelMediumEmphasized,
+        maxLines = 1,
+        modifier = Modifier
+            .clip(CircleShape)
+            .background(c.fill)
+            .padding(horizontal = 10.dp, vertical = 3.dp),
+    )
 }
 
 /** A short list row: a title, a line under it and a trailing date. */

@@ -77,8 +77,10 @@ most Expressive components. Use the theme's pieces rather than one-offs:
 `LoadingIndicator` (`Loading()`, `RefreshBox`), the `…Emphasized` type styles
 for headlines and numbers, toggle buttons with `shapes`, and `motionScheme`
 specs for app animations. Each outcome has its own `MaterialShapes` outline
-(`outcomeShape` in `ui/Common.kt`), used by `StatusGlyph` and behind the
-dashboard hero and a merger's header; a new status needs one there too.
+(`outcomeShape` in `ui/Common.kt`), used by `StatusGlyph`, behind the
+dashboard hero and a merger's header, and on each `MergerCard` (glyph, words,
+and the faint shape off its corner at a per-merger angle; a press squishes it);
+a new status needs one there too.
 Event tiles are the six-sided cookie in the app (`TileShape`) and in the
 widget (`res/drawable/widget_tile.xml`, the same outline as a path): change
 both together. A `MergerCard` grows into its merger's header through
