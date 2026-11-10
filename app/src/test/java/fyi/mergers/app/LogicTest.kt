@@ -47,6 +47,7 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import fyi.mergers.app.notify.Notifier
 
 /** The rules ported from the site, checked against the real data snapshot. */
 class LogicTest {
@@ -501,5 +502,29 @@ class LogicTest {
 
         // A kind of date the app doesn't know yet is shown whatever is ticked.
         assertEquals(EventKind.OTHER, EventKind.of("something_new"))
+    }
+
+    @Test
+    fun a_hearing_under_way_says_until_when_not_when_it_began() {
+        val m = MergersJson.decodeFromString(MergerDetail.serializer(), Fixtures.read("mergers/MN-01068.json")!!)
+        fun hearing() = TrackedEvents.upcoming(m).single { it.title == "Tribunal hearing" }
+
+        // Before it starts: when it starts, and the span of days.
+        assertEquals("in 3 days", Dates.upcoming(hearing().date, hearing().endDate))
+        assertEquals("9 – 19 Nov", Dates.span(hearing().date, hearing().endDate, compact = true))
+        assertEquals("Tribunal hearing 9 Nov", Notifier.line(hearing()))
+
+        // Started yesterday and runs to the 19th: under way, not "yesterday".
+        Dates.clock = Clock.fixed(Instant.parse("2026-11-10T01:00:00Z"), Dates.SYDNEY)
+        val e = hearing()
+        assertEquals("2026-11-19", e.endDate)
+        assertEquals("under way, until 19 Nov", Dates.upcoming(e.date, e.endDate))
+        assertEquals("Tribunal hearing until 19 Nov", Notifier.line(e))
+        // The key is still its first day's, so a follower already told of it isn't told again.
+        assertEquals(TrackedEvents.key("MN-01068", "2026-11-09", "Tribunal hearing"), e.key)
+
+        // After its last day it's gone.
+        Dates.clock = Clock.fixed(Instant.parse("2026-11-20T01:00:00Z"), Dates.SYDNEY)
+        assertTrue(TrackedEvents.upcoming(m).none { it.title == "Tribunal hearing" })
     }
 }

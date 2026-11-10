@@ -294,8 +294,8 @@ private fun Detail(vm: AppViewModel, m: MergerDetail, listState: LazyListState) 
             items(upcoming, key = { "up-" + it.key }) { e ->
                 ListRow(
                     title = e.title,
-                    subtitle = Dates.relative(e.date)?.replaceFirstChar { it.uppercase() },
-                    trailing = Dates.format(e.date),
+                    subtitle = Dates.upcoming(e.date, e.endDate)?.replaceFirstChar { it.uppercase() },
+                    trailing = Dates.span(e.date, e.endDate),
                     onClick = {},
                 )
             }
@@ -573,18 +573,14 @@ private fun Parties(m: MergerDetail) {
     }
 }
 
+/**
+ * A party by name. The register's identifier isn't shown: for a foreign
+ * company it can be a long description ("Netherlands Chamber of Commerce
+ * Business Register Number …") that squeezed the name to a letter a line.
+ */
 @Composable
 private fun PartyLine(p: Party) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Text(p.displayName, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f, fill = false))
-        if (p.identifier != null) {
-            Text(
-                "  ${p.identifier_type ?: ""} ${p.identifier}".trimEnd(),
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-    }
+    Text(p.displayName, style = MaterialTheme.typography.bodyMedium)
 }
 
 @OptIn(ExperimentalLayoutApi::class)

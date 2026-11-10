@@ -37,6 +37,25 @@ object Dates {
 
     fun daysUntil(value: String?): Long? = day(value)?.let { ChronoUnit.DAYS.between(today(), it) }
 
+    /** Whether something spread over days (a hearing) began before today and hasn't ended. */
+    fun underWay(start: String?, end: String?): Boolean =
+        (daysUntil(start) ?: 0) < 0 && (daysUntil(end) ?: -1) >= 0
+
+    /**
+     * When a coming date is, for a list: "in 3 days", or for one already
+     * under way "under way, until 19 Nov".
+     */
+    fun upcoming(start: String?, end: String?): String? =
+        if (underWay(start, end)) "under way, until ${format(end, compact = true)}" else relative(start)
+
+    /** "9 Nov", or a span over days "9 – 19 Nov 2026" (compact within this year). */
+    fun span(start: String?, end: String?, compact: Boolean = false): String? {
+        val a = day(start) ?: return null
+        val b = day(end)?.takeIf { it > a } ?: return format(start, compact)
+        val to = format(end, compact)
+        return if (a.year == b.year && a.month == b.month) "${a.dayOfMonth} – $to" else "${format(start, compact = true)} – $to"
+    }
+
     /** "today", "tomorrow", "in 5 days", "yesterday", "3 days ago". */
     fun relative(value: String?): String? {
         val n = daysUntil(value) ?: return null

@@ -134,8 +134,8 @@ fun FollowingScreen(vm: AppViewModel) {
                     items(upcoming, key = { "up-" + it.key }) { e ->
                         ListRow(
                             title = e.mergerName,
-                            subtitle = "${e.title} · ${Dates.relative(e.date)}",
-                            trailing = Dates.format(e.date, compact = true),
+                            subtitle = "${e.title} · ${Dates.upcoming(e.date, e.endDate)}",
+                            trailing = Dates.span(e.date, e.endDate, compact = true),
                             onClick = { vm.openMerger(e.mergerId) },
                         )
                     }

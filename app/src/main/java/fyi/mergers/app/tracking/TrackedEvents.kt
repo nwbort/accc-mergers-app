@@ -25,6 +25,8 @@ data class TrackedEvent(
     val industryName: String? = null,
     /** A notification's wording when the app writes its own (a followed industry's lines); not part of the key. */
     val short: String? = null,
+    /** The last day of something spread over days (a Tribunal hearing); not part of the key. */
+    val endDate: String? = null,
 )
 
 /**
@@ -94,6 +96,7 @@ object TrackedEvents {
                 out += TrackedEvent(
                     key(m.merger_id, appeal.hearing_date, "Tribunal hearing"),
                     m.merger_id, m.merger_name, appeal.hearing_date, "Tribunal hearing", upcoming = true,
+                    endDate = end,
                 )
             }
         }

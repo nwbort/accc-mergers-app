@@ -98,6 +98,7 @@ import fyi.mergers.app.data.UpcomingEvent
 import fyi.mergers.app.ui.theme.isDarkTheme
 import fyi.mergers.app.ui.theme.eventTypeColors
 import fyi.mergers.app.ui.theme.recentEventColors
+import fyi.mergers.app.widget.Upcoming
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
@@ -188,7 +189,8 @@ private fun DashboardContent(
         val n = Dates.daysUntil(e.end_date ?: e.date) ?: return@filter false
         n >= 0 && (Dates.daysUntil(e.date) ?: 0) <= 14
     }.sortedBy { it.date }
-    val days = soon.groupBy { it.date?.take(10) }
+    // As the widget: a hearing already under way is listed under today, "until" its last day.
+    val days = soon.groupBy { Upcoming.day(it)?.toString() }
     val pastDays = remember(recentEvents) { RecentEventDays.of(recentEvents) }
 
     // Which day header each Coming up and Recent events item sits under, by
@@ -290,7 +292,7 @@ private fun DashboardContent(
                 items(events, key = ::eventKey) { e ->
                     ListRow(
                         title = e.merger_name,
-                        subtitle = e.event_type_display,
+                        subtitle = Upcoming.detail(e),
                         trailing = null,
                         onClick = { vm.openMerger(e.merger_id) },
                         leading = { EventTypeTile(e.type, e.event_type_display) },

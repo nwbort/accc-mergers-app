@@ -52,7 +52,7 @@ object Upcoming {
     private val dayFormat = DateTimeFormatter.ofPattern("EEE d MMM", Locale.forLanguageTag("en-AU"))
 
     /** The day an event is listed under: a hearing already under way counts as today. */
-    private fun day(e: UpcomingEvent): LocalDate? = Dates.day(e.date)?.let { maxOf(it, Dates.today()) }
+    fun day(e: UpcomingEvent): LocalDate? = Dates.day(e.date)?.let { maxOf(it, Dates.today()) }
 
     /** What [config] shows of the site's upcoming events, soonest first. */
     fun events(all: List<UpcomingEvent>, config: UpcomingConfig, followed: Set<String>): List<UpcomingEvent> =
@@ -64,13 +64,16 @@ object Upcoming {
     fun rows(events: List<UpcomingEvent>): List<UpcomingRow> = buildList {
         events.groupBy(::day).forEach { (day, onDay) ->
             add(UpcomingRow.Day(dayLabel(day)))
-            onDay.forEach { e ->
-                val until = e.end_date?.takeIf { Dates.day(it) != Dates.day(e.date) }
-                    ?.let { Dates.format(it, compact = true) }
-                val what = e.event_type_display ?: EventKind.of(e.type).label
-                add(UpcomingRow.Event(e, if (until != null) "$what · until $until" else what))
-            }
+            onDay.forEach { e -> add(UpcomingRow.Event(e, detail(e))) }
         }
+    }
+
+    /** "Consultation responses due", or for one over days "Tribunal hearing · until 19 Nov". */
+    fun detail(e: UpcomingEvent): String {
+        val until = e.end_date?.takeIf { Dates.day(it) != Dates.day(e.date) }
+            ?.let { Dates.format(it, compact = true) }
+        val what = e.event_type_display ?: EventKind.of(e.type).label
+        return if (until != null) "$what · until $until" else what
     }
 
     fun dayLabel(day: LocalDate?): String = when (day) {
