@@ -2,6 +2,7 @@ package fyi.mergers.app.ui
 
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalActivity
+import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -19,6 +20,7 @@ import androidx.compose.material3.ShortNavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.snapshotFlow
@@ -26,6 +28,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.entryProvider
+import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import androidx.navigation3.ui.NavDisplay
 import fyi.mergers.app.tracking.TrackedEvents
 import kotlinx.coroutines.flow.drop
@@ -75,20 +78,32 @@ fun MergersApp(vm: AppViewModel) {
 
         // The tabs share one root entry, side by side in a pager, so you can
         // swipe between them; a merger, an industry or search stacks on top of whichever is showing.
-        NavDisplay(
-            backStack = listOf<Route>(Route.Tabs) + vm.backStack.drop(1),
-            onBack = { if (!vm.back()) activity?.finish() },
-            modifier = Modifier.padding(bottom = padding.calculateBottomPadding()),
-            entryProvider = entryProvider {
-                entry<Route.Tabs> { TabPager(vm) }
-                entry<Route.Merger> { key -> MergerDetailScreen(vm, key.id) }
-                entry<Route.Industries> { IndustriesScreen(vm) }
-                entry<Route.Industry> { key -> IndustryScreen(vm, key.code) }
-                entry<Route.Search> { SearchScreen(vm) }
-                entry<Route.Settings> { SettingsScreen(vm) }
-            },
-        )
+        // One shared-transition scope over every screen, so a merger's card in
+        // a list can grow into the header of its page (Modifier.sharedMerger).
+        SharedTransitionLayout {
+            CompositionLocalProvider(LocalSharedTransitionScope provides this) {
+                NavDisplay(
+                    backStack = listOf<Route>(Route.Tabs) + vm.backStack.drop(1),
+                    onBack = { if (!vm.back()) activity?.finish() },
+                    modifier = Modifier.padding(bottom = padding.calculateBottomPadding()),
+                    entryProvider = entryProvider {
+                        entry<Route.Tabs> { Shared { TabPager(vm) } }
+                        entry<Route.Merger> { key -> Shared { MergerDetailScreen(vm, key.id) } }
+                        entry<Route.Industries> { IndustriesScreen(vm) }
+                        entry<Route.Industry> { key -> Shared { IndustryScreen(vm, key.code) } }
+                        entry<Route.Search> { Shared { SearchScreen(vm) } }
+                        entry<Route.Settings> { SettingsScreen(vm) }
+                    },
+                )
+            }
+        }
     }
+}
+
+/** Hands an entry's own enter/exit animation to [Modifier.sharedMerger] inside it. */
+@Composable
+private fun Shared(content: @Composable () -> Unit) {
+    CompositionLocalProvider(LocalNavAnimatedVisibilityScope provides LocalNavAnimatedContentScope.current, content = content)
 }
 
 /** The three tabs, swiped between left and right, kept in step with the bottom bar. */

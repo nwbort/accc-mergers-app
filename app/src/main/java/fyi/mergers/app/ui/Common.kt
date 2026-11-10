@@ -6,6 +6,8 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import androidx.browser.customtabs.CustomTabsIntent
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
@@ -40,6 +42,10 @@ import androidx.compose.material3.toShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -116,6 +122,41 @@ fun share(context: Context, title: String, url: String) {
         .putExtra(Intent.EXTRA_SUBJECT, title)
         .putExtra(Intent.EXTRA_TEXT, "$title\n$url")
     context.startActivity(Intent.createChooser(send, null).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+}
+
+/** The scope a merger's card and its page header share their bounds in (MergersApp). */
+val LocalSharedTransitionScope = staticCompositionLocalOf<SharedTransitionScope?> { null }
+
+/** The enter/exit animation of the screen being drawn, when it takes part in a shared transition. */
+val LocalNavAnimatedVisibilityScope = staticCompositionLocalOf<AnimatedVisibilityScope?> { null }
+
+/**
+ * A merger's card and its page's header are one thing moving: opening a
+ * merger grows the card into the header, and back shrinks it again. Outside a
+ * shared transition (a widget's settings, say) it does nothing.
+ */
+@Composable
+fun Modifier.sharedMerger(id: String): Modifier {
+    val shared = LocalSharedTransitionScope.current ?: return this
+    val visibility = LocalNavAnimatedVisibilityScope.current ?: return this
+    val clip = MaterialTheme.shapes.large
+    return with(shared) {
+        this@sharedMerger.sharedBounds(
+            rememberSharedContentState("merger-$id"),
+            visibility,
+            resizeMode = SharedTransitionScope.ResizeMode.RemeasureToBounds,
+            clipInOverlayDuringTransition = OverlayClip(clip),
+        )
+    }
+}
+
+/** A tick under the thumb as a follow goes on or off: the toggle's own haptic. */
+@Composable
+fun rememberFollowHaptics(): (Boolean) -> Unit {
+    val haptics = LocalHapticFeedback.current
+    return remember(haptics) {
+        { on -> haptics.performHapticFeedback(if (on) HapticFeedbackType.ToggleOn else HapticFeedbackType.ToggleOff) }
+    }
 }
 
 /** The site's solid status badge: an uppercase label on the outcome's colour. */
@@ -242,7 +283,7 @@ fun MergerCard(
     val label = input.outcomeText() ?: m.status ?: "Unknown"
     val color = statusColors(header?.label ?: m.status)
     Card(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth().sharedMerger(m.merger_id),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
     ) {

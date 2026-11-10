@@ -232,6 +232,11 @@ class AppTest {
         compose.onAllNodesWithText("Autosports Group", substring = true).onFirst().performClick()
         waitForText("Consultation responses due")
         shot("3-detail-live")
+        // Scrolled past its header, the bar wears the header's colour and the merger's name.
+        compose.onNodeWithTag("detail").performScrollToIndex(4)
+        waitForText("Autosports Group - Mercedes-Benz", substring = true)
+        shot("3b-detail-scrolled")
+        compose.onNodeWithTag("detail").performScrollToIndex(0)
         compose.onNodeWithContentDescription("Follow").performClick()
         waitUntil { Graph.store.current().isTracked("MN-20046") }
         waitForText("Following: you", substring = true)

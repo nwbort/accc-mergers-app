@@ -98,8 +98,10 @@ fun MergersScreen(vm: AppViewModel) {
     val scope = rememberCoroutineScope()
     val notifyPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {}
     var menuFor by remember { mutableStateOf<String?>(null) }
+    val haptic = rememberFollowHaptics()
     val toggleFollow = { id: String ->
         val now = vm.toggleFollow(id)
+        haptic(now)
         if (now && context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
             notifyPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
         }

@@ -79,6 +79,14 @@ for headlines and numbers, toggle buttons with `shapes`, and `motionScheme`
 specs for app animations. Each outcome has its own `MaterialShapes` outline
 (`outcomeShape` in `ui/Common.kt`), used by `StatusGlyph` and behind the
 dashboard hero and a merger's header; a new status needs one there too.
+Event tiles are the six-sided cookie in the app (`TileShape`) and in the
+widget (`res/drawable/widget_tile.xml`, the same outline as a path): change
+both together. A `MergerCard` grows into its merger's header through
+`Modifier.sharedMerger` (`SharedTransitionLayout` round `NavDisplay` in
+`MergersApp`); an entry takes part only inside `Shared { }`. On a merger's
+page, follow, share and open live in a floating toolbar, and the top bar takes
+the header's colour and the merger's name once the header has scrolled off.
+Following and unfollowing give a toggle haptic (`rememberFollowHaptics`).
 
 ## Commits and pull requests
 

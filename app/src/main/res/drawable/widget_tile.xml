@@ -1,6 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- An event's icon tile; UpcomingWidget tints it by the kind of date. -->
-<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
-    <solid android:color="@android:color/white" />
-    <corners android:radius="8dp" />
-</shape>
+<!--
+  An event's icon tile; UpcomingWidget tints it by the kind of date. The outline
+  is Material 3 Expressive's six-sided cookie (MaterialShapes.Cookie6Sided), as
+  the dashboard's tiles (EventTypeTile): exported from the shape's cubics.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="32dp"
+    android:height="32dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="@android:color/white"
+        android:pathData="M17.20,20.95 C16.79,21.18 16.41,21.47 16.08,21.79 C16.06,21.80 16.05,21.82 16.04,21.83 C13.79,24.00 10.22,24.00 7.97,21.82 C7.29,21.17 6.46,20.69 5.56,20.43 C5.54,20.42 5.53,20.42 5.51,20.41 C2.50,19.55 0.72,16.45 1.48,13.42 C1.71,12.50 1.71,11.55 1.48,10.63 C1.48,10.62 1.47,10.60 1.47,10.59 C0.71,7.55 2.50,4.46 5.51,3.60 C6.42,3.34 7.25,2.86 7.92,2.21 C7.94,2.20 7.95,2.18 7.96,2.17 C10.21,0.00 13.78,0.00 16.03,2.18 C16.71,2.83 17.54,3.31 18.44,3.57 C18.46,3.58 18.47,3.58 18.49,3.59 C21.50,4.45 23.28,7.55 22.52,10.58 C22.29,11.50 22.29,12.45 22.52,13.37 C22.52,13.38 22.53,13.40 22.53,13.41 C23.29,16.45 21.50,19.54 18.49,20.40 C18.04,20.53 17.60,20.72 17.20,20.95 Z" />
+</vector>

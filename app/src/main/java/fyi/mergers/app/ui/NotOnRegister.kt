@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.dp
  */
 @Composable
 fun NotOnRegister(vm: AppViewModel, id: String, followed: Boolean, modifier: Modifier = Modifier) {
+    val haptic = rememberFollowHaptics()
     val context = LocalContext.current
     val notifyPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {}
     Card(
@@ -51,10 +52,10 @@ fun NotOnRegister(vm: AppViewModel, id: String, followed: Boolean, modifier: Mod
                 modifier = Modifier.padding(top = 4.dp, bottom = 12.dp),
             )
             if (followed) {
-                OutlinedButton(onClick = { vm.toggleFollow(id) }) { Text("Unfollow") }
+                OutlinedButton(onClick = { haptic(vm.toggleFollow(id)) }) { Text("Unfollow") }
             } else {
                 Button(onClick = {
-                    vm.toggleFollow(id)
+                    haptic(vm.toggleFollow(id))
                     if (context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
                         notifyPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
                     }

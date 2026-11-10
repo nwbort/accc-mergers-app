@@ -23,7 +23,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.Settings
@@ -55,6 +54,7 @@ import androidx.compose.material3.toShape
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.material3.LoadingIndicator
+import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -390,13 +390,21 @@ private fun eventTypeIcon(type: String?): ImageVector = when (type) {
     else -> Icons.Outlined.Gavel
 }
 
+/**
+ * The tiles' outline: Expressive's six-sided cookie. The widget's tile
+ * (res/drawable/widget_tile.xml) is the same outline: keep the two in step.
+ */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+private val TileShape get() = MaterialShapes.Cookie6Sided
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 internal fun EventTypeTile(type: String?, description: String?) {
     val c = eventTypeColors(type)
     Box(
         Modifier
             .size(32.dp)
-            .clip(RoundedCornerShape(8.dp))
+            .clip(TileShape.toShape())
             .background(c.fill)
             .then(
                 // Beside its own label (the widget's settings) it's decoration.
@@ -431,13 +439,14 @@ private fun recentEventIcon(type: RecentEventType): ImageVector = when (type) {
     RecentEventType.OTHER -> Icons.Outlined.Info
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun RecentEventTile(type: RecentEventType) {
     val c = recentEventColors(type)
     Box(
         Modifier
             .size(32.dp)
-            .clip(RoundedCornerShape(8.dp))
+            .clip(TileShape.toShape())
             .background(c.fill)
             .semantics { role = Role.Image; contentDescription = type.label },
         contentAlignment = Alignment.Center,

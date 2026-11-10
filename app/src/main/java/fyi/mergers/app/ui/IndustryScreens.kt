@@ -46,6 +46,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.FilledTonalIconToggleButton
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -196,7 +199,7 @@ private fun IndustryRow(i: IndustryEntry, total: Int, max: Int, followed: Boolea
  * tree, its counts, the industries under it, and its mergers by phase. Follow
  * it to hear of each new filing and determination.
  */
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun IndustryScreen(vm: AppViewModel, code: String) {
     val state by remember(code) { vm.division(code) }.collectAsStateWithLifecycle()
@@ -214,8 +217,10 @@ fun IndustryScreen(vm: AppViewModel, code: String) {
     val followed = tracking.isIndustryTracked(code)
     val notifyPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {}
 
+    val haptic = rememberFollowHaptics()
     val toggleFollow = {
         val now = vm.toggleIndustryFollow(code, name)
+        haptic(now)
         if (now && context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
             notifyPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
@@ -237,7 +242,11 @@ fun IndustryScreen(vm: AppViewModel, code: String) {
                 navigationIcon = { BackButton(vm) },
                 actions = {
                     if (node != null) {
-                        IconButton(onClick = toggleFollow) {
+                        FilledTonalIconToggleButton(
+                            checked = followed,
+                            onCheckedChange = { toggleFollow() },
+                            shapes = IconButtonDefaults.toggleableShapes(),
+                        ) {
                             Icon(
                                 if (followed) Icons.Filled.Bookmark else Icons.Filled.BookmarkBorder,
                                 contentDescription = if (followed) "Unfollow industry" else "Follow industry",
