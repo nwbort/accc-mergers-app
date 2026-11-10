@@ -17,6 +17,7 @@ import fyi.mergers.app.widget.WidgetPrefs
 import org.robolectric.Robolectric
 import android.Manifest
 import android.app.NotificationManager
+import android.app.UiModeManager
 import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
@@ -54,6 +55,8 @@ import fyi.mergers.app.notify.CheckWorker
 import fyi.mergers.app.notify.Push
 import fyi.mergers.app.ui.AppViewModel
 import fyi.mergers.app.ui.Route
+import fyi.mergers.app.ui.theme.Appearance
+import fyi.mergers.app.ui.theme.ThemeChoice
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -110,6 +113,32 @@ class AppTest {
         compose.onNodeWithTag("dashboard").performScrollToKey("r-MN-55024-remedy_offer-2026-11-04T12:00:00Z-PSP Investments - AAA Egg Company - remedy offer - 4 November 2026")
         shot("1e-dashboard-recent-events-day")
         compose.onNodeWithTag("dashboard").performScrollToIndex(0)
+
+        // Settings, from the cog on the dashboard's top bar. Dark is kept,
+        // handed to the system, and the dashboard behind it is drawn dark.
+        assertEquals(ThemeChoice.SYSTEM, vm.theme)
+        compose.onNodeWithContentDescription("Settings").performClick()
+        waitForText("Appearance")
+        shot("1f-settings")
+        compose.onNodeWithText("Dark").performClick()
+        waitUntil { vm.theme == ThemeChoice.DARK }
+        assertEquals(ThemeChoice.DARK, Appearance.theme(app))
+        assertEquals(
+            UiModeManager.MODE_NIGHT_YES,
+            shadowOf(app.getSystemService(UiModeManager::class.java)).applicationNightMode,
+        )
+        shot("1g-settings-dark")
+        back()
+        waitUntil { vm.backStack.lastOrNull() == Route.Dashboard }
+        shot("1h-dashboard-dark")
+        // The phone's App info ("Additional settings in the app") opens it too.
+        compose.activity.onNewIntent(Intent(Intent.ACTION_APPLICATION_PREFERENCES))
+        waitUntil { vm.backStack.lastOrNull() == Route.Settings }
+        compose.onNodeWithText("System").performClick()
+        waitUntil { vm.theme == ThemeChoice.SYSTEM }
+        assertEquals(ThemeChoice.SYSTEM, Appearance.theme(app))
+        back()
+        waitUntil { vm.backStack.lastOrNull() == Route.Dashboard }
 
         // Search from the dashboard's top bar: industries and mergers together,
         // the cursor already in the field.

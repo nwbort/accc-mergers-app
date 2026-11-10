@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Back up what you follow and have seen; the downloaded data is re-fetched. -->
+<!-- Back up what you follow and have seen, and the settings; the downloaded data is re-fetched. -->
 <full-backup-content>
     <include domain="file" path="datastore/" />
+    <include domain="sharedpref" path="settings.xml" />
 </full-backup-content>

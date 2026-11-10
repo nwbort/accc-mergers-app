@@ -83,6 +83,7 @@ fun MergersApp(vm: AppViewModel) {
                 entry<Route.Industries> { IndustriesScreen(vm) }
                 entry<Route.Industry> { key -> IndustryScreen(vm, key.code) }
                 entry<Route.Search> { SearchScreen(vm) }
+                entry<Route.Settings> { SettingsScreen(vm) }
             },
         )
     }
