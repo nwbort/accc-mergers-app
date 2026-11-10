@@ -147,11 +147,18 @@ class Tracker(private val repo: Repository, private val store: TrackingStore) {
 
         val fromIndustries = industryEvents(manifest)
 
-        val state = store.current()
+        val before = store.current()
         val events = TrackedEvents.inboxOrder(
-            details.values.filter { state.isTracked(it.merger_id) }.flatMap(TrackedEvents::of) + fromIndustries,
+            details.values.filter { before.isTracked(it.merger_id) }.flatMap(TrackedEvents::of) + fromIndustries,
         )
-        val fresh = events.filter { it.key !in state.notified && it.key !in state.seen }
+        // An industry's line that repeats a followed merger's own event, or
+        // another followed industry's, is never shown. It's marked read so it
+        // doesn't turn up as news later, when the merger or the other industry
+        // is unfollowed.
+        val shown = TrackedEvents.inbox(events, before).mapTo(HashSet()) { it.key }
+        store.markSeen(events.filter { it.key !in shown && it.key !in before.seen }.map { it.key })
+        val state = store.current()
+        val fresh = events.filter { it.key in shown && it.key !in state.notified && it.key !in state.seen }
 
         val newFilings = if (state.notifyNewFilings) newFilings(state, manifest) else emptyList()
 
