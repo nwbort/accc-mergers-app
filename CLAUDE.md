@@ -70,6 +70,16 @@ is kept in plain preferences and handed to `UiModeManager.setApplicationNightMod
 too, so the window and status bar follow it. In Compose, use `isDarkTheme()`,
 not `isSystemInDarkTheme()`, which ignores the setting.
 
+Look and feel: Material 3 Expressive. `MergersTheme` is `MaterialExpressiveTheme`
+with `MotionScheme.expressive()` and rounder `Shapes`; `material3` is pinned
+ahead of the Compose BOM (`libs.versions.toml`) because the BOM's 1.4 lacks
+most Expressive components. Use the theme's pieces rather than one-offs:
+`LoadingIndicator` (`Loading()`, `RefreshBox`), the `…Emphasized` type styles
+for headlines and numbers, toggle buttons with `shapes`, and `motionScheme`
+specs for app animations. Each outcome has its own `MaterialShapes` outline
+(`outcomeShape` in `ui/Common.kt`), used by `StatusGlyph` and behind the
+dashboard hero and a merger's header; a new status needs one there too.
+
 ## Commits and pull requests
 
 Don't credit Claude in anything pushed to GitHub: no `Co-Authored-By: Claude`

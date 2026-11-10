@@ -14,8 +14,8 @@ import androidx.compose.material.icons.outlined.SpaceDashboard
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Icon
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.ShortNavigationBar
+import androidx.compose.material3.ShortNavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -47,10 +47,11 @@ fun MergersApp(vm: AppViewModel) {
 
     Scaffold(
         bottomBar = {
-            NavigationBar {
+            // Expressive's short bar: a pill behind the chosen tab that springs across.
+            ShortNavigationBar {
                 TABS.forEach { tab ->
                     val selected = vm.tab == tab.route
-                    NavigationBarItem(
+                    ShortNavigationBarItem(
                         selected = selected,
                         onClick = { vm.selectTab(tab.route) },
                         label = { Text(tab.label) },

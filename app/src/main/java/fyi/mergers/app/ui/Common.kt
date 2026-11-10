@@ -33,7 +33,10 @@ import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialShapes
+import androidx.compose.material3.toShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -49,6 +52,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.graphics.shapes.RoundedPolygon
 import fyi.mergers.app.data.Dates
 import fyi.mergers.app.data.MergerSummary
 import fyi.mergers.app.data.Party
@@ -141,12 +145,30 @@ fun SolidBadge(label: String, c: StatusColors, description: String = label, modi
 }
 
 /**
- * An outcome as a symbol alone: the status colour in a circle with the site's
- * glyph for it (constants/outcomeIcons.js, and StatusBadge's live glyphs). The
- * words go to the accessible name, so colour isn't the only signal.
+ * Each outcome's own shape from the Material 3 Expressive set, so an outcome
+ * reads by its outline as well as its colour and glyph: a sunny seal for
+ * cleared, a hard-edged cookie for blocked, a many-sided clock face while it
+ * runs, a square for paused, a gem for ceased.
  */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+fun outcomeShape(label: String?): RoundedPolygon = when (label) {
+    Status.APPROVED, Status.NOT_OPPOSED, Status.APPROVED_WITH_CONDITIONS -> MaterialShapes.Sunny
+    Status.NOT_APPROVED, Status.DECLINED -> MaterialShapes.Cookie4Sided
+    Status.UNDER_ASSESSMENT, Status.REFERRED_TO_PHASE_2 -> MaterialShapes.Cookie12Sided
+    Status.ASSESSMENT_SUSPENDED -> MaterialShapes.Square
+    Status.ASSESSMENT_CEASED -> MaterialShapes.Gem
+    else -> MaterialShapes.Circle
+}
+
+/**
+ * An outcome as a symbol alone: the status colour in the outcome's shape
+ * ([outcomeShape]) with the site's glyph for it (constants/outcomeIcons.js,
+ * and StatusBadge's live glyphs). The words go to the accessible name, so
+ * colour isn't the only signal.
+ */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun StatusGlyph(label: String?, modifier: Modifier = Modifier, conditions: Boolean = false, size: Dp = 28.dp) {
+fun StatusGlyph(label: String?, modifier: Modifier = Modifier, conditions: Boolean = false, size: Dp = 32.dp) {
     val c = statusColors(label)
     val icon = when (label) {
         Status.APPROVED, Status.NOT_OPPOSED, Status.APPROVED_WITH_CONDITIONS -> Icons.Filled.Check
@@ -163,19 +185,20 @@ fun StatusGlyph(label: String?, modifier: Modifier = Modifier, conditions: Boole
     Box(
         modifier
             .size(size)
-            .clip(CircleShape)
+            .clip(outcomeShape(label).toShape())
             .background(c.fill)
             .semantics { role = Role.Image; contentDescription = words },
         contentAlignment = Alignment.Center,
     ) {
         if (icon != null) {
-            Icon(icon, contentDescription = null, tint = c.onFill, modifier = Modifier.size(size * 0.6f))
+            Icon(icon, contentDescription = null, tint = c.onFill, modifier = Modifier.size(size * 0.55f))
         } else {
             Box(Modifier.size(size / 4).clip(CircleShape).background(c.onFill))
         }
     }
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun SectionTitle(text: String, modifier: Modifier = Modifier, trailing: @Composable (() -> Unit)? = null) {
     Row(
@@ -184,8 +207,7 @@ fun SectionTitle(text: String, modifier: Modifier = Modifier, trailing: @Composa
     ) {
         Text(
             text,
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.SemiBold,
+            style = MaterialTheme.typography.titleMediumEmphasized,
             modifier = Modifier.weight(1f),
         )
         trailing?.invoke()

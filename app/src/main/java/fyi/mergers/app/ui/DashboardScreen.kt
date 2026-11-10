@@ -46,7 +46,15 @@ import androidx.compose.material.icons.outlined.Gavel
 import androidx.compose.material.icons.outlined.WarningAmber
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.animation.core.Animatable
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.layout.requiredSize
+import androidx.compose.material3.toShape
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -93,7 +101,7 @@ import fyi.mergers.app.ui.theme.recentEventColors
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun DashboardScreen(vm: AppViewModel) {
     val statsState by vm.stats.collectAsStateWithLifecycle()
@@ -122,7 +130,7 @@ fun DashboardScreen(vm: AppViewModel) {
                                 withStyle(SpanStyle(color = dot)) { append(".") }
                                 append("fyi")
                             },
-                            fontWeight = FontWeight.Bold,
+                            style = MaterialTheme.typography.titleLargeEmphasized,
                         )
                         Text(
                             "Australian merger tracker",
@@ -158,10 +166,12 @@ fun DashboardScreen(vm: AppViewModel) {
     }
 }
 
+/** Expressive's loading indicator: a shape that morphs through the M3 shape set while it spins. */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun Loading() {
     Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
-        CircularProgressIndicator()
+        LoadingIndicator(Modifier.size(64.dp))
     }
 }
 
@@ -223,9 +233,8 @@ private fun DashboardContent(
     ) {
         item {
             Column(Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                StatCard(
-                    title = "Mergers",
-                    value = "${stats.by_status[Status.UNDER_ASSESSMENT] ?: 0} under assessment",
+                HeroCard(
+                    count = stats.by_status[Status.UNDER_ASSESSMENT] ?: 0,
                     subtitle = "${stats.total_mergers} notified and ${stats.total_waivers} waivers",
                     onClick = { vm.showMergersWithStatus(Status.UNDER_ASSESSMENT) },
                 )
@@ -444,6 +453,7 @@ private fun median(v: Double): String = if (v % 1.0 == 0.0) v.toInt().toString()
  * what was decided in the window, coloured by how it sits against the all-time
  * median (slower in the declined red, faster in the cleared green).
  */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun DecisionTimeCard(title: String, d: WindowDurations, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val darkTheme = isDarkTheme()
@@ -474,8 +484,7 @@ private fun DecisionTimeCard(title: String, d: WindowDurations, onClick: () -> U
             Row(verticalAlignment = Alignment.Bottom, modifier = Modifier.padding(top = 4.dp)) {
                 Text(
                     median(m),
-                    style = MaterialTheme.typography.headlineLarge,
-                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.headlineLargeEmphasized,
                     color = tone,
                     modifier = Modifier.alignByBaseline(),
                 )
@@ -514,12 +523,67 @@ private fun DecisionTimeCard(title: String, d: WindowDurations, onClick: () -> U
     }
 }
 
+/**
+ * The dashboard's headline: how many matters are under assessment, big, on
+ * the brand's container colour, with the under-assessment shape
+ * ([outcomeShape]) turning into place behind it on a spring.
+ */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+private fun HeroCard(count: Int, subtitle: String, onClick: () -> Unit) {
+    val turn = remember { Animatable(-60f) }
+    val spring = MaterialTheme.motionScheme.slowSpatialSpec<Float>()
+    LaunchedEffect(Unit) { turn.animateTo(0f, spring) }
+    val ink = MaterialTheme.colorScheme.onPrimaryContainer
+    Card(
+        onClick = onClick,
+        shape = MaterialTheme.shapes.extraLarge,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer,
+            contentColor = ink,
+        ),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Box(Modifier.fillMaxWidth()) {
+            val shape = outcomeShape(Status.UNDER_ASSESSMENT).toShape()
+            // Drawn to the content's height, not its own: the shape bleeds off the corner.
+            Box(
+                Modifier
+                    .matchParentSize()
+                    .wrapContentSize(Alignment.TopEnd, unbounded = true)
+                    .offset(x = 36.dp, y = (-28).dp)
+                    .requiredSize(168.dp)
+                    .graphicsLayer { rotationZ = turn.value }
+                    .clip(shape)
+                    .background(ink.copy(alpha = 0.08f)),
+            )
+            Column(Modifier.padding(horizontal = 20.dp, vertical = 18.dp)) {
+                Text("Mergers", style = MaterialTheme.typography.labelLargeEmphasized, color = ink.copy(alpha = 0.8f))
+                Row(verticalAlignment = Alignment.Bottom, modifier = Modifier.padding(top = 2.dp)) {
+                    Text(
+                        "$count",
+                        style = MaterialTheme.typography.displayMediumEmphasized,
+                        modifier = Modifier.alignByBaseline(),
+                    )
+                    Text(
+                        " under assessment",
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.alignByBaseline(),
+                    )
+                }
+                Text(subtitle, style = MaterialTheme.typography.bodyMedium, color = ink.copy(alpha = 0.8f))
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun StatCard(title: String, value: String, subtitle: String?, modifier: Modifier = Modifier, onClick: (() -> Unit)? = null) {
     val content: @Composable () -> Unit = {
         Column(Modifier.fillMaxWidth().padding(14.dp)) {
             Text(title, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text(value, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 4.dp))
+            Text(value, style = MaterialTheme.typography.titleLargeEmphasized, modifier = Modifier.padding(top = 4.dp))
             if (subtitle != null) {
                 Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }

@@ -43,6 +43,16 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.material3.toShape
+import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.FilledTonalIconToggleButton
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.layout.requiredSize
+import androidx.compose.animation.core.Animatable
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -89,7 +99,7 @@ import fyi.mergers.app.ui.theme.AppealIndigo
 import fyi.mergers.app.ui.theme.statusColors
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun MergerDetailScreen(vm: AppViewModel, id: String) {
     val state by remember(id) { vm.detail(id) }.collectAsStateWithLifecycle()
@@ -132,7 +142,12 @@ fun MergerDetailScreen(vm: AppViewModel, id: String) {
                     }
                 },
                 actions = {
-                    IconButton(onClick = toggleFollow) {
+                    // Fills and morphs from round to square-ish when on, on a spring.
+                    FilledTonalIconToggleButton(
+                        checked = followed,
+                        onCheckedChange = { toggleFollow() },
+                        shapes = IconButtonDefaults.toggleableShapes(),
+                    ) {
                         Icon(
                             if (followed) Icons.Filled.Bookmark else Icons.Filled.BookmarkBorder,
                             contentDescription = if (followed) "Unfollow" else "Follow",
@@ -316,6 +331,7 @@ private fun Detail(vm: AppViewModel, m: MergerDetail) {
  * the site's detail page: a deep fill once decided (indigo while under
  * appeal), a pale tint of the status colour while it runs.
  */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun Header(m: MergerDetail) {
     val input = m.outcomeInput()
@@ -336,27 +352,45 @@ private fun Header(m: MergerDetail) {
         "Under judicial review".takeIf { m.under_judicial_review },
     ).joinToString(" · ")
 
-    Column(
+    // The outcome's own shape (as its glyph in lists), large and faint,
+    // turning into place behind the title on a spring.
+    val turn = remember(m.merger_id) { Animatable(-45f) }
+    val spring = MaterialTheme.motionScheme.slowSpatialSpec<Float>()
+    LaunchedEffect(m.merger_id) { turn.animateTo(0f, spring) }
+    val shape = outcomeShape(header?.label ?: m.status).toShape()
+
+    Box(
         Modifier
             .padding(horizontal = 16.dp, vertical = 8.dp)
             .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
-            .background(bg)
-            .padding(18.dp),
+            .clip(MaterialTheme.shapes.extraLarge)
+            .background(bg),
     ) {
-        Text(
-            statusLine.uppercase(),
-            color = fg,
-            style = MaterialTheme.typography.labelMedium,
-            fontWeight = FontWeight.Bold,
+        // Drawn to the content's height, not its own: the shape bleeds off the corner.
+        Box(
+            Modifier
+                .matchParentSize()
+                .wrapContentSize(Alignment.TopEnd, unbounded = true)
+                .offset(x = 40.dp, y = (-36).dp)
+                .requiredSize(160.dp)
+                .graphicsLayer { rotationZ = turn.value }
+                .clip(shape)
+                .background(fg.copy(alpha = 0.10f)),
         )
-        Text(
-            m.merger_name,
-            color = fg,
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.SemiBold,
-            modifier = Modifier.padding(top = 6.dp).semantics { heading() },
-        )
+        Column(Modifier.padding(horizontal = 20.dp, vertical = 20.dp)) {
+            Text(
+                statusLine.uppercase(),
+                color = fg,
+                style = MaterialTheme.typography.labelMediumEmphasized,
+                letterSpacing = 0.8.sp,
+            )
+            Text(
+                m.merger_name,
+                color = fg,
+                style = MaterialTheme.typography.headlineSmallEmphasized,
+                modifier = Modifier.padding(top = 8.dp).semantics { heading() },
+            )
+        }
     }
 }
 
