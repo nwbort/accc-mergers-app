@@ -27,6 +27,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
+import fyi.mergers.app.tracking.TrackedEvents
 import kotlinx.coroutines.flow.drop
 
 private data class Tab(val route: Route, val label: String, val icon: ImageVector, val selectedIcon: ImageVector)
@@ -41,7 +42,7 @@ private val TABS = listOf(
 fun MergersApp(vm: AppViewModel) {
     val tracking by vm.tracking.collectAsStateWithLifecycle()
     val sync by vm.sync.collectAsStateWithLifecycle()
-    val unread = sync?.events?.count { !it.upcoming && it.key !in tracking.seen } ?: 0
+    val unread = TrackedEvents.inbox(sync?.events.orEmpty(), tracking).count { !it.upcoming && it.key !in tracking.seen }
     val activity = LocalActivity.current
 
     Scaffold(

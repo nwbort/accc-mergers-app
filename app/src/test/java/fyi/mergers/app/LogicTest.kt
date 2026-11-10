@@ -140,6 +140,8 @@ class LogicTest {
         val fresh = listOf(ev("MN-20100", null), ev("MN-20100", "C"), ev("MN-20101", "C"))
         val shown = TrackedEvents.toNotify(fresh, followed = setOf("MN-20100"))
         assertEquals(listOf("MN-20100-null", "MN-20101-C"), shown.map { it.key })
+        val state = TrackingState(tracked = listOf("MN-20100"), industries = listOf(FollowedIndustry("C", "Manufacturing")))
+        assertEquals(listOf("MN-20100-null", "MN-20101-C"), TrackedEvents.inbox(fresh, state).map { it.key })
     }
 
     @Test

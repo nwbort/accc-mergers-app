@@ -175,6 +175,17 @@ object TrackedEvents {
     fun toNotify(fresh: List<TrackedEvent>, followed: Set<String>): List<TrackedEvent> =
         fresh.filter { it.industryCode == null || it.mergerId !in followed }
 
+    /**
+     * What the Following inbox lists of [events]: a followed merger's own, and
+     * a followed industry's, less its lines about a merger that's followed
+     * itself (the merger's own events say the same), as in [toNotify].
+     */
+    fun inbox(events: List<TrackedEvent>, state: TrackingState): List<TrackedEvent> =
+        events.filter { e ->
+            if (e.industryCode == null) state.isTracked(e.mergerId)
+            else state.isIndustryTracked(e.industryCode) && !state.isTracked(e.mergerId)
+        }
+
     /** Newest first, and each event once. */
     fun inboxOrder(events: List<TrackedEvent>): List<TrackedEvent> =
         events.distinctBy { it.key }.sortedByDescending { it.date ?: "" }
