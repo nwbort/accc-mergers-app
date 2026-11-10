@@ -101,9 +101,9 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import fyi.mergers.app.data.Dates
 import fyi.mergers.app.data.MergerDetail
+import fyi.mergers.app.data.displayNames
 import fyi.mergers.app.data.MergerEvent
 import fyi.mergers.app.data.MergerIds
-import fyi.mergers.app.data.Party
 import fyi.mergers.app.data.Reasons
 import fyi.mergers.app.data.documentUrl
 import fyi.mergers.app.data.headerStatus
@@ -567,7 +567,7 @@ private fun Parties(m: MergerDetail) {
         groups.forEach { (label, parties) ->
             Column {
                 Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                parties.forEach { PartyLine(it) }
+                parties.displayNames().forEach { PartyLine(it) }
             }
         }
     }
@@ -579,8 +579,8 @@ private fun Parties(m: MergerDetail) {
  * Business Register Number …") that squeezed the name to a letter a line.
  */
 @Composable
-private fun PartyLine(p: Party) {
-    Text(p.displayName, style = MaterialTheme.typography.bodyMedium)
+private fun PartyLine(name: String) {
+    Text(name, style = MaterialTheme.typography.bodyMedium)
 }
 
 @OptIn(ExperimentalLayoutApi::class)

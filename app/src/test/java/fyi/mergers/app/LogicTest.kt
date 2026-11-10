@@ -47,6 +47,9 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import fyi.mergers.app.data.displayNames
+import fyi.mergers.app.data.PartyPage
+import fyi.mergers.app.data.Party
 import fyi.mergers.app.notify.Notifier
 
 /** The rules ported from the site, checked against the real data snapshot. */
@@ -526,5 +529,18 @@ class LogicTest {
         // After its last day it's gone.
         Dates.clock = Clock.fixed(Instant.parse("2026-11-20T01:00:00Z"), Dates.SYDNEY)
         assertTrue(TrackedEvents.upcoming(m).none { it.title == "Tribunal hearing" })
+    }
+
+    @Test
+    fun parties_tidied_to_the_same_name_are_listed_once() {
+        val octopus = PartyPage("octopus", "Octopus Australia")
+        val parties = listOf(
+            Party("OCTOPUS CAPITAL AUST PTY LTD", "ABN", "72 627 019 096", octopus),
+            Party("Octopus Aust Oasis Manager Pty Ltd", "ABN", "52 660 429 087", octopus),
+            Party("ABP"),
+            Party("abp "),
+            Party("Telopea Real Estate Partners Pty Ltd"),
+        )
+        assertEquals(listOf("Octopus Australia", "ABP", "Telopea Real Estate Partners Pty Ltd"), parties.displayNames())
     }
 }

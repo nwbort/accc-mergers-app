@@ -62,6 +62,7 @@ import androidx.graphics.shapes.RoundedPolygon
 import fyi.mergers.app.data.Dates
 import fyi.mergers.app.data.MergerSummary
 import fyi.mergers.app.data.Party
+import fyi.mergers.app.data.displayNames
 import fyi.mergers.app.data.Status
 import fyi.mergers.app.data.headerStatus
 import fyi.mergers.app.data.outcomeInput
@@ -256,7 +257,7 @@ fun SectionTitle(text: String, modifier: Modifier = Modifier, trailing: @Composa
 }
 
 fun partiesLine(acquirers: List<Party>, targets: List<Party>): String? {
-    fun names(p: List<Party>) = p.joinToString(", ") { it.displayName }.ifBlank { null }
+    fun names(p: List<Party>) = p.displayNames().joinToString(", ").ifBlank { null }
     val a = names(acquirers)
     val t = names(targets)
     return when {
