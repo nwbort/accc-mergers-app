@@ -35,7 +35,9 @@ class CheckWorker(context: Context, params: WorkerParameters) : CoroutineWorker(
         if (toPost.isEmpty() || Notifier.postTracked(applicationContext, toPost)) {
             Graph.store.markNotified(result.fresh.map { it.key })
         }
-        Notifier.postNewFilings(applicationContext, result.newFilings)
+        // A filing a followed merger or industry has just announced isn't news twice.
+        val told = toPost.map { it.mergerId }.toSet()
+        Notifier.postNewFilings(applicationContext, result.newFilings.filter { it.merger_id !in told })
         return if (result.failed.isNotEmpty() && runAttemptCount < 2) Result.retry() else Result.success()
     }
 

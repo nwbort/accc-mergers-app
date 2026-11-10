@@ -96,11 +96,11 @@ object Notifier {
         if (lines.size == 1) lines.first() else "${lines.first()} +${lines.size - 1} more"
 
     /**
-     * One event: its full wording when the expanded view adds something.
-     * Several: a line each, up to six.
+     * One event: its line again, in full if it's too long for the collapsed
+     * view. Several: a line each, up to six.
      */
-    private fun style(title: String, events: List<TrackedEvent>, lines: List<String>, full: (TrackedEvent) -> String): NotificationCompat.Style {
-        if (events.size == 1) return NotificationCompat.BigTextStyle().setBigContentTitle(title).bigText(full(events.first()))
+    private fun style(title: String, lines: List<String>): NotificationCompat.Style {
+        if (lines.size == 1) return NotificationCompat.BigTextStyle().setBigContentTitle(title).bigText(lines.first())
         val style = NotificationCompat.InboxStyle().setBigContentTitle(title)
         lines.take(6).forEach { style.addLine(it) }
         if (lines.size > 6) style.setSummaryText("+${lines.size - 6} more")
@@ -128,7 +128,7 @@ object Notifier {
                 .setSmallIcon(R.drawable.ic_stat_merger)
                 .setContentTitle(name)
                 .setContentText(collapsed(lines))
-                .setStyle(style(name, sorted, lines) { if (it.upcoming) due(it) else it.title })
+                .setStyle(style(name, lines))
                 .setSubText(id)
                 .setContentIntent(open(context, id))
                 .setAutoCancel(true)
@@ -154,7 +154,7 @@ object Notifier {
                 .setSmallIcon(R.drawable.ic_stat_merger)
                 .setContentTitle(name)
                 .setContentText(collapsed(lines))
-                .setStyle(style(name, sorted, lines, ::short))
+                .setStyle(style(name, lines))
                 .setSubText("ANZSIC $code")
                 .setContentIntent(openUrl(context, industryPageUrl(code)))
                 .setAutoCancel(true)

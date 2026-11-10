@@ -138,10 +138,16 @@ class LogicTest {
             title = "Merger notified to ACCC", upcoming = false, industryCode = industry,
         )
         val fresh = listOf(ev("MN-20100", null), ev("MN-20100", "C"), ev("MN-20101", "C"))
-        val shown = TrackedEvents.toNotify(fresh, followed = setOf("MN-20100"))
-        assertEquals(listOf("MN-20100-null", "MN-20101-C"), shown.map { it.key })
-        val state = TrackingState(tracked = listOf("MN-20100"), industries = listOf(FollowedIndustry("C", "Manufacturing")))
-        assertEquals(listOf("MN-20100-null", "MN-20101-C"), TrackedEvents.inbox(fresh, state).map { it.key })
+            .map { if (it.industryCode != null) it.copy(key = "ind_C_${it.mergerId}") else it }
+        // The same filing under a second followed industry.
+        val again = ev("MN-20101", "G").copy(key = "ind_G_MN-20101")
+        val shown = TrackedEvents.toNotify(fresh + again, followed = setOf("MN-20100"))
+        assertEquals(listOf("MN-20100-null", "ind_C_MN-20101"), shown.map { it.key })
+        val state = TrackingState(
+            tracked = listOf("MN-20100"),
+            industries = listOf(FollowedIndustry("C", "Manufacturing"), FollowedIndustry("G", "Retail Trade")),
+        )
+        assertEquals(listOf("MN-20100-null", "ind_C_MN-20101"), TrackedEvents.inbox(fresh + again, state).map { it.key })
     }
 
     @Test

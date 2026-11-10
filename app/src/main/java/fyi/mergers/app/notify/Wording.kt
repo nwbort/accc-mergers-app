@@ -10,8 +10,8 @@ import fyi.mergers.app.data.phaseStatus
  * document titles ("Phase 1 - initial assessment determination: Approved",
  * "Timeline extended by 15 business days – following request by parties"),
  * so this maps the common shapes to a few words and leaves the rest as they
- * are. The full title still shows in the expanded notification and the
- * Following inbox.
+ * are, in the notification collapsed or expanded. The full title still
+ * shows in the Following inbox.
  */
 object Wording {
     private fun Regex.at(s: String) = find(s)

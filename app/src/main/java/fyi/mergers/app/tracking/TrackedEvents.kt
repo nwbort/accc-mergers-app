@@ -168,23 +168,25 @@ object TrackedEvents {
         m.related_merger?.takeIf { it.relationship in FORWARD_REFILE }?.merger_id
 
     /**
-     * What to notify of [fresh]: a followed industry's line about a merger
-     * that's followed itself is left out, since the merger's own notification
-     * says the same (or will, if its file couldn't be read this time).
+     * What to notify of [fresh]: each piece of news once. A followed
+     * industry's line about a merger that's followed itself is left out,
+     * since the merger's own notification says the same (or will, if its file
+     * couldn't be read this time), and a merger under two followed industries
+     * is told about in the first.
      */
     fun toNotify(fresh: List<TrackedEvent>, followed: Set<String>): List<TrackedEvent> =
-        fresh.filter { it.industryCode == null || it.mergerId !in followed }
+        fresh.filter { it.industryCode == null || it.mergerId !in followed }.distinctBy(::sameNews)
 
-    /**
-     * What the Following inbox lists of [events]: a followed merger's own, and
-     * a followed industry's, less its lines about a merger that's followed
-     * itself (the merger's own events say the same), as in [toNotify].
-     */
+    /** What the Following inbox lists of [events]: what's followed, each piece of news once, as in [toNotify]. */
     fun inbox(events: List<TrackedEvent>, state: TrackingState): List<TrackedEvent> =
         events.filter { e ->
             if (e.industryCode == null) state.isTracked(e.mergerId)
             else state.isIndustryTracked(e.industryCode) && !state.isTracked(e.mergerId)
-        }
+        }.distinctBy(::sameNews)
+
+    /** An industry line's key without the industry, so the same filing under two industries matches. */
+    private fun sameNews(e: TrackedEvent): String =
+        e.industryCode?.let { e.key.removePrefix("ind_${it}_") } ?: e.key
 
     /** Newest first, and each event once. */
     fun inboxOrder(events: List<TrackedEvent>): List<TrackedEvent> =
