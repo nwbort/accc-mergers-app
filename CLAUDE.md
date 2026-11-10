@@ -25,7 +25,9 @@ Push (`notify/Push.kt`): the site's `android-push.yml` diffs the manifest
 between deploys and sends a "check now" message over FCM to a topic per
 changed file; each phone subscribes to the topics for what it follows
 (`TopicSyncWorker`), and `PushService` runs `CheckWorker.checkNow`. The topic
-names must match `scripts/push/fcm.py`; both test suites pin them. Firebase is
+names must match `scripts/push/fcm.py`, and the site's browser notifications
+(`frontend/src/push/topics.js`) subscribe to the same ones and get the same
+message; all the test suites pin them. Firebase is
 configured from `app/google-services.json` (or the `GOOGLE_SERVICES_JSON`
 secret in CI), read in `app/build.gradle.kts` without the Google Services
 plugin. Without it there's no push and the schedule stays at 2 hours; once a
