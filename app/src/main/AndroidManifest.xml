@@ -37,6 +37,12 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <!-- "Additional settings in the app" on the phone's App info page:
+                 straight to the settings screen. -->
+            <intent-filter>
+                <action android:name="android.intent.action.APPLICATION_PREFERENCES" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
             <!-- The site's pages open here: the dashboard, the merger list, a merger,
                  the industries and an industry. Verified against
                  https://mergers.fyi/.well-known/assetlinks.json (the site's

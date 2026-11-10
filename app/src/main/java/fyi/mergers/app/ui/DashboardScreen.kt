@@ -2,7 +2,6 @@ package fyi.mergers.app.ui
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
@@ -22,6 +21,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.automirrored.outlined.ArrowForward
 import androidx.compose.material.icons.outlined.AccountBalance
 import androidx.compose.material.icons.outlined.AddCircleOutline
@@ -82,6 +82,7 @@ import fyi.mergers.app.data.StatusWindow
 import fyi.mergers.app.data.WindowDurations
 import fyi.mergers.app.data.Status
 import fyi.mergers.app.data.UpcomingEvent
+import fyi.mergers.app.ui.theme.isDarkTheme
 import fyi.mergers.app.ui.theme.eventTypeColors
 import fyi.mergers.app.ui.theme.recentEventColors
 import java.time.format.DateTimeFormatter
@@ -128,6 +129,9 @@ fun DashboardScreen(vm: AppViewModel) {
                 actions = {
                     IconButton(onClick = vm::openSearch) {
                         Icon(Icons.Filled.Search, contentDescription = "Search")
+                    }
+                    IconButton(onClick = vm::openSettings) {
+                        Icon(Icons.Outlined.Settings, contentDescription = "Settings")
                     }
                 },
             )
@@ -420,7 +424,7 @@ private fun median(v: Double): String = if (v % 1.0 == 0.0) v.toInt().toString()
  */
 @Composable
 private fun DecisionTimeCard(title: String, d: WindowDurations, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    val darkTheme = isSystemInDarkTheme()
+    val darkTheme = isDarkTheme()
     val delta = d.median_delta
     val tone = when {
         delta == null || delta == 0.0 || d.median == null -> MaterialTheme.colorScheme.onSurface

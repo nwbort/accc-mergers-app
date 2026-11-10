@@ -39,6 +39,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.lifecycleScope
 import fyi.mergers.app.ui.EventTypeTile
+import fyi.mergers.app.ui.theme.Appearance
 import fyi.mergers.app.ui.theme.MergersTheme
 import kotlinx.coroutines.launch
 
@@ -62,7 +63,7 @@ class UpcomingWidgetConfigActivity : ComponentActivity() {
             return
         }
         setContent {
-            MergersTheme {
+            MergersTheme(Appearance.theme(this)) {
                 UpcomingWidgetConfig(WidgetPrefs.upcoming(this, id)) { config ->
                     WidgetPrefs.setUpcoming(this, id, config)
                     lifecycleScope.launch {

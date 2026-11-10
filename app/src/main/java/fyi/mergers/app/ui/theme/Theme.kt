@@ -5,6 +5,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import fyi.mergers.app.data.IndustryPhase
 import fyi.mergers.app.data.RecentEventType
@@ -52,9 +55,24 @@ private val Dark = darkColorScheme(
     surfaceContainerHighest = Color(0xFF313935),
 )
 
+/** Whether the app is drawing dark: the setting, or the phone's when it's [ThemeChoice.SYSTEM]. */
+private val LocalDark = staticCompositionLocalOf { false }
+
+/** Use this, not [isSystemInDarkTheme], for colours that differ between light and dark. */
 @Composable
-fun MergersTheme(content: @Composable () -> Unit) {
-    MaterialTheme(colorScheme = if (isSystemInDarkTheme()) Dark else Light, content = content)
+@ReadOnlyComposable
+fun isDarkTheme(): Boolean = LocalDark.current
+
+@Composable
+fun MergersTheme(choice: ThemeChoice = ThemeChoice.SYSTEM, content: @Composable () -> Unit) {
+    val dark = when (choice) {
+        ThemeChoice.SYSTEM -> isSystemInDarkTheme()
+        ThemeChoice.LIGHT -> false
+        ThemeChoice.DARK -> true
+    }
+    CompositionLocalProvider(LocalDark provides dark) {
+        MaterialTheme(colorScheme = if (dark) Dark else Light, content = content)
+    }
 }
 
 /** A status's fill and the text on it, as the site's solid badges (SOLID_STATUS_COLORS). */
@@ -133,7 +151,7 @@ private enum class Tint(val tint: Long, val ink: Long, val darkInk: Long) {
 
 @Composable
 private fun tile(t: Tint): StatusColors =
-    if (isSystemInDarkTheme()) StatusColors(Color(t.darkInk).copy(alpha = 0.16f), Color(t.darkInk))
+    if (isDarkTheme()) StatusColors(Color(t.darkInk).copy(alpha = 0.16f), Color(t.darkInk))
     else StatusColors(Color(t.tint), Color(t.ink))
 
 /** The industry pages' group accents: the site's phase-2, phase-1 and waiver fills. */

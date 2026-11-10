@@ -63,6 +63,13 @@ picks day or night), so a new type or colour goes in both places. Search
 draws a widget's `RemoteViews` inside an `AppWidgetHostView` (a list takes no
 rows anywhere else).
 
+Settings (`ui/SettingsScreen.kt`) has no tab: it opens from the cog on the
+dashboard's top bar, and from the phone's App info ("Additional settings in the
+app", `ACTION_APPLICATION_PREFERENCES`). The theme choice (`ui/theme/Appearance.kt`)
+is kept in plain preferences and handed to `UiModeManager.setApplicationNightMode`
+too, so the window and status bar follow it. In Compose, use `isDarkTheme()`,
+not `isSystemInDarkTheme()`, which ignores the setting.
+
 ## Commits and pull requests
 
 Don't credit Claude in anything pushed to GitHub: no `Co-Authored-By: Claude`

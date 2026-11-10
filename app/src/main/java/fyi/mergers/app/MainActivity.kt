@@ -33,7 +33,7 @@ class MainActivity : ComponentActivity() {
                 CrashScreen(shown, onDismiss = { CrashReport.clear(this); report = null })
                 return@setContent
             }
-            MergersTheme { MergersApp(vm) }
+            MergersTheme(vm.theme) { MergersApp(vm) }
         }
     }
 
@@ -52,6 +52,10 @@ class MainActivity : ComponentActivity() {
     private fun handle(intent: Intent, fresh: Boolean = false) {
         if (intent.action == ACTION_SEARCH) {
             vm.openSearch()
+            return
+        }
+        if (intent.action == Intent.ACTION_APPLICATION_PREFERENCES) {
+            vm.openSettings()
             return
         }
         if (intent.action != Intent.ACTION_VIEW) return

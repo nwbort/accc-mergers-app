@@ -23,6 +23,8 @@ import fyi.mergers.app.notify.Notifier
 import fyi.mergers.app.tracking.SyncResult
 import fyi.mergers.app.tracking.TrackedEvents
 import fyi.mergers.app.tracking.TrackingState
+import fyi.mergers.app.ui.theme.Appearance
+import fyi.mergers.app.ui.theme.ThemeChoice
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -41,6 +43,7 @@ sealed interface Route {
     data object Industries : Route
     data class Industry(val code: String) : Route
     data object Search : Route
+    data object Settings : Route
 
     /** Only on screen, never in [AppViewModel.backStack]: the root that holds all three tabs. */
     data object Tabs : Route
@@ -164,6 +167,20 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     fun showMergersWithStatus(status: String) {
         filter = ListFilter(status = status)
         selectTab(Route.Mergers)
+    }
+
+    // ---- settings ---------------------------------------------------------------
+
+    /** The dashboard's cog, or "Additional settings in the app" from the phone's App info. */
+    fun openSettings() = goTo(Route.Settings)
+
+    var theme by mutableStateOf(Appearance.theme(app))
+        private set
+
+    fun chooseTheme(choice: ThemeChoice) {
+        if (choice == theme) return
+        theme = choice
+        Appearance.setTheme(getApplication(), choice)
     }
 
     // ---- data -----------------------------------------------------------------

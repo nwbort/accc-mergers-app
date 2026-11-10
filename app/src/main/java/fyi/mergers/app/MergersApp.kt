@@ -10,6 +10,7 @@ import fyi.mergers.app.notify.Notifier
 import fyi.mergers.app.notify.Push
 import fyi.mergers.app.tracking.Tracker
 import fyi.mergers.app.tracking.TrackingStore
+import fyi.mergers.app.ui.theme.Appearance
 import fyi.mergers.app.widget.UpcomingWidget
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -29,6 +30,7 @@ open class MergersApp : Application() {
         // A failure here would kill every launch before anything could show
         // it, so record it instead and let MainActivity put it on screen.
         try {
+            Appearance.apply(this)
             Graph.init(this, dataSource())
             Notifier.createChannels(this)
             scheduleChecks()
