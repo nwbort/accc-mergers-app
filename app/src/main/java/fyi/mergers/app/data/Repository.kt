@@ -29,6 +29,11 @@ class Repository(private val source: DataSource) {
     private val _upcoming = MutableStateFlow(Loaded<List<UpcomingEvent>>())
     val upcoming: StateFlow<Loaded<List<UpcomingEvent>>> = _upcoming.asStateFlow()
 
+    private val _recent = MutableStateFlow(Loaded<List<RecentEvent>>())
+
+    /** recent-events.json: what happened on the register over the last two weeks. */
+    val recent: StateFlow<Loaded<List<RecentEvent>>> = _recent.asStateFlow()
+
     private val _currentStatus = MutableStateFlow(Loaded<StatusWindow>())
 
     /** The site's /current-status headline: the last 30 days' decision times. */
@@ -88,7 +93,8 @@ class Repository(private val source: DataSource) {
                 windows.firstOrNull { it.days == 30 } ?: windows.firstOrNull() ?: error("No current_status in analysis.json")
             }
         }
-        a.await(); b.await(); c.await()
+        val d = async { load(_recent, "recent-events.json", RecentEvents.serializer()) { it.events } }
+        a.await(); b.await(); c.await(); d.await()
     }
 
     /** upcoming-events.json from the network (or the last copy), for the Coming up widget. */

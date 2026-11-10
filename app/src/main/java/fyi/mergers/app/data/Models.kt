@@ -302,6 +302,23 @@ data class UpcomingEvent(
     val is_waiver: Boolean = false,
 )
 
+// ---- recent-events.json --------------------------------------------------
+
+@Serializable
+data class RecentEvents(val events: List<RecentEvent> = emptyList())
+
+/** One register event from the last two weeks; [type] is the site's classify() (recent_events.py). */
+@Serializable
+data class RecentEvent(
+    val type: String? = null,
+    val title: String? = null,
+    val date: String? = null,
+    val merger_id: String = "",
+    val merger_name: String = "",
+    val stage: String? = null,
+    val is_waiver: Boolean = false,
+)
+
 // ---- phase2.json (only which matters are current) ---------------------------
 
 @Serializable

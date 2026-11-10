@@ -7,6 +7,7 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import fyi.mergers.app.data.IndustryPhase
+import fyi.mergers.app.data.RecentEventType
 import fyi.mergers.app.data.Status
 
 /** The site's own colours (tailwind.config.js): primary #335145, accent #10b981. */
@@ -85,20 +86,55 @@ val RefiledAmber = StatusColors(Color(0xFFB45309), Color.White)
  * 50 tint under its 600/700 shade; in the dark, the 300 shade on a faint wash.
  */
 @Composable
-fun eventTypeColors(type: String?): StatusColors {
-    val dark = isSystemInDarkTheme()
-    fun pair(tint: Long, ink: Long, darkInk: Long) =
-        if (dark) StatusColors(Color(darkInk).copy(alpha = 0.16f), Color(darkInk))
-        else StatusColors(Color(tint), Color(ink))
-    return when (type) {
-        "consultation_due" -> pair(0xFFEFF6FF, 0xFF2563EB, 0xFF93C5FD) // blue
-        "notice_of_competition_concerns" -> pair(0xFFFFFBEB, 0xFFB45309, 0xFFFCD34D) // amber
-        "public_benefit_assessment", "public_benefit_response_due" -> pair(0xFFF0FDFA, 0xFF0F766E, 0xFF5EEAD4) // teal
-        "determination_due" -> pair(0xFFFAF5FF, 0xFF9333EA, 0xFFD8B4FE) // purple
-        "tribunal_hearing", "federal_court_hearing" -> pair(0xFFFFF1F2, 0xFFE11D48, 0xFFFDA4AF) // rose
-        else -> pair(0xFFF3F4F6, 0xFF4B5563, 0xFFD1D5DB) // gray
-    }
+fun eventTypeColors(type: String?): StatusColors = when (type) {
+    "consultation_due" -> tile(Tint.BLUE)
+    "notice_of_competition_concerns" -> tile(Tint.AMBER)
+    "public_benefit_assessment", "public_benefit_response_due" -> tile(Tint.TEAL)
+    "determination_due" -> tile(Tint.PURPLE)
+    "tribunal_hearing", "federal_court_hearing" -> tile(Tint.ROSE)
+    else -> tile(Tint.GRAY)
 }
+
+/**
+ * A recent event's tile, as the site's Recent events list (`tile` in
+ * constants/recentEventTypes.js), in the same families as [eventTypeColors].
+ */
+@Composable
+fun recentEventColors(type: RecentEventType): StatusColors = tile(
+    when (type) {
+        RecentEventType.TRIBUNAL, RecentEventType.FEDERAL_COURT -> Tint.ROSE
+        RecentEventType.PHASE_2_DETERMINATION, RecentEventType.REASONS,
+        RecentEventType.PHASE_1_DETERMINATION -> Tint.PURPLE
+        RecentEventType.UNDERTAKING_ACCEPTED, RecentEventType.REMEDY_OFFER,
+        RecentEventType.REMEDY_QUESTIONNAIRE -> Tint.EMERALD
+        RecentEventType.PHASE_2_REFERRAL, RecentEventType.COMPETITION_CONCERNS -> Tint.AMBER
+        RecentEventType.PUBLIC_BENEFIT -> Tint.TEAL
+        RecentEventType.PHASE_2_CONSULTATION, RecentEventType.QUESTIONNAIRE -> Tint.BLUE
+        RecentEventType.MATERIALLY_INCOMPLETE -> Tint.ORANGE
+        RecentEventType.NOTIFICATION_COMPLETED, RecentEventType.NOTIFIED -> Tint.PRIMARY
+        RecentEventType.TIMELINE_EXTENSION -> Tint.SKY
+        RecentEventType.CEASED, RecentEventType.WAIVER_DETERMINATION, RecentEventType.OTHER -> Tint.GRAY
+    },
+)
+
+/** Tailwind's 50 tint under its 600/700 shade; in the dark, the 300 shade on a faint wash. */
+private enum class Tint(val tint: Long, val ink: Long, val darkInk: Long) {
+    BLUE(0xFFEFF6FF, 0xFF2563EB, 0xFF93C5FD),
+    SKY(0xFFF0F9FF, 0xFF0369A1, 0xFF7DD3FC),
+    AMBER(0xFFFFFBEB, 0xFFB45309, 0xFFFCD34D),
+    ORANGE(0xFFFFF7ED, 0xFFC2410C, 0xFFFDBA74),
+    TEAL(0xFFF0FDFA, 0xFF0F766E, 0xFF5EEAD4),
+    EMERALD(0xFFECFDF5, 0xFF047857, 0xFF6EE7B7),
+    PURPLE(0xFFFAF5FF, 0xFF9333EA, 0xFFD8B4FE),
+    ROSE(0xFFFFF1F2, 0xFFE11D48, 0xFFFDA4AF),
+    PRIMARY(0xFFEBEEED, 0xFF335145, 0xFF9FD3B8), // the site's primary/10 on white
+    GRAY(0xFFF3F4F6, 0xFF4B5563, 0xFFD1D5DB),
+}
+
+@Composable
+private fun tile(t: Tint): StatusColors =
+    if (isSystemInDarkTheme()) StatusColors(Color(t.darkInk).copy(alpha = 0.16f), Color(t.darkInk))
+    else StatusColors(Color(t.tint), Color(t.ink))
 
 /** The industry pages' group accents: the site's phase-2, phase-1 and waiver fills. */
 fun phaseAccent(phase: IndustryPhase): Color = when (phase) {

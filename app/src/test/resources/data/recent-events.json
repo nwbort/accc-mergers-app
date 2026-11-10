@@ -1,0 +1,1068 @@
+{
+  "events": [
+    {
+      "type": "notified",
+      "title": "Merger notified to ACCC",
+      "date": "2026-11-06T12:00:00Z",
+      "merger_id": "MN-20046",
+      "merger_name": "Autosports Group - Mercedes-Benz Parramatta and Castle Hill, Chery Castle Hill",
+      "stage": "Phase 1 - initial assessment",
+      "is_waiver": false
+    },
+    {
+      "type": "questionnaire",
+      "title": "Phase 1 consultation",
+      "date": "2026-11-06T12:00:00Z",
+      "merger_id": "MN-20046",
+      "merger_name": "Autosports Group - Mercedes-Benz Parramatta and Castle Hill, Chery Castle Hill",
+      "stage": "Phase 1 - initial assessment",
+      "is_waiver": false,
+      "url_gh": "/mergers/MN-20046/Autosports Group - Mercedes-Benz Parramatta and Castle Hill, Chery Castle Hill - third party questionnaire.pdf"
+    },
+    {
+      "type": "questionnaire",
+      "title": "Phase 1 consultation",
+      "date": "2026-11-06T12:00:00Z",
+      "merger_id": "MN-70049",
+      "merger_name": "Total Ventilation Hygiene - Alphacool",
+      "stage": "Phase 1 - initial assessment",
+      "is_waiver": false,
+      "url_gh": "/mergers/MN-70049/Total Ventilation Hygiene - Alphacool - third-party questionnaire.pdf"
+    },
+    {
+      "type": "phase_1_determination",
+      "title": "Phase 1 - initial assessment determination: Approved",
+      "date": "2026-11-05T12:00:00Z",
+      "merger_id": "MN-10032",
+      "merger_name": "TurOSI - Cordina",
+      "stage": "Phase 1 - initial assessment",
+      "is_waiver": false,
+      "url_gh": "/mergers/MN-10032/TurOSI - Cordina - Phase 1 determination_0.pdf"
+    },
+    {
+      "type": "phase_1_determination",
+      "title": "Phase 1 - initial assessment determination: Approved",
+      "date": "2026-11-05T12:00:00Z",
+      "merger_id": "MN-25047",
+      "merger_name": "Alcoa \u2013 South32 aluminium assets",
+      "stage": "Phase 1 - initial assessment",
+      "is_waiver": false,
+      "url_gh": "/mergers/MN-25047/Alcoa - South32's Aluminium Assets - Phase 1 Determination.pdf"
+    },
+    {
+      "type": "remedy_questionnaire",
+      "title": "PSP Investments \u2013 AAA Egg Company \u2013 Questionnaire \u2013 Remedy Offer \u2013 5 November 2026",
+      "date": "2026-11-05T12:00:00Z",
+      "merger_id": "MN-55024",
+      "merger_name": "PSP Investments - AAA Egg Company",
+      "stage": "Phase 1 - initial assessment",
+      "is_waiver": false,
+      "url_gh": "/mergers/MN-55024/PSP Investments \u2013 AAA Egg Company \u2013 Questionnaire \u2013 Remedy Offer \u2013 5 November 2026.pdf"
+    },
+    {
+      "type": "notification_completed",
+      "title": "USCO provided additional information in response to the ACCC\u2019s decision under s 51ABY of the CCA. The effective notification date is 5 November 2026.",
+      "date": "2026-11-05T12:00:00Z",
+      "merger_id": "MN-55046",
+      "merger_name": "USCO \u2013 ITM",
+      "stage": "Phase 1 - initial assessment",
+      "is_waiver": false
+    },
+    {
+      "type": "questionnaire",
+      "title": "Phase 1 consultation",
+      "date": "2026-11-05T12:00:00Z",
+      "merger_id": "MN-55046",
+      "merger_name": "USCO \u2013 ITM",
+      "stage": "Phase 1 - initial assessment",
+      "is_waiver": false,
+      "url_gh": "/mergers/MN-55046/Questionnaire - USCO - ITM_0.pdf"
+    },
+    {
+      "type": "questionnaire",
+      "title": "Phase 1 consultation",
+      "date": "2026-11-05T12:00:00Z",
+      "merger_id": "MN-65042",
+      "merger_name": "Thoma Bravo - Varonis",
+      "stage": "Phase 1 - initial assessment",
+      "is_waiver": false,
+      "url_gh": "/mergers/MN-65042/Questionnaire - Thoma Bravo - Varonis.pdf"
+    },
+    {
+      "type": "notified",
+      "title": "Merger notified to ACCC",
+      "date": "2026-11-05T12:00:00Z",
+      "merger_id": "MN-70049",
+      "merger_name": "Total Ventilation Hygiene - Alphacool",
+      "stage": "Phase 1 - initial assessment",
+      "is_waiver": false
+    },
+    {
+      "type": "timeline_extension",
+      "title": "Timeline extended by 5 business days \u2013 following request by parties",
+      "date": "2026-11-05T12:00:00Z",
+      "merger_id": "MN-75031",
+      "merger_name": "VetPartners \u2013 VetLove",
+      "stage": "Phase 1 - initial assessment",
+      "is_waiver": false
+    },
+    {
+      "type": "waiver_determination",
+      "title": "Waiver application determination: Approved",
+      "date": "2026-11-05T12:00:00Z",
+      "merger_id": "WA-40050",
+      "merger_name": "Sims - business assets of Base Metal Recyclers, VIC",
+      "stage": "Waiver application",
+      "is_waiver": true,
+      "url_gh": "/mergers/WA-40050/Sims - business assets of Base Metal Recyclers, VIC (WA-40050) - Notification waiver determination - 4 November 2026.pdf"
+    },
+    {
+      "type": "timeline_extension",
+      "title": "Timeline extended by 15 business days \u2013 following remedy offered by parties",
+      "date": "2026-11-04T12:00:00Z",
+      "merger_id": "MN-05013",
+      "merger_name": "Zoetis \u2013 Neogen Genomics Business",
+      "stage": "Phase 2 - detailed assessment",
+      "is_waiver": false
+    },
+    {
+      "type": "remedy_questionnaire",
+      "title": "Zoetis-Neogen - Questionnaire - Remedy Offer - 4 November 2026",
+      "date": "2026-11-04T12:00:00Z",
+      "merger_id": "MN-05013",
+      "merger_name": "Zoetis \u2013 Neogen Genomics Business",
+      "stage": "Phase 2 - detailed assessment",
+      "is_waiver": false,
+      "url_gh": "/mergers/MN-05013/Zoetis-Neogen - Questionnaire - Remedy Offer - 4 November 2026.pdf"
+    },
+    {
+      "type": "timeline_extension",
+      "title": "Timeline extended by 15 business days \u2013 following remedy offered by parties",
+      "date": "2026-11-04T12:00:00Z",
+      "merger_id": "MN-55024",
+      "merger_name": "PSP Investments - AAA Egg Company",
+      "stage": "Phase 1 - initial assessment",
+      "is_waiver": false
+    },
+    {
+      "type": "remedy_offer",
+      "title": "PSP Investments - AAA Egg Company - remedy offer - 4 November 2026",
+      "date": "2026-11-04T12:00:00Z",
+      "merger_id": "MN-55024",
+      "merger_name": "PSP Investments - AAA Egg Company",
+      "stage": "Phase 1 - initial assessment",
+      "is_waiver": false,
+      "url_gh": "/mergers/MN-55024/PSP Investments - AAA Egg Company - remedy offer - 4 November 2026.pdf"
+    },
+    {
+      "type": "materially_incomplete",
+      "title": "In accordance with s 51ABZ of the CCA the ACCC decided that the notification lodged on 26 October 2026 should be taken not to have an effective notification date because it is materially incomplete.",
+      "date": "2026-11-04T12:00:00Z",
+      "merger_id": "MN-55046",
+      "merger_name": "USCO \u2013 ITM",
+      "stage": "Phase 1 - initial assessment",
+      "is_waiver": false
+    },
+    {
+      "type": "phase_1_determination",
+      "title": "Phase 1 - initial assessment determination: Approved",
+      "date": "2026-11-04T12:00:00Z",
+      "merger_id": "MN-65038",
+      "merger_name": "TCL Electronics \u2013 Sony\u2019s home entertainment business",
+      "stage": "Phase 1 - initial assessment",
+      "is_waiver": false,
+      "url_gh": "/mergers/MN-65038/TCL Electronics - Sony's home entertainment business - Phase 1 Determination.pdf"
+    },
+    {
+      "type": "notified",
+      "title": "Merger notified to ACCC",
+      "date": "2026-11-04T12:00:00Z",
+      "merger_id": "MN-65042",
+      "merger_name": "Thoma Bravo - Varonis",
+      "stage": "Phase 1 - initial assessment",
+      "is_waiver": false
+    },
+    {
+      "type": "waiver_determination",
+      "title": "Waiver application determination: Approved",
+      "date": "2026-11-04T12:00:00Z",
+      "merger_id": "WA-10048",
+      "merger_name": "TA Associates \u2013 MedEnvision",
+      "stage": "Waiver application",
+      "is_waiver": true,
+      "url_gh": "/mergers/WA-10048/TA Associates - MedEnvision (WA-10048) - Notification waiver determination - 4 November 2026.pdf"
+    },
+    {
+      "type": "waiver_determination",
+      "title": "Waiver application determination: Approved",
+      "date": "2026-11-04T12:00:00Z",
+      "merger_id": "WA-70045",
+      "merger_name": "SVP \u2013 Marelli",
+      "stage": "Waiver application",
+      "is_waiver": true,
+      "url_gh": "/mergers/WA-70045/SVP - Marelli (WA-70045) - Notification waiver determination - 4 November 2026.pdf"
+    },
+    {
+      "type": "waiver_determination",
+      "title": "Waiver application determination: Approved",
+      "date": "2026-11-04T12:00:00Z",
+      "merger_id": "WA-85059",
+      "merger_name": "SMM Perth \u2013 mining tenements of Rio Tinto related to the Winu copper-gold project in Western Australia",
+      "stage": "Waiver application",
+      "is_waiver": true,
+      "url_gh": "/mergers/WA-85059/SMM Perth \u2013 mining tenements of Rio Tinto related to the Winu copper-gold project in Western Australia (WA-85059) - Notification waiver determination - 4 November 2026.pdf"
+    },
+    {
+      "type": "questionnaire",
+      "title": "Notification Phase 1 Questionnaire",
+      "date": "2026-11-03T12:00:00Z",
+      "merger_id": "MN-25058",
+      "merger_name": "Healthe Care \u2013 Knox Private, Ringwood Private, Northpark Private, Victorian Rehabilitation Centre and Geelong Clinic",
+      "stage": "Phase 1 - initial assessment",
+      "is_waiver": false,
+      "url_gh": "/mergers/MN-25058/Healthscope - Questionnaire (HMC Hospitals) - October 2026.pdf"
+    },
+    {
+      "type": "questionnaire",
+      "title": "Phase 1 consultation",
+      "date": "2026-11-03T12:00:00Z",
+      "merger_id": "MN-60052",
+      "merger_name": "Healthe Care - Prince of Wales Private Hospital",
+      "stage": "Phase 1 - initial assessment",
+      "is_waiver": false,
+      "url_gh": "/mergers/MN-60052/Healthscope - Questionnaire (POWH) - October 2026_1.pdf"
+    },
+    {
+      "type": "waiver_determination",
+      "title": "Waiver application determination: Approved",
+      "date": "2026-11-03T12:00:00Z",
+      "merger_id": "WA-35051",
+      "merger_name": "Jaybro - Sewer Equipment Company Australia",
+      "stage": "Waiver application",
+      "is_waiver": true,
+      "url_gh": "/mergers/WA-35051/Jaybro - Sewer Equipment Company Australia (WA-35051) - Notification waiver determination - 3 November 2026.pdf"
+    },
+    {
+      "type": "remedy_offer",
+      "title": "Remedy offer - Zoetis - Neogen Genomics Business - 2 November 2026",
+      "date": "2026-11-02T12:00:00Z",
+      "merger_id": "MN-05013",
+      "merger_name": "Zoetis \u2013 Neogen Genomics Business",
+      "stage": "Phase 2 - detailed assessment",
+      "is_waiver": false,
+      "url_gh": "/mergers/MN-05013/Remedy offer - Zoetis - Neogen Genomics Business - 2 November 2026.pdf"
+    },
+    {
+      "type": "questionnaire",
+      "title": "Phase 1 consultation",
+      "date": "2026-11-02T12:00:00Z",
+      "merger_id": "MN-10043",
+      "merger_name": "ACURIO - Nepean, Sydney Southwest, and Campbelltown Private Hospitals",
+      "stage": "Phase 1 - initial assessment",
+      "is_waiver": false,
+      "url_gh": "/mergers/MN-10043/Acurio - Nepean, Sydney Southwest and Campbeltown Private Hospitals - Questionnaire - 2 November 2026.pdf"
+    },
+    {
+      "type": "notified",
+      "title": "Merger notified to ACCC",
+      "date": "2026-11-02T12:00:00Z",
+      "merger_id": "MN-25058",
+      "merger_name": "Healthe Care \u2013 Knox Private, Ringwood Private, Northpark Private, Victorian Rehabilitation Centre and Geelong Clinic",
+      "stage": "Phase 1 - initial assessment",
+      "is_waiver": false
+    },
+    {
+      "type": "questionnaire",
+      "title": "Phase 1 consultation",
+      "date": "2026-11-02T12:00:00Z",
+      "merger_id": "MN-40049",
+      "merger_name": "Coles \u2013 supermarket site in Cannonvale Central (QLD)",
+      "stage": "Phase 1 - initial assessment",
+      "is_waiver": false,
+      "url_gh": "/mergers/MN-40049/Coles-Cannonvale Central (QLD) third-party questionnaire.pdf"
+    },
+    {
+      "type": "phase_1_determination",
+      "title": "Phase 1 - initial assessment determination: Approved",
+      "date": "2026-11-02T12:00:00Z",
+      "merger_id": "MN-60044",
+      "merger_name": "Airbus, Leonardo and Thales \u2013 Space activities joint venture",
+      "stage": "Phase 1 - initial assessment",
+      "is_waiver": false,
+      "url_gh": "/mergers/MN-60044/Airbus, Leonardo and Thales \u2013 Space activities joint venture - Phase 1 determination.pdf"
+    },
+    {
+      "type": "notified",
+      "title": "Merger notified to ACCC",
+      "date": "2026-11-02T12:00:00Z",
+      "merger_id": "MN-60052",
+      "merger_name": "Healthe Care - Prince of Wales Private Hospital",
+      "stage": "Phase 1 - initial assessment",
+      "is_waiver": false
+    },
+    {
+      "type": "notified",
+      "title": "Merger notified to ACCC",
+      "date": "2026-11-02T12:00:00Z",
+      "merger_id": "MN-60059",
+      "merger_name": "Merchant Wealth Partners - minority investment in Ironbark Financial Group",
+      "stage": "Phase 1 - initial assessment",
+      "is_waiver": false
+    },
+    {
+      "type": "questionnaire",
+      "title": "Phase 1 consultation",
+      "date": "2026-11-02T12:00:00Z",
+      "merger_id": "MN-60059",
+      "merger_name": "Merchant Wealth Partners - minority investment in Ironbark Financial Group",
+      "stage": "Phase 1 - initial assessment",
+      "is_waiver": false,
+      "url_gh": "/mergers/MN-60059/Questionnaire - Merchant Wealth Partners - minority investment in Ironbark Financial Group.pdf"
+    },
+    {
+      "type": "questionnaire",
+      "title": "Phase 1 consultation",
+      "date": "2026-11-02T12:00:00Z",
+      "merger_id": "MN-65041",
+      "merger_name": "GLNG Participants \u2013 Greater Meridian CSG Project assets",
+      "stage": "Phase 1 - initial assessment",
+      "is_waiver": false,
+      "url_gh": "/mergers/MN-65041/GLNG - Greater Meridian Project Assets - third-party questionnaire.pdf"
+    },
+    {
+      "type": "waiver_determination",
+      "title": "Waiver application determination: Approved",
+      "date": "2026-11-02T12:00:00Z",
+      "merger_id": "WA-20047",
+      "merger_name": "Macquarie Korea Asset Management \u2013 Hwasung Cosmetics and Nowcos",
+      "stage": "Waiver application",
+      "is_waiver": true,
+      "url_gh": "/mergers/WA-20047/Macquarie Korea Asset Management \u2013 Hwasung Cosmetics and Nowcos (WA-20047) - Notification waiver determination - 2 November 2026.pdf"
+    },
+    {
+      "type": "waiver_determination",
+      "title": "Waiver application determination: Approved",
+      "date": "2026-11-02T12:00:00Z",
+      "merger_id": "WA-60055",
+      "merger_name": "TD SYNNEX - BlueStar",
+      "stage": "Waiver application",
+      "is_waiver": true,
+      "url_gh": "/mergers/WA-60055/TD SYNNEX - BlueStar (WA-60055) - Notification waiver determination - 2 November 2026.pdf"
+    },
+    {
+      "type": "waiver_determination",
+      "title": "Waiver application determination: Approved",
+      "date": "2026-11-02T12:00:00Z",
+      "merger_id": "WA-80049",
+      "merger_name": "Samsung C&T - Powertech",
+      "stage": "Waiver application",
+      "is_waiver": true,
+      "url_gh": "/mergers/WA-80049/Samsung CandT - Powertech (WA-80049) - Notification waiver determination - 2 November 2026.pdf"
+    },
+    {
+      "type": "waiver_determination",
+      "title": "Waiver application determination: Approved",
+      "date": "2026-11-02T12:00:00Z",
+      "merger_id": "WA-80050",
+      "merger_name": "Pearson plc \u2013 Workera Corp",
+      "stage": "Waiver application",
+      "is_waiver": true,
+      "url_gh": "/mergers/WA-80050/Pearson plc - Workera (WA-80050) - Notification waiver determination - 2 November 2026.pdf"
+    },
+    {
+      "type": "questionnaire",
+      "title": "Phase 1 consultation",
+      "date": "2026-10-30T12:00:00Z",
+      "merger_id": "MN-10040",
+      "merger_name": "Calvary \u2013 14 Healthscope hospitals and Healthscope Independence Services",
+      "stage": "Phase 1 - initial assessment",
+      "is_waiver": false,
+      "url_gh": "/mergers/MN-10040/Calvary - 14 Healthscope hospitals and Healthscope Independence Services - Questionnaire - 30 October 2026.pdf"
+    },
+    {
+      "type": "notified",
+      "title": "Merger notified to ACCC",
+      "date": "2026-10-30T12:00:00Z",
+      "merger_id": "MN-10043",
+      "merger_name": "ACURIO - Nepean, Sydney Southwest, and Campbelltown Private Hospitals",
+      "stage": "Phase 1 - initial assessment",
+      "is_waiver": false
+    },
+    {
+      "type": "phase_1_determination",
+      "title": "Phase 1 - initial assessment determination: Approved",
+      "date": "2026-10-30T12:00:00Z",
+      "merger_id": "MN-25048",
+      "merger_name": "Colas \u2013 Quarry Products Harlaxton",
+      "stage": "Phase 1 - initial assessment",
+      "is_waiver": false,
+      "url_gh": "/mergers/MN-25048/Colas - Quarry Products Harlaxton - Phase 1 determination - 30 October 2026_0.pdf"
+    },
+    {
+      "type": "phase_1_determination",
+      "title": "Phase 1 - initial assessment determination: Approved",
+      "date": "2026-10-30T12:00:00Z",
+      "merger_id": "MN-30033",
+      "merger_name": "Brown & Hurley - Schmitz Cargobull and Freighter Group",
+      "stage": "Phase 1 - initial assessment",
+      "is_waiver": false,
+      "url_gh": "/mergers/MN-30033/Brown and Hurley - Schmitz Cargobull and Freighter Group - Phase 1 determination_0.pdf"
+    },
+    {
+      "type": "notified",
+      "title": "Merger notified to ACCC",
+      "date": "2026-10-30T12:00:00Z",
+      "merger_id": "MN-40049",
+      "merger_name": "Coles \u2013 supermarket site in Cannonvale Central (QLD)",
+      "stage": "Phase 1 - initial assessment",
+      "is_waiver": false
+    },
+    {
+      "type": "notified",
+      "title": "Merger notified to ACCC",
+      "date": "2026-10-30T12:00:00Z",
+      "merger_id": "MN-65041",
+      "merger_name": "GLNG Participants \u2013 Greater Meridian CSG Project assets",
+      "stage": "Phase 1 - initial assessment",
+      "is_waiver": false
+    },
+    {
+      "type": "phase_1_determination",
+      "title": "Phase 1 - initial assessment determination: Approved",
+      "date": "2026-10-30T12:00:00Z",
+      "merger_id": "MN-85049",
+      "merger_name": "APEM Group - Resource Strategies",
+      "stage": "Phase 1 - initial assessment",
+      "is_waiver": false,
+      "url_gh": "/mergers/MN-85049/APEM Group - Resource Strategies - Phase 1 determination.pdf"
+    },
+    {
+      "type": "questionnaire",
+      "title": "Phase 1 consultation",
+      "date": "2026-10-30T12:00:00Z",
+      "merger_id": "MN-90044",
+      "merger_name": "Stellex and ONA \u2013 Score",
+      "stage": "Phase 1 - initial assessment",
+      "is_waiver": false,
+      "url_gh": "/mergers/MN-90044/Stellex and ONA - Score - 3PQ AR.pdf"
+    },
+    {
+      "type": "waiver_determination",
+      "title": "Waiver application determination: Approved",
+      "date": "2026-10-30T12:00:00Z",
+      "merger_id": "WA-45034",
+      "merger_name": "EQT Holdings \u2013 Platinum Investment Management",
+      "stage": "Waiver application",
+      "is_waiver": true,
+      "url_gh": "/mergers/WA-45034/EQT Holdings - Platinum Investment Management (WA-45034) - Notification waiver determination - 30 October 2026.pdf"
+    },
+    {
+      "type": "waiver_determination",
+      "title": "Waiver application determination: Approved",
+      "date": "2026-10-30T12:00:00Z",
+      "merger_id": "WA-80052",
+      "merger_name": "SCEE Group \u2013 Entire Group",
+      "stage": "Waiver application",
+      "is_waiver": true,
+      "url_gh": "/mergers/WA-80052/SCEE Group \u2013 Entire Group (WA-80052) - Notification waiver determination - 30 October 2026.pdf"
+    },
+    {
+      "type": "other",
+      "title": "6-month extension granted for Acquisition to be put into effect",
+      "date": "2026-10-29T12:00:00Z",
+      "merger_id": "MN-01037",
+      "merger_name": "Anglo American - Teck Resources",
+      "stage": "Phase 1 - initial assessment",
+      "is_waiver": false
+    },
+    {
+      "type": "phase_1_determination",
+      "title": "Phase 1 - initial assessment determination: Approved",
+      "date": "2026-10-29T12:00:00Z",
+      "merger_id": "MN-05049",
+      "merger_name": "Imagine Education \u2013 Eden Academy",
+      "stage": "Phase 1 - initial assessment",
+      "is_waiver": false,
+      "url_gh": "/mergers/MN-05049/Imagine Education - Eden Academy - Phase 1 determination.pdf"
+    },
+    {
+      "type": "phase_1_determination",
+      "title": "Phase 1 - initial assessment determination: Approved",
+      "date": "2026-10-29T12:00:00Z",
+      "merger_id": "MN-05054",
+      "merger_name": "Stanmore \u2013 Exxaro Australia Holdings",
+      "stage": "Phase 1 - initial assessment",
+      "is_waiver": false,
+      "url_gh": "/mergers/MN-05054/MN-05054 - Stanmore-Exxaro - Phase 1 determination.pdf"
+    },
+    {
+      "type": "notified",
+      "title": "Merger notified to ACCC",
+      "date": "2026-10-29T12:00:00Z",
+      "merger_id": "MN-10040",
+      "merger_name": "Calvary \u2013 14 Healthscope hospitals and Healthscope Independence Services",
+      "stage": "Phase 1 - initial assessment",
+      "is_waiver": false
+    },
+    {
+      "type": "questionnaire",
+      "title": "Phase 1 consultation",
+      "date": "2026-10-29T12:00:00Z",
+      "merger_id": "MN-10044",
+      "merger_name": "OCTA \u2013 Woodside-EDL LNG JV",
+      "stage": "Phase 1 - initial assessment",
+      "is_waiver": false,
+      "url_gh": "/mergers/MN-10044/OCTA - Woodside-EDL LNG JV - Questionnaire - October 2026.pdf"
+    },
+    {
+      "type": "questionnaire",
+      "title": "Endeavour Group - retail liquor site in Penrith, NSW - Questionnaire",
+      "date": "2026-10-29T12:00:00Z",
+      "merger_id": "MN-45028",
+      "merger_name": "Endeavour Group \u2013 retail liquor site in Penrith, NSW",
+      "stage": "Phase 1 - initial assessment",
+      "is_waiver": false,
+      "url_gh": "/mergers/MN-45028/Endeavour Group - retail liquor site in Penrith, NSW - Questionnaire.pdf"
+    },
+    {
+      "type": "timeline_extension",
+      "title": "Timeline extended by 15 business days \u2013 following remedy offered by parties",
+      "date": "2026-10-29T12:00:00Z",
+      "merger_id": "MN-65005",
+      "merger_name": "Insurance Australia Group \u2013 RAC Insurance",
+      "stage": "Public benefit phase",
+      "is_waiver": false
+    },
+    {
+      "type": "timeline_extension",
+      "title": "Timeline extended by 10 business days - following request by parties",
+      "date": "2026-10-29T12:00:00Z",
+      "merger_id": "MN-75058",
+      "merger_name": "Kinetic - Tassielink",
+      "stage": "Phase 1 - initial assessment",
+      "is_waiver": false
+    },
+    {
+      "type": "notified",
+      "title": "Merger notified to ACCC",
+      "date": "2026-10-29T12:00:00Z",
+      "merger_id": "MN-90044",
+      "merger_name": "Stellex and ONA \u2013 Score",
+      "stage": "Phase 1 - initial assessment",
+      "is_waiver": false
+    },
+    {
+      "type": "phase_1_determination",
+      "title": "Phase 1 - initial assessment determination: Approved",
+      "date": "2026-10-29T12:00:00Z",
+      "merger_id": "MN-95043",
+      "merger_name": "Bright & Duggan \u2013 Civium",
+      "stage": "Phase 1 - initial assessment",
+      "is_waiver": false,
+      "url_gh": "/mergers/MN-95043/Bright and Duggan - Civium - Phase 1 determination.pdf"
+    },
+    {
+      "type": "waiver_determination",
+      "title": "Waiver application determination: Approved",
+      "date": "2026-10-29T12:00:00Z",
+      "merger_id": "WA-01130",
+      "merger_name": "ABP - Macquarie Agriculture Fund Crop Australia 2",
+      "stage": "Waiver application",
+      "is_waiver": true,
+      "url_gh": "/mergers/WA-01130/ABP - Macquarie Agriculture Fund Crop Australia 2 (WA-01130) - Notification waiver determination - 28 October 2026.pdf"
+    },
+    {
+      "type": "waiver_determination",
+      "title": "Waiver application determination: Approved",
+      "date": "2026-10-29T12:00:00Z",
+      "merger_id": "WA-10046",
+      "merger_name": "Seidler Equity \u2013 Eco Outdoor",
+      "stage": "Waiver application",
+      "is_waiver": true,
+      "url_gh": "/mergers/WA-10046/Seidler Equity - Eco Outdoor (WA-10046) - Notification waiver determination - 28 October 2026.pdf"
+    },
+    {
+      "type": "waiver_determination",
+      "title": "Waiver application determination: Approved",
+      "date": "2026-10-29T12:00:00Z",
+      "merger_id": "WA-60051",
+      "merger_name": "Mitsubishi Electric Corporation \u2013 Power Costs, Inc.",
+      "stage": "Waiver application",
+      "is_waiver": true,
+      "url_gh": "/mergers/WA-60051/Mitsubishi Electric Corporation \u2013 Power Costs, Inc. (WA-60051) - Notification waiver determination - 28 October 2026.pdf"
+    },
+    {
+      "type": "waiver_determination",
+      "title": "Waiver application determination: Approved",
+      "date": "2026-10-29T12:00:00Z",
+      "merger_id": "WA-90042",
+      "merger_name": "Blackstone \u2013 Discovery Education",
+      "stage": "Waiver application",
+      "is_waiver": true,
+      "url_gh": "/mergers/WA-90042/Blackstone \u2013 Discovery Education (WA-90042) - Notification waiver determination - 28 October 2026.pdf"
+    },
+    {
+      "type": "notified",
+      "title": "Merger notified to ACCC",
+      "date": "2026-10-28T12:00:00Z",
+      "merger_id": "MN-10044",
+      "merger_name": "OCTA \u2013 Woodside-EDL LNG JV",
+      "stage": "Phase 1 - initial assessment",
+      "is_waiver": false
+    },
+    {
+      "type": "questionnaire",
+      "title": "Questionnaire",
+      "date": "2026-10-28T12:00:00Z",
+      "merger_id": "MN-20044",
+      "merger_name": "4K Automotive Group \u2013 Peninsula Motor Group",
+      "stage": "Phase 1 - initial assessment",
+      "is_waiver": false,
+      "url_gh": "/mergers/MN-20044/Peninsula Motor Group - Questionnaire - October 2026.pdf"
+    },
+    {
+      "type": "notified",
+      "title": "Merger notified to ACCC",
+      "date": "2026-10-28T12:00:00Z",
+      "merger_id": "MN-45028",
+      "merger_name": "Endeavour Group \u2013 retail liquor site in Penrith, NSW",
+      "stage": "Phase 1 - initial assessment",
+      "is_waiver": false
+    },
+    {
+      "type": "phase_1_determination",
+      "title": "Phase 1 - initial assessment determination: Approved",
+      "date": "2026-10-28T12:00:00Z",
+      "merger_id": "MN-65039",
+      "merger_name": "ASSA ABLOY \u2013 Gunnebo Entrance Control",
+      "stage": "Phase 1 - initial assessment",
+      "is_waiver": false,
+      "url_gh": "/mergers/MN-65039/ASSA ABLOY - Gunnebo Entrance Control - Phase 1 determination.pdf"
+    },
+    {
+      "type": "phase_1_determination",
+      "title": "Phase 1 - initial assessment determination: Approved",
+      "date": "2026-10-28T12:00:00Z",
+      "merger_id": "MN-80045",
+      "merger_name": "Apiam - Goulburn Valley Equine Hospital",
+      "stage": "Phase 1 - initial assessment",
+      "is_waiver": false,
+      "url_gh": "/mergers/MN-80045/Apiam-Goulburn Valley Equine Hospital - Phase 1 determination.pdf"
+    },
+    {
+      "type": "waiver_determination",
+      "title": "Waiver application determination: Approved",
+      "date": "2026-10-28T12:00:00Z",
+      "merger_id": "WA-10041",
+      "merger_name": "Platinum Equity - SuperStroke",
+      "stage": "Waiver application",
+      "is_waiver": true,
+      "url_gh": "/mergers/WA-10041/Platinum Equity - SuperStroke (WA-10041) - Notification waiver determination - 28 October 2026.pdf"
+    },
+    {
+      "type": "waiver_determination",
+      "title": "Waiver application determination: Approved",
+      "date": "2026-10-28T12:00:00Z",
+      "merger_id": "WA-30042",
+      "merger_name": "Goldman Sachs \u2013 NOJA Power",
+      "stage": "Waiver application",
+      "is_waiver": true,
+      "url_gh": "/mergers/WA-30042/Goldman Sachs \u2013 NOJA Power (WA-30042) - Notification waiver determination - 28 October 2026.pdf"
+    },
+    {
+      "type": "waiver_determination",
+      "title": "Waiver application determination: Approved",
+      "date": "2026-10-28T12:00:00Z",
+      "merger_id": "WA-35054",
+      "merger_name": "Northpharm Services - Wesley Pharmacy Group",
+      "stage": "Waiver application",
+      "is_waiver": true,
+      "url_gh": "/mergers/WA-35054/Northpharm Services - Wesley Pharmacy Group (WA-35054) - Notification waiver determination - 28 October 2026.pdf"
+    },
+    {
+      "type": "waiver_determination",
+      "title": "Waiver application determination: Approved",
+      "date": "2026-10-28T12:00:00Z",
+      "merger_id": "WA-75067",
+      "merger_name": "Alpin Investments \u2013 Best Sheds",
+      "stage": "Waiver application",
+      "is_waiver": true,
+      "url_gh": "/mergers/WA-75067/Alpin Investments \u2013 Best Sheds (WA-75067) - Notification waiver determination - 28 October 2026.pdf"
+    },
+    {
+      "type": "notified",
+      "title": "Merger notified to ACCC",
+      "date": "2026-10-27T12:00:00Z",
+      "merger_id": "MN-15043",
+      "merger_name": "NYK - NS United",
+      "stage": "Phase 1 - initial assessment",
+      "is_waiver": false
+    },
+    {
+      "type": "questionnaire",
+      "title": "Phase 1 consultation",
+      "date": "2026-10-27T12:00:00Z",
+      "merger_id": "MN-15043",
+      "merger_name": "NYK - NS United",
+      "stage": "Phase 1 - initial assessment",
+      "is_waiver": false,
+      "url_gh": "/mergers/MN-15043/NYK - NS United - third-party questionnaire_0.pdf"
+    },
+    {
+      "type": "questionnaire",
+      "title": "Hopper Motor Group - Essendon Kia - questionnaire",
+      "date": "2026-10-27T12:00:00Z",
+      "merger_id": "MN-20041",
+      "merger_name": "Hopper Motor Group \u2013 Essendon Kia",
+      "stage": "Phase 1 - initial assessment",
+      "is_waiver": false,
+      "url_gh": "/mergers/MN-20041/Hopper Motor Group - Essendon Kia - questionnaire.pdf"
+    },
+    {
+      "type": "notified",
+      "title": "Merger notified to ACCC",
+      "date": "2026-10-27T12:00:00Z",
+      "merger_id": "MN-20044",
+      "merger_name": "4K Automotive Group \u2013 Peninsula Motor Group",
+      "stage": "Phase 1 - initial assessment",
+      "is_waiver": false
+    },
+    {
+      "type": "phase_1_determination",
+      "title": "Phase 1 - initial assessment determination: Approved",
+      "date": "2026-10-27T12:00:00Z",
+      "merger_id": "MN-25053",
+      "merger_name": "Altius \u2013 Converge International",
+      "stage": "Phase 1 - initial assessment",
+      "is_waiver": false,
+      "url_gh": "/mergers/MN-25053/Altius - Converge international - Phase 1 determination.pdf"
+    },
+    {
+      "type": "phase_1_determination",
+      "title": "Phase 1 - initial assessment determination: Approved",
+      "date": "2026-10-27T12:00:00Z",
+      "merger_id": "MN-45030",
+      "merger_name": "Shepparton Automotive Group - Darryl Twitt Motors dealerships in Shepparton East, Victoria",
+      "stage": "Phase 1 - initial assessment",
+      "is_waiver": false,
+      "url_gh": "/mergers/MN-45030/Shepparton Automotive Group - Darryl Twitt Motors dealerships in Shepparton East, Victoria (MN-45030) - Phase 1 determination - 27 October 2026.pdf"
+    },
+    {
+      "type": "phase_1_determination",
+      "title": "Phase 1 - initial assessment determination: Approved",
+      "date": "2026-10-27T12:00:00Z",
+      "merger_id": "MN-95044",
+      "merger_name": "Olin - Huntsman",
+      "stage": "Phase 1 - initial assessment",
+      "is_waiver": false,
+      "url_gh": "/mergers/MN-95044/Olin - Huntsman - Phase 1 determination.pdf"
+    },
+    {
+      "type": "waiver_determination",
+      "title": "Waiver application determination: Approved",
+      "date": "2026-10-27T12:00:00Z",
+      "merger_id": "WA-55041",
+      "merger_name": "Thoma Bravo \u2013 Accelerant Holdings",
+      "stage": "Waiver application",
+      "is_waiver": true,
+      "url_gh": "/mergers/WA-55041/Thoma Bravo \u2013 Accelerant Holdings (WA-55041) - Notification waiver determination - 27 October 2026.pdf"
+    },
+    {
+      "type": "waiver_determination",
+      "title": "Waiver application determination: Approved",
+      "date": "2026-10-27T12:00:00Z",
+      "merger_id": "WA-70041",
+      "merger_name": "DCP Capital \u2013 Vitaco",
+      "stage": "Waiver application",
+      "is_waiver": true,
+      "url_gh": "/mergers/WA-70041/DCP Capital \u2013 Vitaco (WA-70041) - Notification waiver determination - 26 October 2026.pdf"
+    },
+    {
+      "type": "waiver_determination",
+      "title": "Waiver application determination: Approved",
+      "date": "2026-10-27T12:00:00Z",
+      "merger_id": "WA-85058",
+      "merger_name": "Redwood Services Group \u2013 Virtual IT Department",
+      "stage": "Waiver application",
+      "is_waiver": true,
+      "url_gh": "/mergers/WA-85058/Redwood Services Group \u2013 Virtual IT Department (WA-85058) - Notification waiver determination - 27 October 2026.pdf"
+    },
+    {
+      "type": "notified",
+      "title": "Merger notified to ACCC",
+      "date": "2026-10-26T12:00:00Z",
+      "merger_id": "MN-20041",
+      "merger_name": "Hopper Motor Group \u2013 Essendon Kia",
+      "stage": "Phase 1 - initial assessment",
+      "is_waiver": false
+    },
+    {
+      "type": "questionnaire",
+      "title": "Phase 1 consultation",
+      "date": "2026-10-26T12:00:00Z",
+      "merger_id": "MN-20042",
+      "merger_name": "Webuild \u2013 Trevi Group",
+      "stage": "Phase 1 - initial assessment",
+      "is_waiver": false,
+      "url_gh": "/mergers/MN-20042/Webuild - Trevi Group - third-party questionnaire.pdf"
+    },
+    {
+      "type": "phase_1_determination",
+      "title": "Phase 1 - initial assessment determination: Approved",
+      "date": "2026-10-26T12:00:00Z",
+      "merger_id": "MN-45029",
+      "merger_name": "Schreiber Foods \u2013 Real Dairy Australia",
+      "stage": "Phase 1 - initial assessment",
+      "is_waiver": false,
+      "url_gh": "/mergers/MN-45029/Schreiber Foods - Real Dairy Australia - Phase 1 determination.pdf"
+    },
+    {
+      "type": "questionnaire",
+      "title": "Phase 1 consultation",
+      "date": "2026-10-26T12:00:00Z",
+      "merger_id": "MN-55042",
+      "merger_name": "AUB \u2013 One Underwriting",
+      "stage": "Phase 1 - initial assessment",
+      "is_waiver": false,
+      "url_gh": "/mergers/MN-55042/AUB - One Underwriting - third-party questionnaire.pdf"
+    },
+    {
+      "type": "notified",
+      "title": "Merger notified to ACCC",
+      "date": "2026-10-26T12:00:00Z",
+      "merger_id": "MN-55046",
+      "merger_name": "USCO \u2013 ITM",
+      "stage": "Phase 1 - initial assessment",
+      "is_waiver": false
+    },
+    {
+      "type": "questionnaire",
+      "title": "Phase 1 consultation",
+      "date": "2026-10-26T12:00:00Z",
+      "merger_id": "MN-75065",
+      "merger_name": "Monadelphous - Tyden Power",
+      "stage": "Phase 1 - initial assessment",
+      "is_waiver": false,
+      "url_gh": "/mergers/MN-75065/Monadelphous - Tyden Power - third-party questionnaire_4.pdf"
+    },
+    {
+      "type": "phase_1_determination",
+      "title": "Phase 1 - initial assessment determination: Approved",
+      "date": "2026-10-26T12:00:00Z",
+      "merger_id": "MN-85042",
+      "merger_name": "Vets Central \u2013 Vital Vet Animal Hospital",
+      "stage": "Phase 1 - initial assessment",
+      "is_waiver": false,
+      "url_gh": "/mergers/MN-85042/Vets Central - Vital Vet Animal Hospital - Phase 1 determination - 26 October 2026.pdf"
+    },
+    {
+      "type": "phase_1_determination",
+      "title": "Phase 1 - initial assessment determination: Approved",
+      "date": "2026-10-26T12:00:00Z",
+      "merger_id": "MN-90037",
+      "merger_name": "Stripe - OpenRouter",
+      "stage": "Phase 1 - initial assessment",
+      "is_waiver": false,
+      "url_gh": "/mergers/MN-90037/Stripe-OpenRouter - Phase 1 Determination.pdf"
+    },
+    {
+      "type": "waiver_determination",
+      "title": "Waiver application determination: Approved",
+      "date": "2026-10-26T12:00:00Z",
+      "merger_id": "WA-01129",
+      "merger_name": "Accel-KKR - Eleco",
+      "stage": "Waiver application",
+      "is_waiver": true,
+      "url_gh": "/mergers/WA-01129/Accel-KKR - Eleco (WA-01129) - Notification waiver determination - 26 October 2026.pdf"
+    },
+    {
+      "type": "waiver_determination",
+      "title": "Waiver application determination: Approved",
+      "date": "2026-10-26T12:00:00Z",
+      "merger_id": "WA-01131",
+      "merger_name": "MA Financial (Redcape Fund) \u2013 Caves Coastal Bar & Bungalows",
+      "stage": "Waiver application",
+      "is_waiver": true,
+      "url_gh": "/mergers/WA-01131/MA Financial (Redcape Fund) - Caves Coastal Bar and Bungalows (WA-01131) - Notification waiver determination - 26 October 2026.pdf"
+    },
+    {
+      "type": "waiver_determination",
+      "title": "Waiver application determination: Approved",
+      "date": "2026-10-26T12:00:00Z",
+      "merger_id": "WA-25059",
+      "merger_name": "Tasmanian Department of Health \u2013 leasehold interest in vacant site at Hobart International Airport",
+      "stage": "Waiver application",
+      "is_waiver": true,
+      "url_gh": "/mergers/WA-25059/Tasmanian Department of Health \u2013 leasehold interest in vacant site at Hobart International Airport - 26 October 2026.pdf"
+    },
+    {
+      "type": "waiver_determination",
+      "title": "Waiver application determination: Approved",
+      "date": "2026-10-26T12:00:00Z",
+      "merger_id": "WA-40046",
+      "merger_name": "EQT Fund Management S.\u00e0 r.l. \u2013 McGill and Partners Group",
+      "stage": "Waiver application",
+      "is_waiver": true,
+      "url_gh": "/mergers/WA-40046/EQT Fund Management S.a r.l. - McGill and Partners Group (WA-40046) - Notification waiver determination - 26 October 2026.pdf"
+    },
+    {
+      "type": "waiver_determination",
+      "title": "Waiver application determination: Approved",
+      "date": "2026-10-26T12:00:00Z",
+      "merger_id": "WA-70042",
+      "merger_name": "Attindas \u2013 Activ Medical Disposable group",
+      "stage": "Waiver application",
+      "is_waiver": true,
+      "url_gh": "/mergers/WA-70042/Attindas \u2013 Activ Medical Disposable group (WA-70042) - Notification waiver determination - 26 October 2026.pdf"
+    },
+    {
+      "type": "waiver_determination",
+      "title": "Waiver application determination: Approved",
+      "date": "2026-10-26T12:00:00Z",
+      "merger_id": "WA-75064",
+      "merger_name": "BMD Fleet \u2013 East Coast Commercial Vehicles dealerships",
+      "stage": "Waiver application",
+      "is_waiver": true,
+      "url_gh": "/mergers/WA-75064/BMD Fleet \u2013 East Coast Commercial Vehicles dealerships (WA-75064) - Notification waiver determination - 23 October 2026.pdf"
+    },
+    {
+      "type": "tribunal",
+      "title": "Tribunal appeal \u2013 Submissions",
+      "date": "2026-10-25T12:00:00Z",
+      "merger_id": "MN-01068",
+      "merger_name": "Coles \u2013 supermarket and liquor site in Kalgoorlie, WA",
+      "stage": "Phase 2 - detailed assessment",
+      "is_waiver": false,
+      "url_gh": "/mergers/MN-01068/30.-IGA-Submissions-Public-Version.pdf"
+    },
+    {
+      "type": "notified",
+      "title": "Merger notified to ACCC",
+      "date": "2026-10-24T12:00:00Z",
+      "merger_id": "MN-20042",
+      "merger_name": "Webuild \u2013 Trevi Group",
+      "stage": "Phase 1 - initial assessment",
+      "is_waiver": false
+    },
+    {
+      "type": "phase_1_determination",
+      "title": "Phase 1 - initial assessment determination: Approved",
+      "date": "2026-10-23T12:00:00Z",
+      "merger_id": "MN-20039",
+      "merger_name": "Calvary \u2013 Southern Cross Care (Tasmania)",
+      "stage": "Phase 1 - initial assessment",
+      "is_waiver": false,
+      "url_gh": "/mergers/MN-20039/Calvary - Southern Cross Care (Tasmania) - Phase 1 Determination.pdf"
+    },
+    {
+      "type": "questionnaire",
+      "title": "Questionnaire",
+      "date": "2026-10-23T12:00:00Z",
+      "merger_id": "MN-35035",
+      "merger_name": "Sun Pharma - Organon",
+      "stage": "Phase 1 - initial assessment",
+      "is_waiver": false,
+      "url_gh": "/mergers/MN-35035/Organon - Questionnaire - October 2026.pdf"
+    },
+    {
+      "type": "notified",
+      "title": "Merger notified to ACCC",
+      "date": "2026-10-23T12:00:00Z",
+      "merger_id": "MN-55042",
+      "merger_name": "AUB \u2013 One Underwriting",
+      "stage": "Phase 1 - initial assessment",
+      "is_waiver": false
+    },
+    {
+      "type": "phase_1_determination",
+      "title": "Phase 1 - initial assessment determination: Approved",
+      "date": "2026-10-23T12:00:00Z",
+      "merger_id": "MN-70039",
+      "merger_name": "Architectus \u2013 SBA",
+      "stage": "Phase 1 - initial assessment",
+      "is_waiver": false,
+      "url_gh": "/mergers/MN-70039/Architectus - SBA - Phase 1 determination.pdf"
+    },
+    {
+      "type": "notified",
+      "title": "Merger notified to ACCC",
+      "date": "2026-10-23T12:00:00Z",
+      "merger_id": "MN-75065",
+      "merger_name": "Monadelphous - Tyden Power",
+      "stage": "Phase 1 - initial assessment",
+      "is_waiver": false
+    },
+    {
+      "type": "waiver_determination",
+      "title": "Waiver application determination: Approved",
+      "date": "2026-10-23T12:00:00Z",
+      "merger_id": "WA-05055",
+      "merger_name": "Ochre Health - Health E Medical & Health E Allied Services, Vic",
+      "stage": "Waiver application",
+      "is_waiver": true,
+      "url_gh": "/mergers/WA-05055/Ochre Health - Health E Medical and Health E Allied Services, Vic (WA-05055) - Notification waiver determination - 23 October 2026.pdf"
+    },
+    {
+      "type": "waiver_determination",
+      "title": "Waiver application determination: Approved",
+      "date": "2026-10-23T12:00:00Z",
+      "merger_id": "WA-15050",
+      "merger_name": "National Dental Care \u2013 business assets comprising the Dentists of Tasmania clinic, Sorell, TAS",
+      "stage": "Waiver application",
+      "is_waiver": true,
+      "url_gh": "/mergers/WA-15050/National Dental Care \u2013 business assets comprising the Dentists of Tasmania clinic, Sorell, TAS (WA-15050) - Notification waiver determination - 23 October 2026.pdf"
+    },
+    {
+      "type": "waiver_determination",
+      "title": "Waiver application determination: Approved",
+      "date": "2026-10-23T12:00:00Z",
+      "merger_id": "WA-45033",
+      "merger_name": "ANZ Australian Staff Superannuation Scheme \u2013 further investment in Vinva Australian Equities Fund unit trust",
+      "stage": "Waiver application",
+      "is_waiver": true,
+      "url_gh": "/mergers/WA-45033/ANZ Australian Staff Superannuation Scheme \u2013 further investment in Vinva Australian Equities Fund unit trust (WA-45033) - Notification waiver determination - 23 October 2026.pdf"
+    },
+    {
+      "type": "waiver_determination",
+      "title": "Waiver application determination: Approved",
+      "date": "2026-10-23T12:00:00Z",
+      "merger_id": "WA-60049",
+      "merger_name": "Tuhu \u2013 Conti Trade Australia",
+      "stage": "Waiver application",
+      "is_waiver": true,
+      "url_gh": "/mergers/WA-60049/Tuhu - Conti Trade Australia (WA-60049) - Notification waiver determination - 23 October 2026.pdf"
+    },
+    {
+      "type": "waiver_determination",
+      "title": "Waiver application determination: Approved",
+      "date": "2026-10-23T12:00:00Z",
+      "merger_id": "WA-75069",
+      "merger_name": "Australian Rugby League Commission \u2013 Novotel Sydney International Airport, NSW",
+      "stage": "Waiver application",
+      "is_waiver": true,
+      "url_gh": "/mergers/WA-75069/Australian Rugby League Commission \u2013 Novotel Sydney International Airport (WA-75069) - Notification waiver determination - 23 October 2026.pdf"
+    },
+    {
+      "type": "waiver_determination",
+      "title": "Waiver application determination: Approved",
+      "date": "2026-10-23T12:00:00Z",
+      "merger_id": "WA-90043",
+      "merger_name": "Cerberus \u2013 Mechanical Engineering Business of Goodwin",
+      "stage": "Waiver application",
+      "is_waiver": true,
+      "url_gh": "/mergers/WA-90043/Cerberus - Mechanical Engineering Business of Goodwin (WA-90043) - Notification waiver determination - 23 October 2026.pdf"
+    },
+    {
+      "type": "waiver_determination",
+      "title": "Waiver application determination: Approved",
+      "date": "2026-10-23T12:00:00Z",
+      "merger_id": "WA-95045",
+      "merger_name": "AerFin - acquisition of aircraft from Qantas",
+      "stage": "Waiver application",
+      "is_waiver": true,
+      "url_gh": "/mergers/WA-95045/AerFin - acquisition of aircraft from Qantas (WA-95045) - Notification waiver determination - 23 October 2026.pdf"
+    }
+  ],
+  "count": 109,
+  "days_back": 14
+}

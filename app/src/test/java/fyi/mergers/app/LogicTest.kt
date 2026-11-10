@@ -17,6 +17,9 @@ import fyi.mergers.app.data.Manifest
 import fyi.mergers.app.data.ManifestHash
 import fyi.mergers.app.data.MergerEvent
 import fyi.mergers.app.data.Reasons
+import fyi.mergers.app.data.RecentEventDays
+import fyi.mergers.app.data.RecentEventType
+import fyi.mergers.app.data.RecentEvents
 import fyi.mergers.app.data.StatementBlock
 import fyi.mergers.app.data.TableItem
 import fyi.mergers.app.data.MergerDetail
@@ -102,6 +105,30 @@ class LogicTest {
         // Decided: nothing due, except the Tribunal hearing on a live appeal.
         assertTrue(TrackedEvents.upcoming(detail("MN-01016")).isEmpty())
         assertEquals(listOf("Tribunal hearing"), TrackedEvents.upcoming(detail("MN-01068")).map { it.title })
+    }
+
+    @Test
+    fun recent_events_list_as_on_the_site() {
+        val all = MergersJson.decodeFromString(RecentEvents.serializer(), Fixtures.read("recent-events.json")!!).events
+        val days = RecentEventDays.of(all)
+        // Newest day first; days with nothing shown are left out.
+        assertEquals(
+            listOf("2026-11-05", "2026-11-04", "2026-11-02", "2026-10-29", "2026-10-25"),
+            days.map { it.first },
+        )
+        // What the dashboard's own cards already list, and routine phase 1
+        // consultations, are left out, as on the site.
+        val shown = days.flatMap { it.second }
+        assertTrue(all.any { it.type == "phase_1_determination" } && all.any { it.type == "questionnaire" })
+        assertTrue(shown.none { it.type in setOf("notified", "questionnaire", "phase_1_determination", "waiver_determination") })
+        // Within a day, the most significant first, then by matter.
+        assertEquals(
+            listOf("remedy_offer", "remedy_questionnaire", "materially_incomplete", "timeline_extension", "timeline_extension"),
+            days.first { it.first == "2026-11-04" }.second.map { it.type },
+        )
+        // A type the app doesn't know yet reads as Other, and is shown.
+        assertEquals(RecentEventType.OTHER, RecentEventType.of("something_new"))
+        assertTrue(RecentEventType.of("something_new").shown)
     }
 
     @Test

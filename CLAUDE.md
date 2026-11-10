@@ -45,6 +45,12 @@ SHA-256. `SiteLink.from` maps a link to a screen; one it can't place goes back
 to the browser. `openUrl` always pins a browser package, or a "view on the
 site" would come straight back into the app.
 
+Recent events (the dashboard, below Coming up) is the site's
+`RecentEventsTimeline` over `recent-events.json`. Which types it lists and
+their order within a day are `data/RecentEventTypes.kt`, a port of the site's
+`frontend/src/constants/recentEventTypes.js` (`shown` and key order): keep the
+two in step. A type the app doesn't know reads as Other.
+
 Widgets (`widget/`): plain `RemoteViews`, no Glance. Coming up
 (`UpcomingWidget`) lists `upcoming-events.json` from the copy kept on the
 phone, filtered by each widget's `UpcomingConfig` (followed only, and the
