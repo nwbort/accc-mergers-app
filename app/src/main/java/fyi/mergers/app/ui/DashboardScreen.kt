@@ -1,5 +1,10 @@
 package fyi.mergers.app.ui
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandHorizontally
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.IntrinsicSize
@@ -193,11 +198,21 @@ private fun DashboardContent(
         }
     }
     val listState = rememberLazyListState()
-    val pinnedDay by remember(dayOfKey) {
+    // The day pinned at the top, and the next one while it's pushing that one
+    // off: both carry the section's title, so the title rides up with the old
+    // day and the new day arrives with it, rather than arriving bare and
+    // gaining the title only once it reaches the top.
+    val pinnedDays by remember(dayOfKey) {
         derivedStateOf {
-            val top = listState.layoutInfo.visibleItemsInfo
-                .firstOrNull { it.index == listState.firstVisibleItemIndex }
-            top?.let { dayOfKey[it.key] }
+            val visible = listState.layoutInfo.visibleItemsInfo
+            buildSet {
+                visible.firstOrNull { it.index == listState.firstVisibleItemIndex }
+                    ?.let { dayOfKey[it.key] }?.let(::add)
+                visible.forEach { item ->
+                    val key = item.key
+                    if (dayOfKey[key] == key && item.offset < item.size) add(key as String)
+                }
+            }
         }
     }
 
@@ -262,7 +277,7 @@ private fun DashboardContent(
         if (soon.isNotEmpty()) {
             stickyHeader(key = "h-Coming up") { StickyTitle("Coming up") }
             days.forEach { (day, events) ->
-                stickyHeader(key = dayKey(day)) { DayHeader("Coming up", day, pinned = pinnedDay == dayKey(day)) }
+                stickyHeader(key = dayKey(day)) { DayHeader("Coming up", day, pinned = dayKey(day) in pinnedDays) }
                 items(events, key = ::eventKey) { e ->
                     ListRow(
                         title = e.merger_name,
@@ -280,7 +295,7 @@ private fun DashboardContent(
         if (pastDays.isNotEmpty()) {
             stickyHeader(key = "h-Recent events") { StickyTitle("Recent events") }
             pastDays.forEach { (day, events) ->
-                stickyHeader(key = pastDayKey(day)) { DayHeader("Recent events", day, pinned = pinnedDay == pastDayKey(day)) }
+                stickyHeader(key = pastDayKey(day)) { DayHeader("Recent events", day, pinned = pastDayKey(day) in pinnedDays) }
                 items(events, key = ::eventKey) { e ->
                     val type = RecentEventType.of(e.type)
                     ListRow(
@@ -332,11 +347,18 @@ private fun DayHeader(section: String, day: String?, pinned: Boolean) {
             .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        if (pinned) {
+        // Slides in from the start, nudging the date along, rather than popping in.
+        AnimatedVisibility(
+            visible = pinned,
+            enter = expandHorizontally(expandFrom = Alignment.Start) + fadeIn(),
+            exit = shrinkHorizontally(shrinkTowards = Alignment.Start) + fadeOut(),
+        ) {
             Text(
                 "$section · ",
                 style = MaterialTheme.typography.labelLarge,
                 fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+                softWrap = false,
             )
         }
         Text(
