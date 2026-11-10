@@ -362,7 +362,11 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     private fun searchText(m: MergerSummary): String = searchCache.getOrPut(m.merger_id + m.page_modified_datetime) {
         buildString {
             append(m.merger_name).append(' ').append(m.merger_id)
-            (m.acquirers + m.targets + m.other_parties).forEach { append(' ').append(it.name) }
+            // Every party, as the register names it and as the site tidies it.
+            (m.acquirers + m.targets + m.other_parties).forEach {
+                append(' ').append(it.name)
+                it.party_page?.name?.let { tidied -> append(' ').append(tidied) }
+            }
             m.anzsic_codes.forEach { append(' ').append(it.name) }
         }.lowercase()
     }

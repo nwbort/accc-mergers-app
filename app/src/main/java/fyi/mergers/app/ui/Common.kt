@@ -61,8 +61,6 @@ import androidx.compose.ui.unit.sp
 import androidx.graphics.shapes.RoundedPolygon
 import fyi.mergers.app.data.Dates
 import fyi.mergers.app.data.MergerSummary
-import fyi.mergers.app.data.Party
-import fyi.mergers.app.data.displayNames
 import fyi.mergers.app.data.Status
 import fyi.mergers.app.data.headerStatus
 import fyi.mergers.app.data.outcomeInput
@@ -256,21 +254,11 @@ fun SectionTitle(text: String, modifier: Modifier = Modifier, trailing: @Composa
     }
 }
 
-fun partiesLine(acquirers: List<Party>, targets: List<Party>): String? {
-    fun names(p: List<Party>) = p.displayNames().joinToString(", ").ifBlank { null }
-    val a = names(acquirers)
-    val t = names(targets)
-    return when {
-        a != null && t != null -> "$a → $t"
-        else -> a ?: t
-    }
-}
-
 /**
  * One merger in a list: the outcome first (a solid badge, and a rail down the
  * left edge in the same colour), then the name, as the site's merger list does.
  */
-@OptIn(ExperimentalLayoutApi::class)
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun MergerCard(
     m: MergerSummary,
@@ -319,22 +307,13 @@ fun MergerCard(
                         )
                     }
                 }
+                // The name alone: it carries the parties that matter, and search
+                // still finds every party. A size up, in the room the parties left.
                 Text(
                     m.merger_name,
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.padding(top = 8.dp),
+                    style = MaterialTheme.typography.titleMediumEmphasized,
+                    modifier = Modifier.padding(top = 10.dp),
                 )
-                partiesLine(m.acquirers, m.targets)?.let {
-                    Text(
-                        it,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.padding(top = 2.dp),
-                    )
-                }
                 val dates = listOfNotNull(
                     m.merger_id,
                     Dates.format(m.effective_notification_datetime)?.let { "Notified $it" },
