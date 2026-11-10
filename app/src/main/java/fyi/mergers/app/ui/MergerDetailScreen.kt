@@ -114,6 +114,8 @@ import fyi.mergers.app.data.stageLabel
 import fyi.mergers.app.tracking.TrackedEvents
 import fyi.mergers.app.ui.theme.AppealIndigo
 import fyi.mergers.app.ui.theme.statusColors
+import fyi.mergers.app.ui.theme.statusGlyphColors
+import fyi.mergers.app.ui.theme.isDarkTheme
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
@@ -172,7 +174,8 @@ fun MergerDetailScreen(vm: AppViewModel, id: String) {
     Scaffold(
         modifier = Modifier.nestedScroll(toolbar),
         contentWindowInsets = WindowInsets(0),
-        snackbarHost = { SnackbarHost(snackbar, Modifier.padding(bottom = 72.dp)) },
+        // Clear of the floating toolbar, with room between.
+        snackbarHost = { SnackbarHost(snackbar, Modifier.padding(bottom = 96.dp)) },
         topBar = {
             TopAppBar(
                 title = {
@@ -422,9 +425,14 @@ private fun headerColors(m: MergerDetail): Pair<Color, Color> {
     return when {
         decided && underReview -> AppealIndigo.fill to AppealIndigo.onFill
         decided -> colors.fill to colors.onFill
-        // Opaque, so the top bar can wear it too.
-        else -> colors.fill.copy(alpha = 0.14f).compositeOver(MaterialTheme.colorScheme.surface) to
-            MaterialTheme.colorScheme.onSurface
+        // Still running: a tint of the status, opaque so the top bar can wear it
+        // too. In the dark the deep fill would wash out to grey, so it's the
+        // lighter glyph shade, and a stronger tint of it.
+        else -> {
+            val tint = if (isDarkTheme()) statusGlyphColors(header?.label ?: m.status).fill.copy(alpha = 0.22f)
+            else colors.fill.copy(alpha = 0.14f)
+            tint.compositeOver(MaterialTheme.colorScheme.surface) to MaterialTheme.colorScheme.onSurface
+        }
     }
 }
 

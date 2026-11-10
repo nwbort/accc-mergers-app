@@ -119,6 +119,27 @@ fun statusColors(label: String?): StatusColors = when (label) {
     else -> StatusColors(Color(0xFF4B5563), Color.White)
 }
 
+/**
+ * A status as a glyph or tint, which in the dark can't be the solid fill: the
+ * brand's deep green vanishes on a near-black card, and amber glares. Light
+ * keeps [statusColors]; dark takes Tailwind's 300 shade of each family with
+ * its 900 as the ink, as the event tiles do.
+ */
+@Composable
+fun statusGlyphColors(label: String?): StatusColors {
+    val c = statusColors(label)
+    if (!isDarkTheme()) return c
+    return when (c.fill) {
+        emerald.fill -> StatusColors(Color(0xFF6EE7B7), Color(0xFF064E3B))
+        red.fill -> StatusColors(Color(0xFFFCA5A5), Color(0xFF7F1D1D))
+        Color(0xFFFBBF24) -> StatusColors(Color(0xFFFCD34D), Color(0xFF451A03))
+        Brand -> StatusColors(Color(0xFF9FD3B8), Color(0xFF053824))
+        Color(0xFFC2410C) -> StatusColors(Color(0xFFFDBA74), Color(0xFF7C2D12))
+        Color(0xFF7E22CE) -> StatusColors(Color(0xFFD8B4FE), Color(0xFF581C87))
+        else -> StatusColors(Color(0xFFD1D5DB), Color(0xFF1F2937))
+    }
+}
+
 /** The wash a matter under appeal or judicial review takes, as on the site. */
 val AppealIndigo = StatusColors(Color(0xFF4338CA), Color.White)
 

@@ -73,6 +73,7 @@ import fyi.mergers.app.ui.theme.RefiledAmber
 import fyi.mergers.app.ui.theme.StatusColors
 import fyi.mergers.app.ui.theme.WaiverAmber
 import fyi.mergers.app.ui.theme.statusColors
+import fyi.mergers.app.ui.theme.statusGlyphColors
 
 /**
  * Open a link in a Custom Tab (documents, the site, the ACCC's page), or
@@ -212,7 +213,7 @@ fun outcomeShape(label: String?): RoundedPolygon = when (label) {
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun StatusGlyph(label: String?, modifier: Modifier = Modifier, conditions: Boolean = false, size: Dp = 32.dp) {
-    val c = statusColors(label)
+    val c = statusGlyphColors(label)
     val icon = when (label) {
         Status.APPROVED, Status.NOT_OPPOSED, Status.APPROVED_WITH_CONDITIONS -> Icons.Filled.Check
         Status.NOT_APPROVED, Status.DECLINED -> Icons.Filled.Close
