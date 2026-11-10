@@ -39,14 +39,8 @@ import androidx.compose.material3.toShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import fyi.mergers.app.ui.theme.isDarkTheme
-import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.Color
 import androidx.compose.runtime.getValue
-import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.foundation.layout.requiredSize
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.LocalIndication
@@ -264,12 +258,9 @@ fun SectionTitle(text: String, modifier: Modifier = Modifier, trailing: @Composa
 }
 
 /**
- * One merger in a list, in the app's shape language: the outcome's glyph
- * (its [outcomeShape], colour and symbol) leading the outcome's words, the
- * same shape large and faint off the top corner (as on the merger's own
- * header, which the card grows into), then the name. The faint shape sits at
- * an angle of its own per merger, so a list doesn't read as stamped out. A
- * press squishes the card on a spring.
+ * One merger in a list: the outcome's glyph (its [outcomeShape], colour and
+ * symbol) leading the outcome's words, then the name. A press squishes the
+ * card on a spring.
  */
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -284,11 +275,6 @@ fun MergerCard(
     val header = input.headerStatus()
     val key = header?.label ?: m.status
     val label = input.outcomeText() ?: m.status ?: "Unknown"
-    val color = statusColors(key)
-    val dark = isDarkTheme()
-    // In the dark the status fills are deep, so the wash is lifted toward white to show.
-    val wash = (if (dark) lerp(color.fill, Color.White, 0.35f).copy(alpha = 0.14f) else color.fill.copy(alpha = 0.12f))
-    val angle = remember(m.merger_id) { (m.merger_id.hashCode() and 0x7fffffff) % 72 - 36f }
 
     val presses = remember { MutableInteractionSource() }
     val pressed by presses.collectIsPressedAsState()
@@ -316,16 +302,6 @@ fun MergerCard(
                 onLongClickLabel = if (followed) "Stop following" else "Follow",
             ),
         ) {
-            Box(
-                Modifier
-                    .matchParentSize()
-                    .wrapContentSize(Alignment.TopEnd, unbounded = true)
-                    .offset(x = 34.dp, y = (-34).dp)
-                    .requiredSize(124.dp)
-                    .graphicsLayer { rotationZ = angle }
-                    .clip(outcomeShape(key).toShape())
-                    .background(wash),
-            )
             Column(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 14.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     StatusGlyph(key, conditions = label.contains("conditions", ignoreCase = true), size = 30.dp)
