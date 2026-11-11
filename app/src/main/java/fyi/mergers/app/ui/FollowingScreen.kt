@@ -38,6 +38,8 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarHost
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -82,10 +84,13 @@ fun FollowingScreen(vm: AppViewModel) {
     // back as soon as you scroll up.
     val bar = TopAppBarDefaults.enterAlwaysScrollBehavior()
     val list = rememberLazyListState()
+    val snackbar = remember { SnackbarHostState() }
+    val toggleFollow = rememberMergerFollowToggle(vm, snackbar)
     ScrollToTopOnReselect(vm, Route.Following, list, bar.state)
     Scaffold(
         modifier = Modifier.nestedScroll(bar.nestedScrollConnection),
         contentWindowInsets = WindowInsets(0),
+        snackbarHost = { SnackbarHost(snackbar) },
         topBar = {
             TopAppBar(
                 scrollBehavior = bar,
@@ -155,6 +160,7 @@ fun FollowingScreen(vm: AppViewModel) {
                                 m, followed = true,
                                 onClick = { vm.openMerger(id) },
                                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 5.dp),
+                                onSwipe = { toggleFollow(id) },
                             )
                         } else {
                             // Not in the list (yet): a number followed before the

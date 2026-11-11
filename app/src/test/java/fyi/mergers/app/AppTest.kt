@@ -41,6 +41,8 @@ import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipeRight
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.performScrollToIndex
 import androidx.lifecycle.ViewModelProvider
@@ -188,6 +190,22 @@ class AppTest {
         compose.onNode(mergersTab).performClick()
         waitForText("Autosports Group", substring = true)
         assertEquals(Route.Mergers, vm.tab)
+
+        // A card swiped sideways follows its merger, showing what it'll do as
+        // it moves, and springs back; swiped again, it unfollows.
+        val psp = compose.onAllNodesWithText("PSP Investments", substring = true).onFirst()
+        psp.performTouchInput {
+            down(centerLeft + Offset(40f, 0f))
+            repeat(10) { moveBy(Offset(width * 0.05f, 0f)) }
+        }
+        compose.waitForIdle()
+        shot("2a-swipe-follow")
+        psp.performTouchInput { up() }
+        waitUntil { Graph.store.current().isTracked("MN-55024") }
+        waitForText("Following: you", substring = true)
+        psp.performTouchInput { swipeRight() }
+        waitUntil { !Graph.store.current().isTracked("MN-55024") }
+        waitForText("No longer following")
         compose.onNode(hasSetTextAction()).performTextInput("asahi")
         waitForText("1 matter")
         compose.onNode(hasSetTextAction()).performTextClearance()

@@ -29,6 +29,8 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarHost
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -103,8 +105,11 @@ fun SearchScreen(vm: AppViewModel) {
         action()
     }
 
+    val snackbar = remember { SnackbarHostState() }
+    val toggleFollow = rememberMergerFollowToggle(vm, snackbar)
     Scaffold(
         contentWindowInsets = WindowInsets(0),
+        snackbarHost = { SnackbarHost(snackbar) },
         topBar = {
             TopAppBar(
                 title = { Text("Search") },
@@ -183,6 +188,7 @@ fun SearchScreen(vm: AppViewModel) {
                                 tracking.isTracked(m.merger_id),
                                 onClick = { go { vm.openMerger(m.merger_id) } },
                                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 5.dp),
+                                onSwipe = { toggleFollow(m.merger_id) },
                             )
                         }
                         if (mergers.size > MERGERS_SHOWN) {

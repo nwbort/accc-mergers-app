@@ -207,6 +207,7 @@ fun IndustryScreen(vm: AppViewModel, code: String) {
     val tracking by vm.tracking.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val snackbar = remember { SnackbarHostState() }
+    val toggleMerger = rememberMergerFollowToggle(vm, snackbar)
     val scope = rememberCoroutineScope()
     LaunchedEffect(code) { vm.loadIndustry(code) }
 
@@ -274,7 +275,7 @@ fun IndustryScreen(vm: AppViewModel, code: String) {
                 file == null -> Centered("Couldn't load this industry. Pull down to try again.")
                 // A code outside the ANZSIC tree, or one nothing is filed under.
                 node == null -> Centered("No mergers are filed under ANZSIC $code.")
-                else -> IndustryContent(vm, node)
+                else -> IndustryContent(vm, node, toggleMerger)
             }
         }
     }
@@ -282,7 +283,7 @@ fun IndustryScreen(vm: AppViewModel, code: String) {
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun IndustryContent(vm: AppViewModel, node: IndustryNode) {
+private fun IndustryContent(vm: AppViewModel, node: IndustryNode, toggleMerger: (String) -> Unit) {
     val list by vm.list.collectAsStateWithLifecycle()
     val tracking by vm.tracking.collectAsStateWithLifecycle()
     // list.json's fuller summaries (parties, stage) where it has them.
@@ -382,6 +383,7 @@ private fun IndustryContent(vm: AppViewModel, node: IndustryNode) {
                         followed = tracking.isTracked(m.merger_id),
                         onClick = { vm.openMerger(m.merger_id) },
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 5.dp),
+                        onSwipe = { toggleMerger(m.merger_id) },
                     )
                 }
             }

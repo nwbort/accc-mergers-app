@@ -53,17 +53,12 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.outlined.BookmarkAdd
 import androidx.compose.material.icons.outlined.BookmarkRemove
-import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.SnackbarResult
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import android.Manifest
-import android.content.pm.PackageManager
 import fyi.mergers.app.data.mergerPageUrl
-import kotlinx.coroutines.launch
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
@@ -100,24 +95,7 @@ fun MergersScreen(vm: AppViewModel) {
     val scope = rememberCoroutineScope()
     val notifyPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {}
     var menuFor by remember { mutableStateOf<String?>(null) }
-    val haptic = rememberFollowHaptics()
-    val toggleFollow = { id: String ->
-        val now = vm.toggleFollow(id)
-        haptic(now)
-        if (now && context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-            notifyPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
-        }
-        scope.launch {
-            snackbar.currentSnackbarData?.dismiss()
-            val undo = snackbar.showSnackbar(
-                if (now) "Following: you'll be notified of updates" else "No longer following",
-                actionLabel = "Undo",
-                duration = SnackbarDuration.Short,
-            )
-            if (undo == SnackbarResult.ActionPerformed) vm.toggleFollow(id)
-        }
-        Unit
-    }
+    val toggleFollow = rememberMergerFollowToggle(vm, snackbar)
 
     Scaffold(contentWindowInsets = WindowInsets(0), snackbarHost = { SnackbarHost(snackbar) }) { padding ->
         Column(Modifier.padding(padding).statusBarsPadding()) {
@@ -181,6 +159,7 @@ fun MergersScreen(vm: AppViewModel) {
                                         haptics.performHapticFeedback(HapticFeedbackType.LongPress)
                                         menuFor = m.merger_id
                                     },
+                                    onSwipe = { toggleFollow(m.merger_id) },
                                 )
                                 DropdownMenu(expanded = menuFor == m.merger_id, onDismissRequest = { menuFor = null }) {
                                     DropdownMenuItem(

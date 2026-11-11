@@ -39,6 +39,23 @@ import androidx.compose.material3.toShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import kotlinx.coroutines.launch
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.material3.rememberSwipeToDismissBoxState
+import androidx.compose.material3.SwipeToDismissBoxValue
+import androidx.compose.material3.SwipeToDismissBoxState
+import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material.icons.outlined.BookmarkRemove
+import androidx.compose.material.icons.filled.BookmarkAdd
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.compose.rememberLauncherForActivityResult
+import android.Manifest
 import kotlinx.coroutines.flow.filter
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.material3.TopAppBarState
@@ -60,6 +77,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.customActions
+import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
@@ -280,6 +300,88 @@ fun MergerCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     onLongClick: (() -> Unit)? = null,
+    onSwipe: (() -> Unit)? = null,
+) {
+    if (onSwipe == null) {
+        MergerCardBody(m, followed, onClick, modifier, onLongClick)
+        return
+    }
+    // Swiped either way, past the threshold, a card follows or unfollows its
+    // merger, then springs back: it isn't dismissed. Behind it as it moves,
+    // what the swipe will do.
+    val swipe = rememberSwipeToDismissBoxState()
+    val scope = rememberCoroutineScope()
+    val act by rememberUpdatedState(onSwipe)
+    SwipeToDismissBox(
+        state = swipe,
+        // The same, for a screen reader, as one of the card's actions.
+        modifier = modifier.semantics {
+            customActions = listOf(CustomAccessibilityAction(if (followed) "Unfollow" else "Follow") { act(); true })
+        },
+        backgroundContent = { SwipeBacking(swipe, followed) },
+        onDismiss = {
+            act()
+            scope.launch { swipe.reset() }
+        },
+    ) {
+        MergerCardBody(m, followed, onClick, Modifier, onLongClick)
+    }
+}
+
+/** What a swipe on a card will do, shown behind it as it moves: follow, or unfollow. */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+private fun SwipeBacking(swipe: SwipeToDismissBoxState, followed: Boolean) {
+    val armed = swipe.targetValue != SwipeToDismissBoxValue.Settled
+    val haptics = LocalHapticFeedback.current
+    LaunchedEffect(armed) { if (armed) haptics.performHapticFeedback(HapticFeedbackType.GestureThresholdActivate) }
+    val grow by animateFloatAsState(
+        if (armed) 1.25f else 1f,
+        MaterialTheme.motionScheme.fastSpatialSpec(),
+        label = "swipeIcon",
+    )
+    val (fill, ink) = if (followed) {
+        MaterialTheme.colorScheme.surfaceContainerHighest to MaterialTheme.colorScheme.onSurfaceVariant
+    } else {
+        MaterialTheme.colorScheme.primaryContainer to MaterialTheme.colorScheme.onPrimaryContainer
+    }
+    // Only while a swipe is under way, and only for the eye: a screen reader
+    // has the card's Follow or Unfollow action instead.
+    if (swipe.dismissDirection == SwipeToDismissBoxValue.Settled) return
+    val fromStart = swipe.dismissDirection == SwipeToDismissBoxValue.StartToEnd
+    Row(
+        Modifier
+            .fillMaxSize()
+            .clearAndSetSemantics {}
+            .clip(MaterialTheme.shapes.large)
+            .background(fill)
+            .padding(horizontal = 24.dp),
+        horizontalArrangement = if (fromStart) Arrangement.Start else Arrangement.End,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            if (followed) Icons.Outlined.BookmarkRemove else Icons.Filled.BookmarkAdd,
+            contentDescription = null,
+            tint = ink,
+            modifier = Modifier.graphicsLayer { scaleX = grow; scaleY = grow },
+        )
+        Text(
+            if (followed) "Unfollow" else "Follow",
+            style = MaterialTheme.typography.labelLargeEmphasized,
+            color = ink,
+            modifier = Modifier.padding(start = 10.dp),
+        )
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+private fun MergerCardBody(
+    m: MergerSummary,
+    followed: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier,
+    onLongClick: (() -> Unit)?,
 ) {
     val input = m.outcomeInput()
     val header = input.headerStatus()
@@ -474,6 +576,35 @@ fun ScrollToTopOnReselect(vm: AppViewModel, tab: Route, list: LazyListState, bar
         vm.reselected.filter { it == tab }.collect {
             bar?.heightOffset = 0f
             list.animateScrollToItem(0)
+        }
+    }
+}
+
+/**
+ * Follow or unfollow a merger from a list (a swipe on its card, or the
+ * Mergers tab's hold menu): the toggle's haptic, the notification permission
+ * on a first follow, and a snackbar on [snackbar] to undo it.
+ */
+@Composable
+fun rememberMergerFollowToggle(vm: AppViewModel, snackbar: SnackbarHostState): (String) -> Unit {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val haptic = rememberFollowHaptics()
+    val notifyPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {}
+    return { id ->
+        val now = vm.toggleFollow(id)
+        haptic(now)
+        if (now && context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            notifyPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
+        scope.launch {
+            snackbar.currentSnackbarData?.dismiss()
+            val undo = snackbar.showSnackbar(
+                if (now) "Following: you'll be notified of updates" else "No longer following",
+                actionLabel = "Undo",
+                duration = SnackbarDuration.Short,
+            )
+            if (undo == SnackbarResult.ActionPerformed) vm.toggleFollow(id)
         }
     }
 }
