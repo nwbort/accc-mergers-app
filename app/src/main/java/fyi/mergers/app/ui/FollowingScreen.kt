@@ -23,22 +23,24 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.NotificationsOff
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.ListItem
-import androidx.compose.material3.ListItemDefaults
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -56,7 +58,6 @@ import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import fyi.mergers.app.data.Dates
 import fyi.mergers.app.notify.Notifier
-import fyi.mergers.app.notify.Push
 import fyi.mergers.app.tracking.TrackedEvent
 import fyi.mergers.app.tracking.TrackedEvents
 
@@ -82,9 +83,14 @@ fun FollowingScreen(vm: AppViewModel) {
     // Like the dashboard's, the bar slides away as you scroll down and comes
     // back as soon as you scroll up.
     val bar = TopAppBarDefaults.enterAlwaysScrollBehavior()
+    val list = rememberLazyListState()
+    val snackbar = remember { SnackbarHostState() }
+    val toggleFollow = rememberMergerFollowToggle(vm, snackbar)
+    ScrollToTopOnReselect(vm, Route.Following, list, bar.state)
     Scaffold(
         modifier = Modifier.nestedScroll(bar.nestedScrollConnection),
         contentWindowInsets = WindowInsets(0),
+        snackbarHost = { SnackbarHost(snackbar) },
         topBar = {
             TopAppBar(
                 scrollBehavior = bar,
@@ -92,6 +98,10 @@ fun FollowingScreen(vm: AppViewModel) {
                 title = { Text("Following") },
                 actions = {
                     if (unread.isNotEmpty()) TextButton(onClick = vm::markAllRead) { Text("Mark all read") }
+                    // Settings (where the alert switches live), with the dashboard's cog.
+                    IconButton(onClick = vm::openSettings) {
+                        Icon(Icons.Outlined.Settings, contentDescription = "Settings")
+                    }
                 },
             )
         },
@@ -101,7 +111,7 @@ fun FollowingScreen(vm: AppViewModel) {
             onRefresh = vm::refreshFollowing,
             modifier = Modifier.padding(padding).fillMaxSize(),
         ) {
-            LazyColumn(Modifier.fillMaxSize().testTag("following"), contentPadding = PaddingValues(bottom = 24.dp)) {
+            LazyColumn(Modifier.fillMaxSize().testTag("following"), state = list, contentPadding = PaddingValues(bottom = 24.dp)) {
                 item { NotificationsBanner() }
 
                 if (tracking.followsNothing) {
@@ -134,8 +144,8 @@ fun FollowingScreen(vm: AppViewModel) {
                     items(upcoming, key = { "up-" + it.key }) { e ->
                         ListRow(
                             title = e.mergerName,
-                            subtitle = "${e.title} · ${Dates.relative(e.date)}",
-                            trailing = Dates.format(e.date, compact = true),
+                            subtitle = "${e.title} · ${Dates.upcoming(e.date, e.endDate)}",
+                            trailing = Dates.span(e.date, e.endDate, compact = true),
                             onClick = { vm.openMerger(e.mergerId) },
                         )
                     }
@@ -150,6 +160,7 @@ fun FollowingScreen(vm: AppViewModel) {
                                 m, followed = true,
                                 onClick = { vm.openMerger(id) },
                                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 5.dp),
+                                onSwipe = { toggleFollow(id) },
                             )
                         } else {
                             // Not in the list (yet): a number followed before the
@@ -182,8 +193,7 @@ fun FollowingScreen(vm: AppViewModel) {
                     items(earlier, key = { "old-" + it.key }) { e -> EventItem(e, unread = false) { open(vm, e) } }
                 }
 
-                stickyHeader { StickyTitle("Alerts") }
-                item { Settings(vm) }
+                item(key = "alerts") { AlertsLink(vm) }
             }
         }
     }
@@ -212,9 +222,9 @@ private fun EventItem(e: TrackedEvent, unread: Boolean, onClick: () -> Unit) {
     )
 }
 
-/** Shown while notifications are off, since then nothing reaches the phone. */
+/** Shown while notifications are off, since then nothing reaches the phone. Here and in Settings. */
 @Composable
-private fun NotificationsBanner() {
+internal fun NotificationsBanner() {
     val context = LocalContext.current
     var allowed by remember { mutableStateOf(Notifier.canPost(context)) }
     LifecycleResumeEffect(Unit) {
@@ -251,32 +261,23 @@ private fun NotificationsBanner() {
     }
 }
 
+/**
+ * The way to the alert settings, which live in Settings: one row saying how
+ * they're set, so the switches aren't in two places.
+ */
 @Composable
-private fun Settings(vm: AppViewModel) {
+private fun AlertsLink(vm: AppViewModel) {
     val tracking by vm.tracking.collectAsStateWithLifecycle()
-    Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
-        ListItem(
-            headlineContent = { Text("Follow every phase 2 matter") },
-            supportingContent = { Text("Matters referred to phase 2 are followed automatically") },
-            trailingContent = { Switch(checked = tracking.autoTrackPhase2, onCheckedChange = vm::setAutoTrackPhase2) },
-            colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surface),
-        )
-        ListItem(
-            headlineContent = { Text("Every new filing") },
-            supportingContent = { Text("A notification for each new merger or waiver on the register") },
-            trailingContent = { Switch(checked = tracking.notifyNewFilings, onCheckedChange = vm::setNotifyNewFilings) },
-            colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surface),
-        )
-        val pushed = Push.ready(LocalContext.current)
-        Text(
-            if (pushed) {
-                "Checked as soon as mergers.fyi publishes a change, which it does several times a weekday from the ACCC register."
-            } else {
-                "Checked about every two hours. mergers.fyi refreshes from the ACCC register several times a weekday."
-            },
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-        )
-    }
+    ListRow(
+        title = "Alerts",
+        subtitle = listOf(
+            if (tracking.autoTrackPhase2) "Phase 2 matters followed" else "Phase 2 matters not followed",
+            if (tracking.notifyNewFilings) "new filings on" else "new filings off",
+        ).joinToString(" · "),
+        trailing = null,
+        onClick = vm::openSettings,
+        leading = {
+            Icon(Icons.Outlined.Settings, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        },
+    )
 }

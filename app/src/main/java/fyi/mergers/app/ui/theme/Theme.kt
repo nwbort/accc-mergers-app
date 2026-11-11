@@ -1,7 +1,11 @@
 package fyi.mergers.app.ui.theme
 
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.MaterialExpressiveTheme
+import androidx.compose.material3.MotionScheme
+import androidx.compose.material3.Shapes
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
@@ -9,6 +13,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
 import fyi.mergers.app.data.IndustryPhase
 import fyi.mergers.app.data.RecentEventType
 import fyi.mergers.app.data.Status
@@ -63,6 +68,24 @@ private val LocalDark = staticCompositionLocalOf { false }
 @ReadOnlyComposable
 fun isDarkTheme(): Boolean = LocalDark.current
 
+/**
+ * Material 3 Expressive's rounder corners: cards (medium) at 20, sheets and
+ * hero blocks (extraLarge) at 32.
+ */
+private val AppShapes = Shapes(
+    extraSmall = RoundedCornerShape(8.dp),
+    small = RoundedCornerShape(12.dp),
+    medium = RoundedCornerShape(20.dp),
+    large = RoundedCornerShape(24.dp),
+    extraLarge = RoundedCornerShape(32.dp),
+)
+
+/**
+ * Material 3 Expressive: springy motion (MotionScheme.expressive, which every
+ * M3 component and the app's own [androidx.compose.material3.MaterialTheme.motionScheme]
+ * animations follow), [AppShapes], and the emphasized type styles alongside the usual ones.
+ */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun MergersTheme(choice: ThemeChoice = ThemeChoice.SYSTEM, content: @Composable () -> Unit) {
     val dark = when (choice) {
@@ -71,7 +94,12 @@ fun MergersTheme(choice: ThemeChoice = ThemeChoice.SYSTEM, content: @Composable 
         ThemeChoice.DARK -> true
     }
     CompositionLocalProvider(LocalDark provides dark) {
-        MaterialTheme(colorScheme = if (dark) Dark else Light, content = content)
+        MaterialExpressiveTheme(
+            colorScheme = if (dark) Dark else Light,
+            motionScheme = MotionScheme.expressive(),
+            shapes = AppShapes,
+            content = content,
+        )
     }
 }
 
@@ -89,6 +117,27 @@ fun statusColors(label: String?): StatusColors = when (label) {
     Status.ASSESSMENT_SUSPENDED -> StatusColors(Color(0xFFC2410C), Color.White)
     Status.ASSESSMENT_CEASED -> StatusColors(Color(0xFF7E22CE), Color.White)
     else -> StatusColors(Color(0xFF4B5563), Color.White)
+}
+
+/**
+ * A status as a glyph or tint, which in the dark can't be the solid fill: the
+ * brand's deep green vanishes on a near-black card, and amber glares. Light
+ * keeps [statusColors]; dark takes Tailwind's 300 shade of each family with
+ * its 900 as the ink, as the event tiles do.
+ */
+@Composable
+fun statusGlyphColors(label: String?): StatusColors {
+    val c = statusColors(label)
+    if (!isDarkTheme()) return c
+    return when (c.fill) {
+        emerald.fill -> StatusColors(Color(0xFF6EE7B7), Color(0xFF064E3B))
+        red.fill -> StatusColors(Color(0xFFFCA5A5), Color(0xFF7F1D1D))
+        Color(0xFFFBBF24) -> StatusColors(Color(0xFFFCD34D), Color(0xFF451A03))
+        Brand -> StatusColors(Color(0xFF9FD3B8), Color(0xFF053824))
+        Color(0xFFC2410C) -> StatusColors(Color(0xFFFDBA74), Color(0xFF7C2D12))
+        Color(0xFF7E22CE) -> StatusColors(Color(0xFFD8B4FE), Color(0xFF581C87))
+        else -> StatusColors(Color(0xFFD1D5DB), Color(0xFF1F2937))
+    }
 }
 
 /** The wash a matter under appeal or judicial review takes, as on the site. */

@@ -6,6 +6,8 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import androidx.browser.customtabs.CustomTabsIntent
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
@@ -14,11 +16,8 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -33,14 +32,54 @@ import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialShapes
+import androidx.compose.material3.toShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import kotlinx.coroutines.launch
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.material3.rememberSwipeToDismissBoxState
+import androidx.compose.material3.SwipeToDismissBoxValue
+import androidx.compose.material3.SwipeToDismissBoxState
+import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material.icons.outlined.BookmarkRemove
+import androidx.compose.material.icons.filled.BookmarkAdd
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.compose.rememberLauncherForActivityResult
+import android.Manifest
+import kotlinx.coroutines.flow.filter
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.material3.TopAppBarState
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.foundation.lazy.LazyListState
+import fyi.mergers.app.ui.theme.isDarkTheme
+import androidx.compose.ui.graphics.compositeOver
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.runtime.getValue
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.LocalIndication
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.customActions
+import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
@@ -49,9 +88,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.graphics.shapes.RoundedPolygon
 import fyi.mergers.app.data.Dates
 import fyi.mergers.app.data.MergerSummary
-import fyi.mergers.app.data.Party
 import fyi.mergers.app.data.Status
 import fyi.mergers.app.data.headerStatus
 import fyi.mergers.app.data.outcomeInput
@@ -61,6 +100,7 @@ import fyi.mergers.app.ui.theme.RefiledAmber
 import fyi.mergers.app.ui.theme.StatusColors
 import fyi.mergers.app.ui.theme.WaiverAmber
 import fyi.mergers.app.ui.theme.statusColors
+import fyi.mergers.app.ui.theme.statusGlyphColors
 
 /**
  * Open a link in a Custom Tab (documents, the site, the ACCC's page), or
@@ -114,6 +154,41 @@ fun share(context: Context, title: String, url: String) {
     context.startActivity(Intent.createChooser(send, null).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
 }
 
+/** The scope a merger's card and its page header share their bounds in (MergersApp). */
+val LocalSharedTransitionScope = staticCompositionLocalOf<SharedTransitionScope?> { null }
+
+/** The enter/exit animation of the screen being drawn, when it takes part in a shared transition. */
+val LocalNavAnimatedVisibilityScope = staticCompositionLocalOf<AnimatedVisibilityScope?> { null }
+
+/**
+ * A merger's card and its page's header are one thing moving: opening a
+ * merger grows the card into the header, and back shrinks it again. Outside a
+ * shared transition (a widget's settings, say) it does nothing.
+ */
+@Composable
+fun Modifier.sharedMerger(id: String): Modifier {
+    val shared = LocalSharedTransitionScope.current ?: return this
+    val visibility = LocalNavAnimatedVisibilityScope.current ?: return this
+    val clip = MaterialTheme.shapes.large
+    return with(shared) {
+        this@sharedMerger.sharedBounds(
+            rememberSharedContentState("merger-$id"),
+            visibility,
+            resizeMode = SharedTransitionScope.ResizeMode.RemeasureToBounds,
+            clipInOverlayDuringTransition = OverlayClip(clip),
+        )
+    }
+}
+
+/** A tick under the thumb as a follow goes on or off: the toggle's own haptic. */
+@Composable
+fun rememberFollowHaptics(): (Boolean) -> Unit {
+    val haptics = LocalHapticFeedback.current
+    return remember(haptics) {
+        { on -> haptics.performHapticFeedback(if (on) HapticFeedbackType.ToggleOn else HapticFeedbackType.ToggleOff) }
+    }
+}
+
 /** The site's solid status badge: an uppercase label on the outcome's colour. */
 @Composable
 fun StatusBadge(label: String, modifier: Modifier = Modifier, colorKey: String = label) =
@@ -141,13 +216,31 @@ fun SolidBadge(label: String, c: StatusColors, description: String = label, modi
 }
 
 /**
- * An outcome as a symbol alone: the status colour in a circle with the site's
- * glyph for it (constants/outcomeIcons.js, and StatusBadge's live glyphs). The
- * words go to the accessible name, so colour isn't the only signal.
+ * Each outcome's own shape from the Material 3 Expressive set, so an outcome
+ * reads by its outline as well as its colour and glyph: a sunny seal for
+ * cleared, a hard-edged cookie for blocked, a many-sided clock face while it
+ * runs, a square for paused, a gem for ceased.
  */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+fun outcomeShape(label: String?): RoundedPolygon = when (label) {
+    Status.APPROVED, Status.NOT_OPPOSED, Status.APPROVED_WITH_CONDITIONS -> MaterialShapes.Sunny
+    Status.NOT_APPROVED, Status.DECLINED -> MaterialShapes.Cookie4Sided
+    Status.UNDER_ASSESSMENT, Status.REFERRED_TO_PHASE_2 -> MaterialShapes.Cookie12Sided
+    Status.ASSESSMENT_SUSPENDED -> MaterialShapes.Square
+    Status.ASSESSMENT_CEASED -> MaterialShapes.Gem
+    else -> MaterialShapes.Circle
+}
+
+/**
+ * An outcome as a symbol alone: the status colour in the outcome's shape
+ * ([outcomeShape]) with the site's glyph for it (constants/outcomeIcons.js,
+ * and StatusBadge's live glyphs). The words go to the accessible name, so
+ * colour isn't the only signal.
+ */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun StatusGlyph(label: String?, modifier: Modifier = Modifier, conditions: Boolean = false, size: Dp = 28.dp) {
-    val c = statusColors(label)
+fun StatusGlyph(label: String?, modifier: Modifier = Modifier, conditions: Boolean = false, size: Dp = 32.dp) {
+    val c = statusGlyphColors(label)
     val icon = when (label) {
         Status.APPROVED, Status.NOT_OPPOSED, Status.APPROVED_WITH_CONDITIONS -> Icons.Filled.Check
         Status.NOT_APPROVED, Status.DECLINED -> Icons.Filled.Close
@@ -163,19 +256,20 @@ fun StatusGlyph(label: String?, modifier: Modifier = Modifier, conditions: Boole
     Box(
         modifier
             .size(size)
-            .clip(CircleShape)
+            .clip(outcomeShape(label).toShape())
             .background(c.fill)
             .semantics { role = Role.Image; contentDescription = words },
         contentAlignment = Alignment.Center,
     ) {
         if (icon != null) {
-            Icon(icon, contentDescription = null, tint = c.onFill, modifier = Modifier.size(size * 0.6f))
+            Icon(icon, contentDescription = null, tint = c.onFill, modifier = Modifier.size(size * 0.55f))
         } else {
             Box(Modifier.size(size / 4).clip(CircleShape).background(c.onFill))
         }
     }
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun SectionTitle(text: String, modifier: Modifier = Modifier, trailing: @Composable (() -> Unit)? = null) {
     Row(
@@ -184,29 +278,21 @@ fun SectionTitle(text: String, modifier: Modifier = Modifier, trailing: @Composa
     ) {
         Text(
             text,
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.SemiBold,
+            style = MaterialTheme.typography.titleMediumEmphasized,
             modifier = Modifier.weight(1f),
         )
         trailing?.invoke()
     }
 }
 
-fun partiesLine(acquirers: List<Party>, targets: List<Party>): String? {
-    fun names(p: List<Party>) = p.joinToString(", ") { it.displayName }.ifBlank { null }
-    val a = names(acquirers)
-    val t = names(targets)
-    return when {
-        a != null && t != null -> "$a → $t"
-        else -> a ?: t
-    }
-}
-
 /**
- * One merger in a list: the outcome first (a solid badge, and a rail down the
- * left edge in the same colour), then the name, as the site's merger list does.
+ * One merger in a list, the card tinted with its status colour (the site's
+ * fill as a pale wash; in the dark, the lighter glyph shade), the outcome's
+ * glyph (its [outcomeShape], colour and symbol) leading the outcome's words,
+ * then the name. Flat: the colour sets it off, not a shadow. A press
+ * squishes the card on a spring.
  */
-@OptIn(ExperimentalLayoutApi::class)
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun MergerCard(
     m: MergerSummary,
@@ -214,63 +300,169 @@ fun MergerCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     onLongClick: (() -> Unit)? = null,
+    onSwipe: (() -> Unit)? = null,
+) {
+    if (onSwipe == null) {
+        MergerCardBody(m, followed, onClick, modifier, onLongClick)
+        return
+    }
+    // Swiped either way, past the threshold, a card follows or unfollows its
+    // merger, then springs back: it isn't dismissed. Behind it as it moves,
+    // what the swipe will do.
+    // A quarter of the card's width is enough (Material's default is half):
+    // following is quick to undo, so it needn't take a long drag.
+    val swipe = rememberSwipeToDismissBoxState(positionalThreshold = { width -> width * SWIPE_THRESHOLD })
+    val scope = rememberCoroutineScope()
+    val act by rememberUpdatedState(onSwipe)
+    SwipeToDismissBox(
+        state = swipe,
+        // The same, for a screen reader, as one of the card's actions.
+        modifier = modifier.semantics {
+            customActions = listOf(CustomAccessibilityAction(if (followed) "Unfollow" else "Follow") { act(); true })
+        },
+        backgroundContent = { SwipeBacking(swipe, followed) },
+        onDismiss = {
+            act()
+            scope.launch { swipe.reset() }
+        },
+    ) {
+        MergerCardBody(m, followed, onClick, Modifier, onLongClick)
+    }
+}
+
+/** How far across a card a swipe must go to follow or unfollow, as a fraction of its width. */
+private const val SWIPE_THRESHOLD = 0.25f
+
+/** What a swipe on a card will do, shown behind it as it moves: follow, or unfollow. */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+private fun SwipeBacking(swipe: SwipeToDismissBoxState, followed: Boolean) {
+    val armed = swipe.targetValue != SwipeToDismissBoxValue.Settled
+    val haptics = LocalHapticFeedback.current
+    LaunchedEffect(armed) { if (armed) haptics.performHapticFeedback(HapticFeedbackType.GestureThresholdActivate) }
+    val grow by animateFloatAsState(
+        if (armed) 1.25f else 1f,
+        MaterialTheme.motionScheme.fastSpatialSpec(),
+        label = "swipeIcon",
+    )
+    val (fill, ink) = if (followed) {
+        MaterialTheme.colorScheme.surfaceContainerHighest to MaterialTheme.colorScheme.onSurfaceVariant
+    } else {
+        MaterialTheme.colorScheme.primaryContainer to MaterialTheme.colorScheme.onPrimaryContainer
+    }
+    // Only while a swipe is under way, and only for the eye: a screen reader
+    // has the card's Follow or Unfollow action instead.
+    if (swipe.dismissDirection == SwipeToDismissBoxValue.Settled) return
+    val fromStart = swipe.dismissDirection == SwipeToDismissBoxValue.StartToEnd
+    Row(
+        Modifier
+            .fillMaxSize()
+            .clearAndSetSemantics {}
+            .clip(MaterialTheme.shapes.large)
+            .background(fill)
+            .padding(horizontal = 24.dp),
+        horizontalArrangement = if (fromStart) Arrangement.Start else Arrangement.End,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            if (followed) Icons.Outlined.BookmarkRemove else Icons.Filled.BookmarkAdd,
+            contentDescription = null,
+            tint = ink,
+            modifier = Modifier.graphicsLayer { scaleX = grow; scaleY = grow },
+        )
+        Text(
+            if (followed) "Unfollow" else "Follow",
+            style = MaterialTheme.typography.labelLargeEmphasized,
+            color = ink,
+            modifier = Modifier.padding(start = 10.dp),
+        )
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+private fun MergerCardBody(
+    m: MergerSummary,
+    followed: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier,
+    onLongClick: (() -> Unit)?,
 ) {
     val input = m.outcomeInput()
     val header = input.headerStatus()
+    val key = header?.label ?: m.status
     val label = input.outcomeText() ?: m.status ?: "Unknown"
-    val color = statusColors(header?.label ?: m.status)
+    val tint = if (isDarkTheme()) {
+        statusGlyphColors(key).fill.copy(alpha = 0.14f).compositeOver(MaterialTheme.colorScheme.surfaceContainerLow)
+    } else {
+        statusColors(key).fill.copy(alpha = 0.10f).compositeOver(MaterialTheme.colorScheme.surfaceContainerLowest)
+    }
+
+    val presses = remember { MutableInteractionSource() }
+    val pressed by presses.collectIsPressedAsState()
+    val squish by animateFloatAsState(
+        if (pressed) 0.96f else 1f,
+        MaterialTheme.motionScheme.fastSpatialSpec(),
+        label = "squish",
+    )
+
     Card(
-        modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        modifier = modifier
+            .fillMaxWidth()
+            .sharedMerger(m.merger_id)
+            .graphicsLayer { scaleX = squish; scaleY = squish },
+        shape = MaterialTheme.shapes.large,
+        colors = CardDefaults.cardColors(containerColor = tint),
     ) {
-        Row(
-            Modifier
-                .height(IntrinsicSize.Min)
-                .combinedClickable(
-                    onClick = onClick,
-                    onLongClick = onLongClick,
-                    onLongClickLabel = if (followed) "Stop following" else "Follow",
-                ),
+        Box(
+            Modifier.combinedClickable(
+                interactionSource = presses,
+                indication = LocalIndication.current,
+                onClick = onClick,
+                onLongClick = onLongClick,
+                onLongClickLabel = if (followed) "Stop following" else "Follow",
+            ),
         ) {
-            Box(Modifier.width(4.dp).fillMaxHeight().background(color.fill))
-            Column(Modifier.weight(1f).padding(horizontal = 14.dp, vertical = 12.dp)) {
-                Row(verticalAlignment = Alignment.Top) {
+            Column(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 14.dp)) {
+                val flags = listOfNotNull(
+                    ("Waiver" to WaiverAmber).takeIf { m.is_waiver },
+                    ("Under appeal" to AppealIndigo).takeIf { m.under_appeal },
+                    ("Re-filed" to RefiledAmber).takeIf { m.is_refiled },
+                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    StatusGlyph(key, conditions = label.contains("conditions", ignoreCase = true), size = 30.dp)
                     FlowRow(
-                        Modifier.weight(1f),
+                        Modifier.padding(start = 10.dp).weight(1f),
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        verticalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                        itemVerticalAlignment = Alignment.CenterVertically,
                     ) {
-                        StatusBadge(label, colorKey = header?.label ?: m.status ?: "")
-                        if (m.is_waiver) SolidBadge("Waiver", WaiverAmber)
-                        if (m.under_appeal) SolidBadge("Under appeal", AppealIndigo)
-                        if (m.is_refiled) SolidBadge("Re-filed", RefiledAmber)
+                        Text(label, style = MaterialTheme.typography.labelLargeEmphasized)
+                        // Flags ride on the status line, so a flagged card is no taller.
+                        flags.forEach { (text, c) -> FlagPill(text, c) }
                     }
                     if (followed) {
-                        Icon(
-                            Icons.Filled.Bookmark,
-                            contentDescription = "Following",
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(18.dp),
-                        )
+                        Box(
+                            Modifier
+                                .size(28.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.surfaceContainerLowest),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(
+                                Icons.Filled.Bookmark,
+                                contentDescription = "Following",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(16.dp),
+                            )
+                        }
                     }
                 }
                 Text(
                     m.merger_name,
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.padding(top = 8.dp),
+                    style = MaterialTheme.typography.titleMediumEmphasized,
+                    modifier = Modifier.padding(top = 10.dp),
                 )
-                partiesLine(m.acquirers, m.targets)?.let {
-                    Text(
-                        it,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.padding(top = 2.dp),
-                    )
-                }
                 val dates = listOfNotNull(
                     m.merger_id,
                     Dates.format(m.effective_notification_datetime)?.let { "Notified $it" },
@@ -278,13 +470,29 @@ fun MergerCard(
                 ).joinToString(" · ")
                 Text(
                     dates,
-                    style = MaterialTheme.typography.labelSmall,
+                    style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = 6.dp),
                 )
             }
         }
     }
+}
+
+/** A merger's flag on its status line (waiver, under appeal, re-filed): a small pill in the site's solid colours. */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+private fun FlagPill(text: String, c: StatusColors) {
+    Text(
+        text,
+        color = c.onFill,
+        style = MaterialTheme.typography.labelSmallEmphasized,
+        maxLines = 1,
+        modifier = Modifier
+            .clip(CircleShape)
+            .background(c.fill)
+            .padding(horizontal = 8.dp, vertical = 2.dp),
+    )
 }
 
 /** A short list row: a title, a line under it and a trailing date. */
@@ -359,5 +567,49 @@ private fun clean(s: String): String =
 fun Centered(text: String, modifier: Modifier = Modifier) {
     Box(modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
         Text(text, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
+/**
+ * A tap on [tab] in the bottom bar while it's already showing scrolls [list]
+ * back to the top, and brings back the top bar ([bar]) if it had slid away.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ScrollToTopOnReselect(vm: AppViewModel, tab: Route, list: LazyListState, bar: TopAppBarState? = null) {
+    LaunchedEffect(vm, tab, list) {
+        vm.reselected.filter { it == tab }.collect {
+            bar?.heightOffset = 0f
+            list.animateScrollToItem(0)
+        }
+    }
+}
+
+/**
+ * Follow or unfollow a merger from a list (a swipe on its card, or the
+ * Mergers tab's hold menu): the toggle's haptic, the notification permission
+ * on a first follow, and a snackbar on [snackbar] to undo it.
+ */
+@Composable
+fun rememberMergerFollowToggle(vm: AppViewModel, snackbar: SnackbarHostState): (String) -> Unit {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val haptic = rememberFollowHaptics()
+    val notifyPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {}
+    return { id ->
+        val now = vm.toggleFollow(id)
+        haptic(now)
+        if (now && context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            notifyPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
+        scope.launch {
+            snackbar.currentSnackbarData?.dismiss()
+            val undo = snackbar.showSnackbar(
+                if (now) "Following: you'll be notified of updates" else "No longer following",
+                actionLabel = "Undo",
+                duration = SnackbarDuration.Short,
+            )
+            if (undo == SnackbarResult.ActionPerformed) vm.toggleFollow(id)
+        }
     }
 }

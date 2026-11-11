@@ -1,6 +1,12 @@
 package fyi.mergers.app.ui
 
 import androidx.compose.foundation.layout.Column
+import fyi.mergers.app.notify.Push
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.runtime.getValue
+import androidx.compose.material3.Switch
+import androidx.compose.material3.ListItemDefaults
+import androidx.compose.material3.ListItem
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -13,14 +19,23 @@ import androidx.compose.material.icons.outlined.DarkMode
 import androidx.compose.material.icons.outlined.LightMode
 import androidx.compose.material.icons.outlined.PhoneAndroid
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.Role
+import androidx.compose.material3.ToggleButtonDefaults
+import androidx.compose.material3.ToggleButton
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.ButtonGroupDefaults
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -31,8 +46,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import fyi.mergers.app.ui.theme.ThemeChoice
 
-/** Settings, from the dashboard's cog (or the phone's App info). */
-@OptIn(ExperimentalMaterial3Api::class)
+/**
+ * Settings, from the dashboard's cog, the Following tab's Alerts row, or the
+ * phone's App info.
+ */
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun SettingsScreen(vm: AppViewModel) {
     val context = LocalContext.current
@@ -55,32 +73,48 @@ fun SettingsScreen(vm: AppViewModel) {
         },
     ) { padding ->
         Column(Modifier.padding(padding).fillMaxSize().verticalScroll(rememberScrollState())) {
+            // What reaches the phone, first: it's what most people come here for.
+            SectionTitle("Notifications")
+            NotificationsBanner()
+            AlertSettings(vm)
+
+            HorizontalDivider(Modifier.padding(top = 8.dp))
             SectionTitle("Appearance")
             Text(
                 "Theme",
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.padding(horizontal = 16.dp),
             )
-            SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
+            // Expressive's connected button group: the chosen one rounds off fully.
+            Row(
+                Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(ButtonGroupDefaults.ConnectedSpaceBetween),
+            ) {
+                val n = ThemeChoice.entries.size
                 ThemeChoice.entries.forEachIndexed { i, choice ->
-                    SegmentedButton(
-                        selected = vm.theme == choice,
-                        onClick = { vm.chooseTheme(choice) },
-                        shape = SegmentedButtonDefaults.itemShape(i, ThemeChoice.entries.size),
-                        icon = {
-                            SegmentedButtonDefaults.Icon(active = vm.theme == choice) {
-                                Icon(
-                                    when (choice) {
-                                        ThemeChoice.SYSTEM -> Icons.Outlined.PhoneAndroid
-                                        ThemeChoice.LIGHT -> Icons.Outlined.LightMode
-                                        ThemeChoice.DARK -> Icons.Outlined.DarkMode
-                                    },
-                                    contentDescription = null,
-                                )
-                            }
+                    val selected = vm.theme == choice
+                    ToggleButton(
+                        checked = selected,
+                        onCheckedChange = { vm.chooseTheme(choice) },
+                        shapes = when (i) {
+                            0 -> ButtonGroupDefaults.connectedLeadingButtonShapes()
+                            n - 1 -> ButtonGroupDefaults.connectedTrailingButtonShapes()
+                            else -> ButtonGroupDefaults.connectedMiddleButtonShapes()
                         },
-                        label = { Text(choice.label) },
-                    )
+                        modifier = Modifier.weight(1f).semantics { role = Role.RadioButton },
+                    ) {
+                        Icon(
+                            when (choice) {
+                                ThemeChoice.SYSTEM -> Icons.Outlined.PhoneAndroid
+                                ThemeChoice.LIGHT -> Icons.Outlined.LightMode
+                                ThemeChoice.DARK -> Icons.Outlined.DarkMode
+                            },
+                            contentDescription = null,
+                            modifier = Modifier.size(ToggleButtonDefaults.IconSize),
+                        )
+                        Spacer(Modifier.width(ToggleButtonDefaults.IconSpacing))
+                        Text(choice.label)
+                    }
                 }
             }
 
@@ -102,4 +136,32 @@ fun SettingsScreen(vm: AppViewModel) {
             }
         }
     }
+}
+
+/** Which alerts the background check raises, and how often it looks. */
+@Composable
+private fun AlertSettings(vm: AppViewModel) {
+    val tracking by vm.tracking.collectAsStateWithLifecycle()
+    ListItem(
+        headlineContent = { Text("Follow every phase 2 matter") },
+        supportingContent = { Text("Matters referred to phase 2 are followed automatically") },
+        trailingContent = { Switch(checked = tracking.autoTrackPhase2, onCheckedChange = vm::setAutoTrackPhase2) },
+        colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surface),
+    )
+    ListItem(
+        headlineContent = { Text("Every new filing") },
+        supportingContent = { Text("A notification for each new merger or waiver on the register") },
+        trailingContent = { Switch(checked = tracking.notifyNewFilings, onCheckedChange = vm::setNotifyNewFilings) },
+        colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surface),
+    )
+    Text(
+        if (Push.ready(LocalContext.current)) {
+            "Checked as soon as mergers.fyi publishes a change, which it does several times a weekday from the ACCC register."
+        } else {
+            "Checked about every two hours. mergers.fyi refreshes from the ACCC register several times a weekday."
+        },
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+    )
 }

@@ -46,23 +46,19 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.outlined.BookmarkAdd
 import androidx.compose.material.icons.outlined.BookmarkRemove
-import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.SnackbarResult
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import android.Manifest
-import android.content.pm.PackageManager
 import fyi.mergers.app.data.mergerPageUrl
-import kotlinx.coroutines.launch
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
@@ -81,6 +77,7 @@ fun MergersScreen(vm: AppViewModel) {
         all?.let { vm.applyFilter(it, f, tracking.trackedSet) }.orEmpty()
     }
     val lazy = rememberLazyListState()
+    ScrollToTopOnReselect(vm, Route.Mergers, lazy)
     // A new search or filter starts from the top; coming back from a merger
     // keeps the place.
     var lastFilter by rememberSaveable { mutableIntStateOf(f.hashCode()) }
@@ -98,22 +95,7 @@ fun MergersScreen(vm: AppViewModel) {
     val scope = rememberCoroutineScope()
     val notifyPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {}
     var menuFor by remember { mutableStateOf<String?>(null) }
-    val toggleFollow = { id: String ->
-        val now = vm.toggleFollow(id)
-        if (now && context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-            notifyPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
-        }
-        scope.launch {
-            snackbar.currentSnackbarData?.dismiss()
-            val undo = snackbar.showSnackbar(
-                if (now) "Following: you'll be notified of updates" else "No longer following",
-                actionLabel = "Undo",
-                duration = SnackbarDuration.Short,
-            )
-            if (undo == SnackbarResult.ActionPerformed) vm.toggleFollow(id)
-        }
-        Unit
-    }
+    val toggleFollow = rememberMergerFollowToggle(vm, snackbar)
 
     Scaffold(contentWindowInsets = WindowInsets(0), snackbarHost = { SnackbarHost(snackbar) }) { padding ->
         Column(Modifier.padding(padding).statusBarsPadding()) {
@@ -164,7 +146,7 @@ fun MergersScreen(vm: AppViewModel) {
                         state = lazy,
                         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 24.dp),
                         verticalArrangement = Arrangement.spacedBy(10.dp),
-                        modifier = Modifier.fillMaxSize(),
+                        modifier = Modifier.fillMaxSize().testTag("mergers"),
                     ) {
                         items(shown, key = { it.merger_id }) { m ->
                             val followed = tracking.isTracked(m.merger_id)
@@ -177,6 +159,7 @@ fun MergersScreen(vm: AppViewModel) {
                                         haptics.performHapticFeedback(HapticFeedbackType.LongPress)
                                         menuFor = m.merger_id
                                     },
+                                    onSwipe = { toggleFollow(m.merger_id) },
                                 )
                                 DropdownMenu(expanded = menuFor == m.merger_id, onDismissRequest = { menuFor = null }) {
                                     DropdownMenuItem(

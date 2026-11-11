@@ -23,7 +23,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.Settings
@@ -46,7 +45,16 @@ import androidx.compose.material.icons.outlined.Gavel
 import androidx.compose.material.icons.outlined.WarningAmber
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.animation.core.Animatable
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.layout.requiredSize
+import androidx.compose.material3.toShape
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.material3.LoadingIndicator
+import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -56,6 +64,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.material3.TopAppBarState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -90,10 +99,11 @@ import fyi.mergers.app.data.UpcomingEvent
 import fyi.mergers.app.ui.theme.isDarkTheme
 import fyi.mergers.app.ui.theme.eventTypeColors
 import fyi.mergers.app.ui.theme.recentEventColors
+import fyi.mergers.app.widget.Upcoming
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun DashboardScreen(vm: AppViewModel) {
     val statsState by vm.stats.collectAsStateWithLifecycle()
@@ -122,7 +132,7 @@ fun DashboardScreen(vm: AppViewModel) {
                                 withStyle(SpanStyle(color = dot)) { append(".") }
                                 append("fyi")
                             },
-                            fontWeight = FontWeight.Bold,
+                            style = MaterialTheme.typography.titleLargeEmphasized,
                         )
                         Text(
                             "Australian merger tracker",
@@ -152,16 +162,19 @@ fun DashboardScreen(vm: AppViewModel) {
                 stats == null -> Centered("Couldn't load the dashboard. Pull down to try again.")
                 else -> DashboardContent(
                     vm, stats, upcomingState.value.orEmpty(), recentState.value, recentEventsState.value.orEmpty(),
+                    bar.state,
                 )
             }
         }
     }
 }
 
+/** Expressive's loading indicator: a shape that morphs through the M3 shape set while it spins. */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun Loading() {
     Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
-        CircularProgressIndicator()
+        LoadingIndicator(Modifier.size(64.dp))
     }
 }
 
@@ -173,12 +186,14 @@ private fun DashboardContent(
     upcoming: List<UpcomingEvent>,
     recent: StatusWindow?,
     recentEvents: List<RecentEvent>,
+    barState: TopAppBarState,
 ) {
     val soon = upcoming.filter { e ->
         val n = Dates.daysUntil(e.end_date ?: e.date) ?: return@filter false
         n >= 0 && (Dates.daysUntil(e.date) ?: 0) <= 14
     }.sortedBy { it.date }
-    val days = soon.groupBy { it.date?.take(10) }
+    // As the widget: a hearing already under way is listed under today, "until" its last day.
+    val days = soon.groupBy { Upcoming.day(it)?.toString() }
     val pastDays = remember(recentEvents) { RecentEventDays.of(recentEvents) }
 
     // Which day header each Coming up and Recent events item sits under, by
@@ -198,6 +213,7 @@ private fun DashboardContent(
         }
     }
     val listState = rememberLazyListState()
+    ScrollToTopOnReselect(vm, Route.Dashboard, listState, barState)
     // The day pinned at the top, and the next one while it's pushing that one
     // off: both carry the section's title, so the title rides up with the old
     // day and the new day arrives with it, rather than arriving bare and
@@ -223,9 +239,8 @@ private fun DashboardContent(
     ) {
         item {
             Column(Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                StatCard(
-                    title = "Mergers",
-                    value = "${stats.by_status[Status.UNDER_ASSESSMENT] ?: 0} under assessment",
+                HeroCard(
+                    count = stats.by_status[Status.UNDER_ASSESSMENT] ?: 0,
                     subtitle = "${stats.total_mergers} notified and ${stats.total_waivers} waivers",
                     onClick = { vm.showMergersWithStatus(Status.UNDER_ASSESSMENT) },
                 )
@@ -281,7 +296,7 @@ private fun DashboardContent(
                 items(events, key = ::eventKey) { e ->
                     ListRow(
                         title = e.merger_name,
-                        subtitle = e.event_type_display,
+                        subtitle = Upcoming.detail(e),
                         trailing = null,
                         onClick = { vm.openMerger(e.merger_id) },
                         leading = { EventTypeTile(e.type, e.event_type_display) },
@@ -381,13 +396,21 @@ private fun eventTypeIcon(type: String?): ImageVector = when (type) {
     else -> Icons.Outlined.Gavel
 }
 
+/**
+ * The tiles' outline: Expressive's six-sided cookie. The widget's tile
+ * (res/drawable/widget_tile.xml) is the same outline: keep the two in step.
+ */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+private val TileShape get() = MaterialShapes.Cookie6Sided
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 internal fun EventTypeTile(type: String?, description: String?) {
     val c = eventTypeColors(type)
     Box(
         Modifier
             .size(32.dp)
-            .clip(RoundedCornerShape(8.dp))
+            .clip(TileShape.toShape())
             .background(c.fill)
             .then(
                 // Beside its own label (the widget's settings) it's decoration.
@@ -422,13 +445,14 @@ private fun recentEventIcon(type: RecentEventType): ImageVector = when (type) {
     RecentEventType.OTHER -> Icons.Outlined.Info
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun RecentEventTile(type: RecentEventType) {
     val c = recentEventColors(type)
     Box(
         Modifier
             .size(32.dp)
-            .clip(RoundedCornerShape(8.dp))
+            .clip(TileShape.toShape())
             .background(c.fill)
             .semantics { role = Role.Image; contentDescription = type.label },
         contentAlignment = Alignment.Center,
@@ -444,6 +468,7 @@ private fun median(v: Double): String = if (v % 1.0 == 0.0) v.toInt().toString()
  * what was decided in the window, coloured by how it sits against the all-time
  * median (slower in the declined red, faster in the cleared green).
  */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun DecisionTimeCard(title: String, d: WindowDurations, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val darkTheme = isDarkTheme()
@@ -474,8 +499,7 @@ private fun DecisionTimeCard(title: String, d: WindowDurations, onClick: () -> U
             Row(verticalAlignment = Alignment.Bottom, modifier = Modifier.padding(top = 4.dp)) {
                 Text(
                     median(m),
-                    style = MaterialTheme.typography.headlineLarge,
-                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.headlineLargeEmphasized,
                     color = tone,
                     modifier = Modifier.alignByBaseline(),
                 )
@@ -514,12 +538,67 @@ private fun DecisionTimeCard(title: String, d: WindowDurations, onClick: () -> U
     }
 }
 
+/**
+ * The dashboard's headline: how many matters are under assessment, big, on
+ * the brand's container colour, with the under-assessment shape
+ * ([outcomeShape]) turning into place behind it on a spring.
+ */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+private fun HeroCard(count: Int, subtitle: String, onClick: () -> Unit) {
+    val turn = remember { Animatable(-60f) }
+    val spring = MaterialTheme.motionScheme.slowSpatialSpec<Float>()
+    LaunchedEffect(Unit) { turn.animateTo(0f, spring) }
+    val ink = MaterialTheme.colorScheme.onPrimaryContainer
+    Card(
+        onClick = onClick,
+        shape = MaterialTheme.shapes.extraLarge,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer,
+            contentColor = ink,
+        ),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Box(Modifier.fillMaxWidth()) {
+            val shape = outcomeShape(Status.UNDER_ASSESSMENT).toShape()
+            // Drawn to the content's height, not its own: the shape bleeds off the corner.
+            Box(
+                Modifier
+                    .matchParentSize()
+                    .wrapContentSize(Alignment.TopEnd, unbounded = true)
+                    .offset(x = 36.dp, y = (-28).dp)
+                    .requiredSize(168.dp)
+                    .graphicsLayer { rotationZ = turn.value }
+                    .clip(shape)
+                    .background(ink.copy(alpha = 0.08f)),
+            )
+            Column(Modifier.padding(horizontal = 20.dp, vertical = 18.dp)) {
+                Text("Mergers", style = MaterialTheme.typography.labelLargeEmphasized, color = ink.copy(alpha = 0.8f))
+                Row(verticalAlignment = Alignment.Bottom, modifier = Modifier.padding(top = 2.dp)) {
+                    Text(
+                        "$count",
+                        style = MaterialTheme.typography.displayMediumEmphasized,
+                        modifier = Modifier.alignByBaseline(),
+                    )
+                    Text(
+                        " under assessment",
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.alignByBaseline(),
+                    )
+                }
+                Text(subtitle, style = MaterialTheme.typography.bodyMedium, color = ink.copy(alpha = 0.8f))
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun StatCard(title: String, value: String, subtitle: String?, modifier: Modifier = Modifier, onClick: (() -> Unit)? = null) {
     val content: @Composable () -> Unit = {
         Column(Modifier.fillMaxWidth().padding(14.dp)) {
             Text(title, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text(value, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 4.dp))
+            Text(value, style = MaterialTheme.typography.titleLargeEmphasized, modifier = Modifier.padding(top = 4.dp))
             if (subtitle != null) {
                 Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }

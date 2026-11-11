@@ -46,6 +46,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.FilledTonalIconToggleButton
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -196,7 +199,7 @@ private fun IndustryRow(i: IndustryEntry, total: Int, max: Int, followed: Boolea
  * tree, its counts, the industries under it, and its mergers by phase. Follow
  * it to hear of each new filing and determination.
  */
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun IndustryScreen(vm: AppViewModel, code: String) {
     val state by remember(code) { vm.division(code) }.collectAsStateWithLifecycle()
@@ -204,6 +207,7 @@ fun IndustryScreen(vm: AppViewModel, code: String) {
     val tracking by vm.tracking.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val snackbar = remember { SnackbarHostState() }
+    val toggleMerger = rememberMergerFollowToggle(vm, snackbar)
     val scope = rememberCoroutineScope()
     LaunchedEffect(code) { vm.loadIndustry(code) }
 
@@ -214,8 +218,10 @@ fun IndustryScreen(vm: AppViewModel, code: String) {
     val followed = tracking.isIndustryTracked(code)
     val notifyPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {}
 
+    val haptic = rememberFollowHaptics()
     val toggleFollow = {
         val now = vm.toggleIndustryFollow(code, name)
+        haptic(now)
         if (now && context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
             notifyPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
@@ -237,7 +243,11 @@ fun IndustryScreen(vm: AppViewModel, code: String) {
                 navigationIcon = { BackButton(vm) },
                 actions = {
                     if (node != null) {
-                        IconButton(onClick = toggleFollow) {
+                        FilledTonalIconToggleButton(
+                            checked = followed,
+                            onCheckedChange = { toggleFollow() },
+                            shapes = IconButtonDefaults.toggleableShapes(),
+                        ) {
                             Icon(
                                 if (followed) Icons.Filled.Bookmark else Icons.Filled.BookmarkBorder,
                                 contentDescription = if (followed) "Unfollow industry" else "Follow industry",
@@ -265,7 +275,7 @@ fun IndustryScreen(vm: AppViewModel, code: String) {
                 file == null -> Centered("Couldn't load this industry. Pull down to try again.")
                 // A code outside the ANZSIC tree, or one nothing is filed under.
                 node == null -> Centered("No mergers are filed under ANZSIC $code.")
-                else -> IndustryContent(vm, node)
+                else -> IndustryContent(vm, node, toggleMerger)
             }
         }
     }
@@ -273,7 +283,7 @@ fun IndustryScreen(vm: AppViewModel, code: String) {
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun IndustryContent(vm: AppViewModel, node: IndustryNode) {
+private fun IndustryContent(vm: AppViewModel, node: IndustryNode, toggleMerger: (String) -> Unit) {
     val list by vm.list.collectAsStateWithLifecycle()
     val tracking by vm.tracking.collectAsStateWithLifecycle()
     // list.json's fuller summaries (parties, stage) where it has them.
@@ -373,6 +383,7 @@ private fun IndustryContent(vm: AppViewModel, node: IndustryNode) {
                         followed = tracking.isTracked(m.merger_id),
                         onClick = { vm.openMerger(m.merger_id) },
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 5.dp),
+                        onSwipe = { toggleMerger(m.merger_id) },
                     )
                 }
             }

@@ -63,12 +63,44 @@ picks day or night), so a new type or colour goes in both places. Search
 draws a widget's `RemoteViews` inside an `AppWidgetHostView` (a list takes no
 rows anywhere else).
 
+Tabs (`ui/App.kt`): Dashboard, Mergers and Following change only from the
+bottom bar, never by swiping across the screen (Material's navigation bar
+guidance keeps swipes for things within a screen). Each keeps its scroll and
+state while another shows. Tapping the tab already showing goes back to it
+from a merger or industry open over it, and at the tab itself scrolls it to
+the top (`AppViewModel.tapTab`, `ScrollToTopOnReselect`).
+
 Settings (`ui/SettingsScreen.kt`) has no tab: it opens from the cog on the
-dashboard's top bar, and from the phone's App info ("Additional settings in the
+dashboard's top bar, from the Following tab (the same cog, and the Alerts row
+that says how alerts are set; the switches themselves live only in Settings,
+under Notifications), and from the phone's App info ("Additional settings in the
 app", `ACTION_APPLICATION_PREFERENCES`). The theme choice (`ui/theme/Appearance.kt`)
 is kept in plain preferences and handed to `UiModeManager.setApplicationNightMode`
 too, so the window and status bar follow it. In Compose, use `isDarkTheme()`,
 not `isSystemInDarkTheme()`, which ignores the setting.
+
+Look and feel: Material 3 Expressive. `MergersTheme` is `MaterialExpressiveTheme`
+with `MotionScheme.expressive()` and rounder `Shapes`; `material3` is pinned
+ahead of the Compose BOM (`libs.versions.toml`) because the BOM's 1.4 lacks
+most Expressive components. Use the theme's pieces rather than one-offs:
+`LoadingIndicator` (`Loading()`, `RefreshBox`), the `…Emphasized` type styles
+for headlines and numbers, toggle buttons with `shapes`, and `motionScheme`
+specs for app animations. Each outcome has its own `MaterialShapes` outline
+(`outcomeShape` in `ui/Common.kt`), used by `StatusGlyph` (which leads
+each `MergerCard`) and large and faint behind the dashboard hero and a merger's
+header, not on cards, where a list of them reads as repetitive; a new status
+needs one there too.
+Event tiles are the six-sided cookie in the app (`TileShape`) and in the
+widget (`res/drawable/widget_tile.xml`, the same outline as a path): change
+both together. A `MergerCard` grows into its merger's header through
+`Modifier.sharedMerger` (`SharedTransitionLayout` round `NavDisplay` in
+`MergersApp`); an entry takes part only inside `Shared { }`. On a merger's
+page, follow, share and open live in a floating toolbar, and the top bar takes
+the header's colour and the merger's name once the header has scrolled off.
+Following and unfollowing give a toggle haptic (`rememberFollowHaptics`).
+A merger card swiped either way follows or unfollows it and springs back
+(`MergerCard`'s `onSwipe`, with `rememberMergerFollowToggle` for the snackbar
+and Undo); a screen reader gets the same as the card's custom action.
 
 ## Commits and pull requests
 

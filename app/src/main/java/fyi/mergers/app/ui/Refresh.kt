@@ -2,6 +2,10 @@ package fyi.mergers.app.ui
 
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
+import androidx.compose.ui.Alignment
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -23,9 +27,10 @@ internal const val MIN_SPIN_MS = 700L
  * [refreshing] can go true and false again before the indicator settles (or
  * before it is set at all), and the circle would snap away the moment it is let
  * go. Here a pull holds the spinner from release for [MIN_SPIN_MS], then for as
- * long as [refreshing] stays true.
+ * long as [refreshing] stays true. The indicator is Expressive's morphing
+ * shape in a container, rather than the plain arc.
  */
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun RefreshBox(
     refreshing: Boolean,
@@ -42,8 +47,14 @@ fun RefreshBox(
             pulled = false
         }
     }
+    val state = rememberPullToRefreshState()
+    val spinning = pulled || refreshing
     PullToRefreshBox(
-        isRefreshing = pulled || refreshing,
+        isRefreshing = spinning,
+        state = state,
+        indicator = {
+            PullToRefreshDefaults.LoadingIndicator(state, spinning, Modifier.align(Alignment.TopCenter))
+        },
         onRefresh = {
             pulled = true
             onRefresh()

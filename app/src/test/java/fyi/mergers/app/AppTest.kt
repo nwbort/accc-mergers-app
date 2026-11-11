@@ -37,9 +37,12 @@ import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performScrollToKey
-import androidx.compose.ui.test.swipeLeft
+import androidx.compose.ui.test.isSelectable
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipeRight
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.performScrollToIndex
 import androidx.lifecycle.ViewModelProvider
@@ -175,11 +178,35 @@ class AppTest {
         waitUntil { vm.tab == Route.Dashboard }
         waitForText("Recent determinations")
 
-        // The merger list, swiped to from the dashboard, searched and cleared.
-        compose.onNodeWithTag("dashboard").performTouchInput { swipeLeft() }
+        // The merger list, from the bottom bar (tabs don't swipe), searched and cleared.
+        val mergersTab = hasText("Mergers") and isSelectable()
+        compose.onNode(mergersTab).performClick()
         waitUntil { vm.tab == fyi.mergers.app.ui.Route.Mergers }
         waitForText("40 matters")
         shot("2-mergers")
+        // Tapping the tab that's showing scrolls it back to the top.
+        compose.onNodeWithTag("mergers").performScrollToIndex(20)
+        waitUntil { compose.onAllNodesWithText("Autosports Group", substring = true).fetchSemanticsNodes().isEmpty() }
+        compose.onNode(mergersTab).performClick()
+        waitForText("Autosports Group", substring = true)
+        assertEquals(Route.Mergers, vm.tab)
+
+        // A card swiped sideways follows its merger, showing what it'll do as
+        // it moves, and springs back; swiped again, it unfollows.
+        val psp = compose.onAllNodesWithText("PSP Investments", substring = true).onFirst()
+        psp.performTouchInput {
+            down(centerLeft + Offset(40f, 0f))
+            // A third of the way across is past the quarter that counts.
+            repeat(10) { moveBy(Offset(width * 0.033f, 0f)) }
+        }
+        compose.waitForIdle()
+        shot("2a-swipe-follow")
+        psp.performTouchInput { up() }
+        waitUntil { Graph.store.current().isTracked("MN-55024") }
+        waitForText("Following: you", substring = true)
+        psp.performTouchInput { swipeRight() }
+        waitUntil { !Graph.store.current().isTracked("MN-55024") }
+        waitForText("No longer following")
         compose.onNode(hasSetTextAction()).performTextInput("asahi")
         waitForText("1 matter")
         compose.onNode(hasSetTextAction()).performTextClearance()
@@ -232,6 +259,11 @@ class AppTest {
         compose.onAllNodesWithText("Autosports Group", substring = true).onFirst().performClick()
         waitForText("Consultation responses due")
         shot("3-detail-live")
+        // Scrolled past its header, the bar wears the header's colour and the merger's name.
+        compose.onNodeWithTag("detail").performScrollToIndex(4)
+        waitForText("Autosports Group - Mercedes-Benz", substring = true)
+        shot("3b-detail-scrolled")
+        compose.onNodeWithTag("detail").performScrollToIndex(0)
         compose.onNodeWithContentDescription("Follow").performClick()
         waitUntil { Graph.store.current().isTracked("MN-20046") }
         waitForText("Following: you", substring = true)
@@ -254,6 +286,16 @@ class AppTest {
         waitForText("Mergers you follow (3)")
         waitForText("New", substring = true)
         shot("6-following")
+        // The alert switches live in Settings; Following links there, saying how they're set.
+        compose.onNodeWithTag("following").performScrollToKey("alerts")
+        waitForText("Phase 2 matters", substring = true)
+        shot("6b-following-alerts")
+        compose.onNodeWithText("Alerts").performClick()
+        waitForText("Every new filing")
+        shot("6c-settings-from-following")
+        back()
+        waitUntil { vm.backStack.lastOrNull() == Route.Following }
+        compose.onNodeWithTag("following").performScrollToIndex(0)
 
         // The followed matter moves on: the background check notices and posts it.
         val m = MergersJson.decodeFromString(MergerDetail.serializer(), Fixtures.read("mergers/MN-20046.json")!!)

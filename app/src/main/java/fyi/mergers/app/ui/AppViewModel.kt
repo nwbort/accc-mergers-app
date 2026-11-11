@@ -28,6 +28,8 @@ import fyi.mergers.app.ui.theme.ThemeChoice
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -99,6 +101,20 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     // ---- navigation ---------------------------------------------------------
 
     val tab: Route get() = backStack.first()
+
+    /** A tap on the tab already showing, at its root: that tab scrolls to the top. No replay: only the showing tab hears it. */
+    private val _reselected = MutableSharedFlow<Route>(extraBufferCapacity = 1)
+    val reselected: SharedFlow<Route> = _reselected
+
+    /**
+     * A tap on the bottom bar. On the tab already showing, with a merger or
+     * industry open over it, it goes back to the tab itself; at the tab's own
+     * screen, it scrolls back to the top (Material's guidance for re-selecting
+     * the current destination).
+     */
+    fun tapTab(tab: Route) {
+        if (backStack.size == 1 && backStack.first() == tab) _reselected.tryEmit(tab) else selectTab(tab)
+    }
 
     fun selectTab(tab: Route) {
         if (backStack.size == 1 && backStack.first() == tab) return
@@ -362,7 +378,11 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     private fun searchText(m: MergerSummary): String = searchCache.getOrPut(m.merger_id + m.page_modified_datetime) {
         buildString {
             append(m.merger_name).append(' ').append(m.merger_id)
-            (m.acquirers + m.targets + m.other_parties).forEach { append(' ').append(it.name) }
+            // Every party, as the register names it and as the site tidies it.
+            (m.acquirers + m.targets + m.other_parties).forEach {
+                append(' ').append(it.name)
+                it.party_page?.name?.let { tidied -> append(' ').append(tidied) }
+            }
             m.anzsic_codes.forEach { append(' ').append(it.name) }
         }.lowercase()
     }

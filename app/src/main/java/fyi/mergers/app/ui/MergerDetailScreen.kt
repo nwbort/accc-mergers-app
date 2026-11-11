@@ -43,6 +43,32 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.graphics.compositeOver
+import androidx.compose.ui.graphics.Color
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.material3.HorizontalFloatingToolbar
+import androidx.compose.material3.FloatingToolbarExitDirection
+import androidx.compose.material3.FloatingToolbarDefaults
+import androidx.compose.material3.FilledIconToggleButton
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.animation.togetherWith
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.material3.toShape
+import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.layout.requiredSize
+import androidx.compose.animation.core.Animatable
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -66,6 +92,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -74,9 +101,9 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import fyi.mergers.app.data.Dates
 import fyi.mergers.app.data.MergerDetail
+import fyi.mergers.app.data.displayNames
 import fyi.mergers.app.data.MergerEvent
 import fyi.mergers.app.data.MergerIds
-import fyi.mergers.app.data.Party
 import fyi.mergers.app.data.Reasons
 import fyi.mergers.app.data.documentUrl
 import fyi.mergers.app.data.headerStatus
@@ -87,9 +114,11 @@ import fyi.mergers.app.data.stageLabel
 import fyi.mergers.app.tracking.TrackedEvents
 import fyi.mergers.app.ui.theme.AppealIndigo
 import fyi.mergers.app.ui.theme.statusColors
+import fyi.mergers.app.ui.theme.statusGlyphColors
+import fyi.mergers.app.ui.theme.isDarkTheme
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun MergerDetailScreen(vm: AppViewModel, id: String) {
     val state by remember(id) { vm.detail(id) }.collectAsStateWithLifecycle()
@@ -103,13 +132,15 @@ fun MergerDetailScreen(vm: AppViewModel, id: String) {
     val followed = tracking.isTracked(id)
     // Not a failure to load: a followed id still waiting, or a well-formed one
     // the register doesn't list (a link to it, say).
-    val listState by vm.list.collectAsStateWithLifecycle()
+    val register by vm.list.collectAsStateWithLifecycle()
     val unlisted = tracking.isAwaiting(id) ||
-        MergerIds.parse(id) == id && listState.value?.none { it.merger_id == id } == true
+        MergerIds.parse(id) == id && register.value?.none { it.merger_id == id } == true
     val notifyPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {}
 
+    val haptic = rememberFollowHaptics()
     val toggleFollow = {
         val now = vm.toggleFollow(id)
+        haptic(now)
         if (now && context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
             notifyPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
@@ -120,25 +151,93 @@ fun MergerDetailScreen(vm: AppViewModel, id: String) {
         Unit
     }
 
+    // Once the header has scrolled away, the bar takes its colour and the
+    // merger's name, so the page keeps saying what it is.
+    val listState = rememberLazyListState()
+    val collapsed by remember { derivedStateOf { listState.firstVisibleItemIndex > 0 } }
+    val (headerFill, headerInk) = m?.let { headerColors(it) }
+        ?: (MaterialTheme.colorScheme.surface to MaterialTheme.colorScheme.onSurface)
+    val showName = collapsed && m != null
+    val barFill by animateColorAsState(
+        if (showName) headerFill else MaterialTheme.colorScheme.surface,
+        MaterialTheme.motionScheme.defaultEffectsSpec(),
+        label = "bar",
+    )
+    val barInk by animateColorAsState(
+        if (showName) headerInk else MaterialTheme.colorScheme.onSurface,
+        MaterialTheme.motionScheme.defaultEffectsSpec(),
+        label = "barInk",
+    )
+    // The actions float at the foot of the page and tuck away while you read down.
+    val toolbar = FloatingToolbarDefaults.exitAlwaysScrollBehavior(exitDirection = FloatingToolbarExitDirection.Bottom)
+
     Scaffold(
+        modifier = Modifier.nestedScroll(toolbar),
         contentWindowInsets = WindowInsets(0),
-        snackbarHost = { SnackbarHost(snackbar) },
+        // Clear of the floating toolbar, with room between.
+        snackbarHost = { SnackbarHost(snackbar, Modifier.padding(bottom = 96.dp)) },
         topBar = {
             TopAppBar(
-                title = { Text(id) },
+                title = {
+                    AnimatedContent(
+                        targetState = if (showName) m.merger_name else id,
+                        transitionSpec = {
+                            (slideInVertically { it / 2 } + fadeIn()) togetherWith (slideOutVertically { -it / 2 } + fadeOut())
+                        },
+                        label = "title",
+                    ) { title ->
+                        Text(title, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    }
+                },
                 navigationIcon = {
                     IconButton(onClick = { vm.back() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
-                actions = {
-                    IconButton(onClick = toggleFollow) {
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = barFill,
+                    titleContentColor = barInk,
+                    navigationIconContentColor = barInk,
+                ),
+            )
+        },
+    ) { padding ->
+        Box(Modifier.padding(padding).fillMaxSize()) {
+            RefreshBox(
+                refreshing = state.loading && m != null,
+                onRefresh = { vm.loadDetail(id) },
+                modifier = Modifier.fillMaxSize(),
+            ) {
+                when {
+                    m == null && state.loading -> Loading()
+                    m == null && unlisted -> LazyColumn(Modifier.fillMaxSize()) {
+                        item { NotOnRegister(vm, id, followed, Modifier.padding(top = 8.dp)) }
+                    }
+                    m == null -> Centered("Couldn't load $id. Pull down to try again.")
+                    else -> Detail(vm, m, listState)
+                }
+            }
+            if (m != null) {
+                HorizontalFloatingToolbar(
+                    expanded = true,
+                    scrollBehavior = toolbar,
+                    colors = FloatingToolbarDefaults.vibrantFloatingToolbarColors(),
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .offset(y = -FloatingToolbarDefaults.ScreenOffset),
+                ) {
+                    // Fills and morphs from round to square-ish when on, on a spring.
+                    FilledIconToggleButton(
+                        checked = followed,
+                        onCheckedChange = { toggleFollow() },
+                        shapes = IconButtonDefaults.toggleableShapes(),
+                    ) {
                         Icon(
                             if (followed) Icons.Filled.Bookmark else Icons.Filled.BookmarkBorder,
                             contentDescription = if (followed) "Unfollow" else "Follow",
                         )
                     }
-                    IconButton(onClick = { share(context, m?.merger_name ?: id, mergerPageUrl(id)) }) {
+                    IconButton(onClick = { share(context, m.merger_name, mergerPageUrl(id)) }) {
                         Icon(Icons.Filled.Share, contentDescription = "Share")
                     }
                     var menu by remember { mutableStateOf(false) }
@@ -151,7 +250,7 @@ fun MergerDetailScreen(vm: AppViewModel, id: String) {
                                 text = { Text("Open on mergers.fyi") },
                                 onClick = { menu = false; openUrl(context, mergerPageUrl(id)) },
                             )
-                            m?.url?.let { url ->
+                            m.url?.let { url ->
                                 DropdownMenuItem(
                                     text = { Text("Open on the ACCC register") },
                                     onClick = { menu = false; openUrl(context, url) },
@@ -159,36 +258,37 @@ fun MergerDetailScreen(vm: AppViewModel, id: String) {
                             }
                         }
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface),
-            )
-        },
-    ) { padding ->
-        RefreshBox(
-            refreshing = state.loading && m != null,
-            onRefresh = { vm.loadDetail(id) },
-            modifier = Modifier.padding(padding).fillMaxSize(),
-        ) {
-            when {
-                m == null && state.loading -> Loading()
-                m == null && unlisted -> LazyColumn(Modifier.fillMaxSize()) {
-                    item { NotOnRegister(vm, id, followed, Modifier.padding(top = 8.dp)) }
                 }
-                m == null -> Centered("Couldn't load $id. Pull down to try again.")
-                else -> Detail(vm, m)
             }
         }
     }
 }
 
 @Composable
-private fun Detail(vm: AppViewModel, m: MergerDetail) {
+private fun Detail(vm: AppViewModel, m: MergerDetail, listState: LazyListState) {
     val context = LocalContext.current
     val events = remember(m) { m.events.sortedWith(compareByDescending<MergerEvent> { it.date ?: "" }) }
     val upcoming = remember(m) { TrackedEvents.upcoming(m).sortedBy { it.date } }
 
-    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 32.dp)) {
-        item { Header(m) }
+    // Room at the foot for the floating toolbar.
+    LazyColumn(Modifier.fillMaxSize().testTag("detail"), state = listState, contentPadding = PaddingValues(bottom = 104.dp)) {
+        item {
+            // Scrolling away, the header recedes: it fades and shrinks a little
+            // as it goes, behind the facts sliding up over it.
+            Header(
+                m,
+                Modifier.graphicsLayer {
+                    val info = listState.layoutInfo.visibleItemsInfo.firstOrNull { it.index == 0 }
+                    if (info != null && info.size > 0) {
+                        val gone = (-info.offset).toFloat().coerceAtLeast(0f) / info.size
+                        alpha = 1f - 0.7f * gone
+                        scaleX = 1f - 0.08f * gone
+                        scaleY = scaleX
+                        translationY = info.size * gone * 0.4f
+                    }
+                },
+            )
+        }
 
         item { Facts(m) }
 
@@ -197,8 +297,8 @@ private fun Detail(vm: AppViewModel, m: MergerDetail) {
             items(upcoming, key = { "up-" + it.key }) { e ->
                 ListRow(
                     title = e.title,
-                    subtitle = Dates.relative(e.date)?.replaceFirstChar { it.uppercase() },
-                    trailing = Dates.format(e.date),
+                    subtitle = Dates.upcoming(e.date, e.endDate)?.replaceFirstChar { it.uppercase() },
+                    trailing = Dates.span(e.date, e.endDate),
                     onClick = {},
                 )
             }
@@ -317,17 +417,31 @@ private fun Detail(vm: AppViewModel, m: MergerDetail) {
  * appeal), a pale tint of the status colour while it runs.
  */
 @Composable
-private fun Header(m: MergerDetail) {
-    val input = m.outcomeInput()
-    val header = input.headerStatus()
+private fun headerColors(m: MergerDetail): Pair<Color, Color> {
+    val header = m.outcomeInput().headerStatus()
     val decided = header?.decided == true
     val colors = statusColors(header?.label ?: m.status)
     val underReview = m.under_appeal || m.under_judicial_review
-    val (bg, fg) = when {
+    return when {
         decided && underReview -> AppealIndigo.fill to AppealIndigo.onFill
         decided -> colors.fill to colors.onFill
-        else -> colors.fill.copy(alpha = 0.14f) to MaterialTheme.colorScheme.onSurface
+        // Still running: a tint of the status, opaque so the top bar can wear it
+        // too. In the dark the deep fill would wash out to grey, so it's the
+        // lighter glyph shade, and a stronger tint of it.
+        else -> {
+            val tint = if (isDarkTheme()) statusGlyphColors(header?.label ?: m.status).fill.copy(alpha = 0.22f)
+            else colors.fill.copy(alpha = 0.14f)
+            tint.compositeOver(MaterialTheme.colorScheme.surface) to MaterialTheme.colorScheme.onSurface
+        }
     }
+}
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+private fun Header(m: MergerDetail, modifier: Modifier = Modifier) {
+    val input = m.outcomeInput()
+    val header = input.headerStatus()
+    val (bg, fg) = headerColors(m)
     val statusLine = listOfNotNull(
         input.outcomeText(),
         input.stageLabel(),
@@ -336,27 +450,46 @@ private fun Header(m: MergerDetail) {
         "Under judicial review".takeIf { m.under_judicial_review },
     ).joinToString(" · ")
 
-    Column(
-        Modifier
+    // The outcome's own shape (as its glyph in lists), large and faint,
+    // turning into place behind the title on a spring.
+    val turn = remember(m.merger_id) { Animatable(-45f) }
+    val spring = MaterialTheme.motionScheme.slowSpatialSpec<Float>()
+    LaunchedEffect(m.merger_id) { turn.animateTo(0f, spring) }
+    val shape = outcomeShape(header?.label ?: m.status).toShape()
+
+    Box(
+        modifier
             .padding(horizontal = 16.dp, vertical = 8.dp)
+            .sharedMerger(m.merger_id)
             .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
-            .background(bg)
-            .padding(18.dp),
+            .clip(MaterialTheme.shapes.extraLarge)
+            .background(bg),
     ) {
-        Text(
-            statusLine.uppercase(),
-            color = fg,
-            style = MaterialTheme.typography.labelMedium,
-            fontWeight = FontWeight.Bold,
+        // Drawn to the content's height, not its own: the shape bleeds off the corner.
+        Box(
+            Modifier
+                .matchParentSize()
+                .wrapContentSize(Alignment.TopEnd, unbounded = true)
+                .offset(x = 40.dp, y = (-36).dp)
+                .requiredSize(160.dp)
+                .graphicsLayer { rotationZ = turn.value }
+                .clip(shape)
+                .background(fg.copy(alpha = 0.10f)),
         )
-        Text(
-            m.merger_name,
-            color = fg,
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.SemiBold,
-            modifier = Modifier.padding(top = 6.dp).semantics { heading() },
-        )
+        Column(Modifier.padding(horizontal = 20.dp, vertical = 20.dp)) {
+            Text(
+                statusLine.uppercase(),
+                color = fg,
+                style = MaterialTheme.typography.labelMediumEmphasized,
+                letterSpacing = 0.8.sp,
+            )
+            Text(
+                m.merger_name,
+                color = fg,
+                style = MaterialTheme.typography.headlineSmallEmphasized,
+                modifier = Modifier.padding(top = 8.dp).semantics { heading() },
+            )
+        }
     }
 }
 
@@ -442,24 +575,20 @@ private fun Parties(m: MergerDetail) {
         groups.forEach { (label, parties) ->
             Column {
                 Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                parties.forEach { PartyLine(it) }
+                parties.displayNames().forEach { PartyLine(it) }
             }
         }
     }
 }
 
+/**
+ * A party by name. The register's identifier isn't shown: for a foreign
+ * company it can be a long description ("Netherlands Chamber of Commerce
+ * Business Register Number …") that squeezed the name to a letter a line.
+ */
 @Composable
-private fun PartyLine(p: Party) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Text(p.displayName, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f, fill = false))
-        if (p.identifier != null) {
-            Text(
-                "  ${p.identifier_type ?: ""} ${p.identifier}".trimEnd(),
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-    }
+private fun PartyLine(name: String) {
+    Text(name, style = MaterialTheme.typography.bodyMedium)
 }
 
 @OptIn(ExperimentalLayoutApi::class)

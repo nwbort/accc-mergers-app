@@ -27,6 +27,14 @@ data class Party(
     val displayName: String get() = party_page?.name ?: name
 }
 
+/**
+ * The names to show for [this] list of parties, each once. The register lists
+ * a company under each of its entities and spellings, and those that share a
+ * site page tidy to the same name.
+ */
+fun List<Party>.displayNames(): List<String> =
+    map { it.displayName.trim() }.filter { it.isNotEmpty() }.distinctBy { it.lowercase() }
+
 @Serializable
 data class PartyPage(val id: String = "", val name: String = "")
 

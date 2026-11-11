@@ -83,7 +83,9 @@ object Notifier {
      */
     fun short(e: TrackedEvent): String = e.short ?: if (e.upcoming) due(e) else Wording.short(e.title)
 
-    private fun due(e: TrackedEvent) = "${e.title} ${Dates.format(e.date, compact = true) ?: ""}".trim()
+    private fun due(e: TrackedEvent) =
+        if (Dates.underWay(e.date, e.endDate)) "${e.title} until ${Dates.format(e.endDate, compact = true)}"
+        else "${e.title} ${Dates.format(e.date, compact = true) ?: ""}".trim()
 
     /** What happened, newest first, then what's due, soonest first. */
     private fun ordered(events: List<TrackedEvent>): List<TrackedEvent> {
