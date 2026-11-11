@@ -51,6 +51,15 @@ their order within a day are `data/RecentEventTypes.kt`, a port of the site's
 `frontend/src/constants/recentEventTypes.js` (`shown` and key order): keep the
 two in step. A type the app doesn't know reads as Other.
 
+Catch me up (`ui/DigestScreen.kt`, `Route.Digest`) is the site's weekly
+digest page (`frontend/src/pages/Digest.jsx`) over `digest.json`. The card under
+the dashboard's decision times opens it, and so does a link to `/digest`,
+`#section` included, as the weekly email sends them (`SiteLink.Digest`). Which
+sections it shows, their order, names, anchors and colours, and what each row
+says, are `data/Digests.kt`. Keep those in step with `Digest.jsx` and
+`DIGEST_COLOR_KEYS`. The test fixture is a copy of the site's archived digest
+for 26 Oct to 1 Nov 2026.
+
 Widgets (`widget/`): plain `RemoteViews`, no Glance. Coming up
 (`UpcomingWidget`) lists `upcoming-events.json` from the copy kept on the
 phone, filtered by each widget's `UpcomingConfig` (followed only, and the

@@ -46,6 +46,7 @@ sealed interface Route {
     data class Industry(val code: String) : Route
     data object Search : Route
     data object Settings : Route
+    data object Digest : Route
 
     /** Only on screen, never in [AppViewModel.backStack]: the root that holds all three tabs. */
     data object Tabs : Route
@@ -74,6 +75,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     val recentEvents get() = repo.recent
     val currentStatus get() = repo.currentStatus
     val list get() = repo.list
+    val digest get() = repo.digest
     val industries: StateFlow<Loaded<IndustryIndex>> get() = repo.industries
 
     /**
@@ -183,6 +185,21 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     fun showMergersWithStatus(status: String) {
         filter = ListFilter(status = status)
         selectTab(Route.Mergers)
+    }
+
+    // ---- the weekly digest -------------------------------------------------------
+
+    /** The section a link asked for (/digest#mergers-referred); the digest scrolls to it, then clears it. */
+    var digestSection by mutableStateOf<String?>(null)
+
+    /** The dashboard's Catch me up card, or a link to /digest (with its section, if it named one). */
+    fun openDigest(section: String? = null) {
+        digestSection = section
+        goTo(Route.Digest)
+    }
+
+    fun refreshDigest() {
+        viewModelScope.launch { repo.refreshDigest() }
     }
 
     // ---- settings ---------------------------------------------------------------

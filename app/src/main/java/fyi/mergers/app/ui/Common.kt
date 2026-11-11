@@ -549,18 +549,18 @@ fun Prose(text: String, modifier: Modifier = Modifier) {
                 lines.filter { it.isNotBlank() }.forEach { line ->
                     Row {
                         Text("•", modifier = Modifier.width(16.dp), style = MaterialTheme.typography.bodyMedium)
-                        Text(clean(line.trimStart().drop(2)), style = MaterialTheme.typography.bodyMedium)
+                        Text(stripMarkdown(line.trimStart().drop(2)), style = MaterialTheme.typography.bodyMedium)
                     }
                 }
             } else {
-                Text(clean(para.replace("\n", " ")), style = MaterialTheme.typography.bodyMedium)
+                Text(stripMarkdown(para.replace("\n", " ")), style = MaterialTheme.typography.bodyMedium)
             }
         }
     }
 }
 
 /** Drop markdown emphasis and turn [text](link) into its text. */
-private fun clean(s: String): String =
+internal fun stripMarkdown(s: String): String =
     s.replace(Regex("\\[([^]]+)]\\([^)]+\\)"), "$1").replace("**", "").replace("__", "")
 
 @Composable

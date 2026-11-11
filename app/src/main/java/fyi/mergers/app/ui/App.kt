@@ -94,6 +94,7 @@ fun MergersApp(vm: AppViewModel) {
                         entry<Route.Industry> { key -> Shared { IndustryScreen(vm, key.code) } }
                         entry<Route.Search> { Shared { SearchScreen(vm) } }
                         entry<Route.Settings> { SettingsScreen(vm) }
+                        entry<Route.Digest> { DigestScreen(vm) }
                     },
                 )
             }

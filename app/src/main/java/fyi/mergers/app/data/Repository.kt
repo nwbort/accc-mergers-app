@@ -39,6 +39,11 @@ class Repository(private val source: DataSource) {
     /** The site's /current-status headline: the last 30 days' decision times. */
     val currentStatus: StateFlow<Loaded<StatusWindow>> = _currentStatus.asStateFlow()
 
+    private val _digest = MutableStateFlow(Loaded<Digest>())
+
+    /** digest.json: last week's weekly digest, the site's /digest ("Catch me up"). */
+    val digest: StateFlow<Loaded<Digest>> = _digest.asStateFlow()
+
     private val _list = MutableStateFlow(Loaded<List<MergerSummary>>())
     val list: StateFlow<Loaded<List<MergerSummary>>> = _list.asStateFlow()
 
@@ -94,8 +99,11 @@ class Repository(private val source: DataSource) {
             }
         }
         val d = async { load(_recent, "recent-events.json", RecentEvents.serializer()) { it.events } }
-        a.await(); b.await(); c.await(); d.await()
+        val e = async { refreshDigest() }
+        a.await(); b.await(); c.await(); d.await(); e.await()
     }
+
+    suspend fun refreshDigest() = load(_digest, "digest.json", Digest.serializer()) { it }
 
     /** upcoming-events.json from the network (or the last copy), for the Coming up widget. */
     suspend fun fetchUpcoming(): List<UpcomingEvent>? = runCatching {

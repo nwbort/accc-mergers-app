@@ -117,6 +117,34 @@ class AppTest {
         shot("1e-dashboard-recent-events-day")
         compose.onNodeWithTag("dashboard").performScrollToIndex(0)
 
+        // Catch me up: last week's digest, from its card under the decision times.
+        compose.onNodeWithText("11 notified · 33 cleared").performClick()
+        waitForText("26 October to 1 November 2026")
+        waitForText("Deals cleared")
+        shot("1i-digest")
+        // A count jumps to its section.
+        compose.onNodeWithText("Ongoing ACT appeals").performClick()
+        waitForText("Lodged by Coles · ACT 1 of 2026")
+        shot("1j-digest-appeals")
+        compose.onNodeWithTag("digest").performScrollToKey("g-mergers-approved-Waiver")
+        waitForText("Waiver")
+        shot("1k-digest-cleared")
+        // A row opens its merger; back returns to the digest.
+        compose.onNodeWithTag("digest").performScrollToKey("ongoing-phase-2-MN-01072")
+        compose.onNodeWithText("Saipem", substring = true).performClick()
+        waitUntil { vm.backStack.lastOrNull() == Route.Merger("MN-01072") }
+        back()
+        waitUntil { vm.backStack.lastOrNull() == Route.Digest }
+        back()
+        waitUntil { vm.backStack.lastOrNull() == Route.Dashboard }
+        // The weekly email's link to a section opens the digest there.
+        compose.activity.onNewIntent(Intent(Intent.ACTION_VIEW, Uri.parse("https://mergers.fyi/digest#ongoing-public-benefit")))
+        waitUntil { vm.backStack.lastOrNull() == Route.Digest && vm.digestSection == null }
+        waitForText("Ongoing · public benefit phase")
+        shot("1l-digest-from-link")
+        back()
+        waitUntil { vm.backStack.lastOrNull() == Route.Dashboard }
+
         // Settings, from the cog on the dashboard's top bar. Dark is kept,
         // handed to the system, and the dashboard behind it is drawn dark.
         assertEquals(ThemeChoice.SYSTEM, vm.theme)
