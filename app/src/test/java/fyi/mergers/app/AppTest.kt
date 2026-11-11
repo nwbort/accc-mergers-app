@@ -131,7 +131,8 @@ class AppTest {
         shot("1k-digest-cleared")
         // A row opens its merger; back returns to the digest.
         compose.onNodeWithTag("digest").performScrollToKey("ongoing-phase-2-MN-01072")
-        compose.onNodeWithText("Saipem", substring = true).performClick()
+        // Anywhere on the card, not just its name: here its summary.
+        compose.onNodeWithText("proposes to merge with Subsea7", substring = true).performClick()
         waitUntil { vm.backStack.lastOrNull() == Route.Merger("MN-01072") }
         back()
         waitUntil { vm.backStack.lastOrNull() == Route.Digest }

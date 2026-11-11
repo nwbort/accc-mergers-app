@@ -59,7 +59,12 @@ enum class DigestSection(
     }
 }
 
-/** One merger's row in a section: the facts under its name, then what was decided (and its document), then its summary. */
+/**
+ * One merger's row in a section: the facts under its name, then [outcome]
+ * where the section's heading doesn't already say it (an appeal's kind, the
+ * determination a public benefit application challenges), its determination
+ * [document], then its summary.
+ */
 data class DigestRow(
     val merger: DigestMerger,
     val facts: List<String>,
@@ -129,10 +134,6 @@ object Digests {
             .maxByOrNull { it.date.orEmpty() }
             ?.let { documentUrl(it.url_gh, null) }
 
-    /** The determination a decided row shows: the ACCC's, else either phase's, else the section's own word. */
-    private fun determination(m: DigestMerger, default: String): String =
-        m.accc_determination ?: m.phase_1_determination ?: m.phase_2_determination ?: default
-
     /** appeal_type's label (constants/appeal.js APPEAL_TYPE_LABELS). */
     fun appealLabel(type: String?): String = when (type) {
         "party_denial" -> "Appeal against refusal"
@@ -150,12 +151,20 @@ object Digests {
         DigestSection.NEW -> DigestRow(
             m, listOf(on("Notified", m.effective_notification_datetime)), summary = firstParagraph(m.merger_description),
         )
-        DigestSection.CLEARED -> decided(m, Status.APPROVED)
-        DigestSection.DECLINED -> decided(m, Status.NOT_APPROVED)
+        // Approved, declined, referred: the heading says what was decided, so
+        // the row needn't. Only a clearance's conditions add to it.
+        DigestSection.CLEARED -> DigestRow(
+            m,
+            listOfNotNull(on("Determined", m.determination_publication_date), "With conditions".takeIf { m.has_conditions }),
+            document = determinationDocument(m),
+        )
+        DigestSection.DECLINED -> DigestRow(
+            m, listOf(on("Determined", m.determination_publication_date)), document = determinationDocument(m),
+        )
         DigestSection.CEASED -> DigestRow(m, listOf(on("Ceased", m.ceased_date), m.stage ?: "N/A"))
         DigestSection.REFERRED -> DigestRow(
             m, listOf(on("Referred", m.phase_1_determination_date)),
-            outcome = determination(m, Status.REFERRED_TO_PHASE_2), document = determinationDocument(m),
+            document = determinationDocument(m),
         )
         // The determination the application seeks to overturn: the Phase 2
         // outcome, or a conditional Phase 1 clearance.
@@ -177,11 +186,6 @@ object Digests {
             outcome = appealLabel(m.appeal?.appeal_type), outcomeNote = appealNote(m.appeal),
         )
     }
-
-    private fun decided(m: DigestMerger, default: String) = DigestRow(
-        m, listOf(on("Determined", m.determination_publication_date)),
-        outcome = determination(m, default), document = determinationDocument(m),
-    )
 
     /**
      * A section's rows. Approved and declined are split as GroupedDeterminationSection

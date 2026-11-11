@@ -575,7 +575,9 @@ class LogicTest {
         assertEquals(33, cleared.sumOf { it.rows.size })
         val waiver = cleared.last().rows.first()
         assertTrue(waiver.merger.is_waiver)
-        assertEquals("Approved", waiver.outcome)
+        // The heading says Approved; the row doesn't repeat it.
+        assertNull(waiver.outcome)
+        assertEquals(listOf("Determined 26 Oct 2026"), waiver.facts)
         assertTrue(waiver.document!!, waiver.document!!.startsWith("https://mergers.fyi/mergers/WA-") && waiver.document!!.endsWith("?raw=1"))
         // An ongoing appeal: when it was filed and heard, and what kind.
         val coles = Digests.groups(DigestSection.ONGOING_APPEALS, d.ongoing_tribunal_appeals).single().rows
@@ -595,6 +597,8 @@ class LogicTest {
         // Declined at Phase 2 sits under Phase 2, whatever Phase 1 said.
         assertEquals(listOf("Phase 2 · detailed assessment"), Digests.groups(DigestSection.DECLINED, listOf(m)).map { it.label })
         assertEquals("Ceased N/A", Digests.row(DigestSection.CEASED, m).facts.first())
+        assertNull(Digests.row(DigestSection.DECLINED, m).outcome)
+        assertEquals("With conditions", Digests.row(DigestSection.CLEARED, m.copy(has_conditions = true)).facts.last())
         assertEquals("Not approved", Digests.row(DigestSection.TO_PUBLIC_BENEFIT, m).outcome)
         assertEquals("Under review at the Competition Tribunal", Digests.row(DigestSection.APPEALED, m).outcome)
         assertEquals("Hearing TBC", Digests.row(DigestSection.ONGOING_APPEALS, m).facts.last())

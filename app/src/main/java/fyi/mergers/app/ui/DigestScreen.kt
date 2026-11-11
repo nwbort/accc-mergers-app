@@ -486,33 +486,13 @@ private fun DigestRowCard(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 4.dp),
             )
-            row.outcome?.let { outcome ->
-                val doc = row.document
-                if (doc != null) {
-                    // Expressive's tonal button: its corners square up under the thumb.
-                    FilledTonalButton(
-                        onClick = { openUrl(context, doc) },
-                        shapes = ButtonDefaults.shapes(),
-                        colors = ButtonDefaults.filledTonalButtonColors(containerColor = c.wash, contentColor = c.ink),
-                        contentPadding = PaddingValues(start = 14.dp, end = 12.dp),
-                        modifier = Modifier.padding(top = 8.dp).height(36.dp),
-                    ) {
-                        Icon(Icons.Outlined.Description, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Text(outcome, style = MaterialTheme.typography.labelLargeEmphasized, modifier = Modifier.padding(horizontal = 6.dp))
-                        Icon(
-                            Icons.AutoMirrored.Filled.OpenInNew,
-                            contentDescription = "Open determination",
-                            modifier = Modifier.size(16.dp),
-                        )
-                    }
-                } else {
-                    Text(
-                        outcome,
-                        style = MaterialTheme.typography.labelLargeEmphasized,
-                        color = c.ink,
-                        modifier = Modifier.padding(top = 8.dp),
-                    )
-                }
+            row.outcome?.let {
+                Text(
+                    it,
+                    style = MaterialTheme.typography.labelLargeEmphasized,
+                    color = c.ink,
+                    modifier = Modifier.padding(top = 8.dp),
+                )
             }
             row.outcomeNote?.let {
                 Text(
@@ -521,6 +501,21 @@ private fun DigestRowCard(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = 2.dp),
                 )
+            }
+            // The one thing on the card that isn't the merger: its determination,
+            // in an Expressive tonal button whose corners square up under the thumb.
+            row.document?.let { doc ->
+                FilledTonalButton(
+                    onClick = { openUrl(context, doc) },
+                    shapes = ButtonDefaults.shapes(),
+                    colors = ButtonDefaults.filledTonalButtonColors(containerColor = c.wash, contentColor = c.ink),
+                    contentPadding = PaddingValues(start = 14.dp, end = 12.dp),
+                    modifier = Modifier.padding(top = 8.dp).height(36.dp),
+                ) {
+                    Icon(Icons.Outlined.Description, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Text("Determination", style = MaterialTheme.typography.labelLargeEmphasized, modifier = Modifier.padding(horizontal = 6.dp))
+                    Icon(Icons.AutoMirrored.Filled.OpenInNew, contentDescription = "Opens the PDF", modifier = Modifier.size(16.dp))
+                }
             }
             row.summary?.takeIf { it.isNotBlank() }?.let {
                 Text(
