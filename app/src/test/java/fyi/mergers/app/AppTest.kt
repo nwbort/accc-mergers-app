@@ -162,6 +162,11 @@ class AppTest {
         back()
         waitUntil { vm.backStack.lastOrNull() == Route.Dashboard }
         shot("1h-dashboard-dark")
+        compose.runOnUiThread { vm.openDigest() }
+        waitForText("Deals cleared")
+        shot("1h-digest-dark")
+        back()
+        waitUntil { vm.backStack.lastOrNull() == Route.Dashboard }
         // The phone's App info ("Additional settings in the app") opens it too.
         compose.activity.onNewIntent(Intent(Intent.ACTION_APPLICATION_PREFERENCES))
         waitUntil { vm.backStack.lastOrNull() == Route.Settings }

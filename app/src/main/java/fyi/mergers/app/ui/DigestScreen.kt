@@ -1,6 +1,32 @@
 package fyi.mergers.app.ui
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.requiredSize
+import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.material.icons.automirrored.outlined.ArrowForward
+import androidx.compose.material.icons.outlined.Balance
+import androidx.compose.material.icons.outlined.Block
+import androidx.compose.material.icons.outlined.Check
+import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.Description
+import androidx.compose.material.icons.outlined.HourglassTop
+import androidx.compose.material.icons.outlined.NewReleases
+import androidx.compose.material.icons.outlined.Newspaper
+import androidx.compose.material.icons.outlined.VolunteerActivism
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.MaterialShapes
+import androidx.compose.material3.toShape
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.graphics.shapes.RoundedPolygon
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -26,8 +52,6 @@ import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.outlined.MarkEmailUnread
-import androidx.compose.material3.AssistChip
-import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -55,6 +79,7 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import fyi.mergers.app.data.Digest
@@ -63,6 +88,7 @@ import fyi.mergers.app.data.DigestSection
 import fyi.mergers.app.data.Digests
 import fyi.mergers.app.data.SITE
 import fyi.mergers.app.tracking.TrackingState
+import fyi.mergers.app.ui.theme.DigestColors
 import fyi.mergers.app.ui.theme.digestColors
 import kotlinx.coroutines.launch
 
@@ -155,20 +181,7 @@ private fun DigestContent(vm: AppViewModel, digest: Digest, tracking: TrackingSt
         state = listState,
         contentPadding = PaddingValues(bottom = 32.dp),
     ) {
-        item(key = "intro") {
-            Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 12.dp)) {
-                Text(
-                    "Weekly digest of merger activity",
-                    style = MaterialTheme.typography.labelLargeEmphasized,
-                    color = MaterialTheme.colorScheme.primary,
-                )
-                Text(
-                    Digests.period(digest) ?: "Last week",
-                    style = MaterialTheme.typography.headlineSmallEmphasized,
-                    modifier = Modifier.padding(top = 2.dp).semantics { heading() },
-                )
-            }
-        }
+        item(key = "intro") { DigestHero(digest) }
 
         if (sections.isEmpty()) {
             item(key = "quiet") { Centered("No merger activity to report for this period.") }
@@ -219,7 +232,118 @@ private fun DigestContent(vm: AppViewModel, digest: Digest, tracking: TrackingSt
     }
 }
 
-/** The page's summary cards: each section's count on its colour, two to a row, a tap away from it. */
+/** A card's spring under the thumb: pressed, it gives a little, and springs back. */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+private fun rememberSquish(presses: MutableInteractionSource): Modifier {
+    val pressed by presses.collectIsPressedAsState()
+    val squish by animateFloatAsState(
+        if (pressed) 0.95f else 1f,
+        MaterialTheme.motionScheme.fastSpatialSpec(),
+        label = "squish",
+    )
+    return Modifier.graphicsLayer { scaleX = squish; scaleY = squish }
+}
+
+/**
+ * Each section's own outline and glyph from the Expressive set. A decision
+ * takes its outcome's shape ([outcomeShape]): cleared's sunny seal, refused's
+ * hard cookie, ceased's gem, the clock face for whatever is still running.
+ */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+private fun DigestSection.shape(): RoundedPolygon = when (this) {
+    DigestSection.NEW -> MaterialShapes.Cookie9Sided
+    DigestSection.CLEARED -> MaterialShapes.Sunny
+    DigestSection.DECLINED -> MaterialShapes.Cookie4Sided
+    DigestSection.CEASED -> MaterialShapes.Gem
+    DigestSection.TO_PUBLIC_BENEFIT -> MaterialShapes.Clover4Leaf
+    DigestSection.APPEALED, DigestSection.ONGOING_APPEALS -> MaterialShapes.Pentagon
+    DigestSection.REFERRED, DigestSection.ONGOING_PHASE_1, DigestSection.ONGOING_PHASE_2,
+    DigestSection.ONGOING_PUBLIC_BENEFIT -> MaterialShapes.Cookie12Sided
+}
+
+private val DigestSection.icon: ImageVector get() = when (this) {
+    DigestSection.NEW -> Icons.Outlined.NewReleases
+    DigestSection.CLEARED -> Icons.Outlined.Check
+    DigestSection.DECLINED -> Icons.Outlined.Close
+    DigestSection.CEASED -> Icons.Outlined.Block
+    DigestSection.REFERRED -> Icons.AutoMirrored.Outlined.ArrowForward
+    DigestSection.TO_PUBLIC_BENEFIT, DigestSection.ONGOING_PUBLIC_BENEFIT -> Icons.Outlined.VolunteerActivism
+    DigestSection.APPEALED, DigestSection.ONGOING_APPEALS -> Icons.Outlined.Balance
+    DigestSection.ONGOING_PHASE_1, DigestSection.ONGOING_PHASE_2 -> Icons.Outlined.HourglassTop
+}
+
+/** A section's glyph: its icon in its shape, on its colour. Decoration beside its name. */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+private fun SectionGlyph(section: DigestSection, c: DigestColors, size: Dp) {
+    Box(
+        Modifier
+            .size(size)
+            .clip(section.shape().toShape())
+            .background(c.ink)
+            .clearAndSetSemantics {},
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(section.icon, contentDescription = null, tint = c.onInk, modifier = Modifier.size(size * 0.55f))
+    }
+}
+
+/**
+ * The week, headline first, as the dashboard's hero: what was filed and
+ * decided, big, on the brand's container colour, with a shape turning into
+ * place behind it on a spring.
+ */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+private fun DigestHero(digest: Digest) {
+    val turn = remember { Animatable(-60f) }
+    val spring = MaterialTheme.motionScheme.slowSpatialSpec<Float>()
+    LaunchedEffect(Unit) { turn.animateTo(0f, spring) }
+    val ink = MaterialTheme.colorScheme.onPrimaryContainer
+    val moved = Digests.moved(digest)
+    Card(
+        shape = MaterialTheme.shapes.extraLarge,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer, contentColor = ink),
+        modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 12.dp),
+    ) {
+        Box(Modifier.fillMaxWidth()) {
+            Box(
+                Modifier
+                    .matchParentSize()
+                    .wrapContentSize(Alignment.TopEnd, unbounded = true)
+                    .offset(x = 40.dp, y = (-32).dp)
+                    .requiredSize(176.dp)
+                    .graphicsLayer { rotationZ = turn.value }
+                    .clip(MaterialShapes.Cookie9Sided.toShape())
+                    .background(ink.copy(alpha = 0.08f)),
+            )
+            Column(Modifier.padding(horizontal = 20.dp, vertical = 18.dp)) {
+                Text(
+                    Digests.period(digest) ?: "Last week",
+                    style = MaterialTheme.typography.labelLargeEmphasized,
+                    color = ink.copy(alpha = 0.8f),
+                    modifier = Modifier.semantics { heading() },
+                )
+                Row(verticalAlignment = Alignment.Bottom, modifier = Modifier.padding(top = 2.dp)) {
+                    Text(
+                        "$moved",
+                        style = MaterialTheme.typography.displayMediumEmphasized,
+                        modifier = Modifier.alignByBaseline(),
+                    )
+                    Text(
+                        if (moved == 1) " filing or decision" else " filings and decisions",
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.alignByBaseline(),
+                    )
+                }
+                Text(Digests.headline(digest), style = MaterialTheme.typography.bodyMedium, color = ink.copy(alpha = 0.8f))
+            }
+        }
+    }
+}
+
+/** The page's summary cards: each section's count on its colour, with its glyph, two to a row, a tap away from it. */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun Counts(counts: List<Pair<DigestSection, Int>>, onClick: (DigestSection) -> Unit) {
@@ -228,17 +352,27 @@ private fun Counts(counts: List<Pair<DigestSection, Int>>, onClick: (DigestSecti
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 pair.forEach { (s, n) ->
                     val c = digestColors(s.color)
+                    val presses = remember { MutableInteractionSource() }
                     Card(
                         onClick = { onClick(s) },
                         colors = CardDefaults.cardColors(containerColor = c.wash),
                         shape = MaterialTheme.shapes.large,
-                        modifier = Modifier.weight(1f),
+                        interactionSource = presses,
+                        modifier = Modifier.weight(1f).then(rememberSquish(presses)),
                     ) {
-                        Column(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 12.dp)) {
-                            Text("$n", style = MaterialTheme.typography.headlineMediumEmphasized, color = c.ink)
+                        Column(Modifier.fillMaxWidth().padding(start = 14.dp, end = 12.dp, top = 12.dp, bottom = 12.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    "$n",
+                                    style = MaterialTheme.typography.headlineLargeEmphasized,
+                                    color = c.ink,
+                                    modifier = Modifier.weight(1f),
+                                )
+                                SectionGlyph(s, c, 30.dp)
+                            }
                             Text(
                                 s.chip,
-                                style = MaterialTheme.typography.labelMedium,
+                                style = MaterialTheme.typography.labelLargeEmphasized,
                                 color = c.ink,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
@@ -252,7 +386,7 @@ private fun Counts(counts: List<Pair<DigestSection, Int>>, onClick: (DigestSecti
     }
 }
 
-/** A section's heading, pinned while its rows scroll under it: its colour's rail, its name and how many. */
+/** A section's heading, pinned while its rows scroll under it: its glyph, its name and how many. */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun SectionHeading(section: DigestSection, count: Int) {
@@ -261,14 +395,14 @@ private fun SectionHeading(section: DigestSection, count: Int) {
         Modifier
             .fillMaxWidth()
             .background(MaterialTheme.colorScheme.surface)
-            .padding(start = 16.dp, end = 16.dp, top = 20.dp, bottom = 8.dp),
+            .padding(start = 16.dp, end = 16.dp, top = 18.dp, bottom = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(Modifier.width(4.dp).height(20.dp).clip(RoundedCornerShape(2.dp)).background(c.bar))
+        SectionGlyph(section, c, 26.dp)
         Text(
             section.title,
             style = MaterialTheme.typography.titleMediumEmphasized,
-            modifier = Modifier.padding(start = 10.dp).weight(1f).semantics { heading() },
+            modifier = Modifier.padding(start = 12.dp).weight(1f).semantics { heading() },
         )
         Text(
             "$count",
@@ -322,11 +456,13 @@ private fun DigestRowCard(
 ) {
     val context = LocalContext.current
     val c = digestColors(section.color)
+    val presses = remember { MutableInteractionSource() }
     Surface(
         onClick = onClick,
         shape = shape,
         color = MaterialTheme.colorScheme.surfaceContainerLow,
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 1.dp),
+        interactionSource = presses,
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 1.dp).then(rememberSquish(presses)),
     ) {
         Column(Modifier.padding(start = 16.dp, end = 12.dp, top = 12.dp, bottom = 12.dp)) {
             Row(verticalAlignment = Alignment.Top) {
@@ -353,24 +489,22 @@ private fun DigestRowCard(
             row.outcome?.let { outcome ->
                 val doc = row.document
                 if (doc != null) {
-                    AssistChip(
+                    // Expressive's tonal button: its corners square up under the thumb.
+                    FilledTonalButton(
                         onClick = { openUrl(context, doc) },
-                        label = { Text(outcome, style = MaterialTheme.typography.labelLargeEmphasized) },
-                        trailingIcon = {
-                            Icon(
-                                Icons.AutoMirrored.Filled.OpenInNew,
-                                contentDescription = "Open determination",
-                                modifier = Modifier.size(AssistChipDefaults.IconSize),
-                            )
-                        },
-                        colors = AssistChipDefaults.assistChipColors(
-                            containerColor = c.wash,
-                            labelColor = c.ink,
-                            trailingIconContentColor = c.ink,
-                        ),
-                        border = null,
-                        modifier = Modifier.padding(top = 4.dp),
-                    )
+                        shapes = ButtonDefaults.shapes(),
+                        colors = ButtonDefaults.filledTonalButtonColors(containerColor = c.wash, contentColor = c.ink),
+                        contentPadding = PaddingValues(start = 14.dp, end = 12.dp),
+                        modifier = Modifier.padding(top = 8.dp).height(36.dp),
+                    ) {
+                        Icon(Icons.Outlined.Description, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Text(outcome, style = MaterialTheme.typography.labelLargeEmphasized, modifier = Modifier.padding(horizontal = 6.dp))
+                        Icon(
+                            Icons.AutoMirrored.Filled.OpenInNew,
+                            contentDescription = "Open determination",
+                            modifier = Modifier.size(16.dp),
+                        )
+                    }
                 } else {
                     Text(
                         outcome,
@@ -417,7 +551,21 @@ fun DigestCard(digest: Digest, onClick: () -> Unit, modifier: Modifier = Modifie
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
     ) {
         Row(Modifier.padding(start = 14.dp, end = 8.dp, top = 12.dp, bottom = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) {
+            Box(
+                Modifier
+                    .size(40.dp)
+                    .clip(MaterialShapes.Cookie9Sided.toShape())
+                    .background(MaterialTheme.colorScheme.tertiaryContainer),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    Icons.Outlined.Newspaper,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onTertiaryContainer,
+                    modifier = Modifier.size(22.dp),
+                )
+            }
+            Column(Modifier.padding(start = 14.dp).weight(1f)) {
                 Text(
                     listOfNotNull("Catch me up", Digests.period(digest)).joinToString(" · "),
                     style = MaterialTheme.typography.labelMedium,

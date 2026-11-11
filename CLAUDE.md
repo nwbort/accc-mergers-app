@@ -57,7 +57,9 @@ the dashboard's decision times opens it, and so does a link to `/digest`,
 `#section` included, as the weekly email sends them (`SiteLink.Digest`). Which
 sections it shows, their order, names, anchors and colours, and what each row
 says, are `data/Digests.kt`. Keep those in step with `Digest.jsx` and
-`DIGEST_COLOR_KEYS`. The test fixture is a copy of the site's archived digest
+`DIGEST_COLOR_KEYS`. Each section has its own `MaterialShapes` glyph
+(`DigestSection.shape()` in the screen; a decision takes its outcome's
+`outcomeShape`), on its count card and its heading. The test fixture is a copy of the site's archived digest
 for 26 Oct to 1 Nov 2026.
 
 Widgets (`widget/`): plain `RemoteViews`, no Glance. Coming up

@@ -215,10 +215,10 @@ fun phaseAccent(phase: IndustryPhase): Color = when (phase) {
  * A digest section's colours, from the site's tailwind families for each
  * DIGEST_COLOR_KEYS (tailwind.config.js): [bar] the section's rail (the
  * family's fill), [ink] its numbers and links (the `dark` shade, which clears
- * 4.5:1 on white), [wash] its chip (the `pale` shade). In the dark, a light
- * shade for both, on a faint wash of it.
+ * 4.5:1 on white), [wash] its chip (the `pale` shade), [onInk] a glyph drawn
+ * on [ink]. In the dark, a light shade for both, on a faint wash of it.
  */
-data class DigestColors(val bar: Color, val ink: Color, val wash: Color)
+data class DigestColors(val bar: Color, val ink: Color, val wash: Color, val onInk: Color)
 
 private enum class DigestFamily(val fill: Long, val dark: Long, val pale: Long, val night: Long) {
     NEW_MERGER(0xFF5B3758, 0xFF3D2539, 0xFFF3EBF2, 0xFFD9B8D5),
@@ -235,8 +235,8 @@ private enum class DigestFamily(val fill: Long, val dark: Long, val pale: Long, 
 fun digestColors(color: DigestColor): DigestColors {
     val f = DigestFamily.valueOf(color.name)
     return if (isDarkTheme()) {
-        DigestColors(Color(f.night), Color(f.night), Color(f.night).copy(alpha = 0.14f))
+        DigestColors(Color(f.night), Color(f.night), Color(f.night).copy(alpha = 0.14f), Color(f.dark))
     } else {
-        DigestColors(Color(f.fill), Color(f.dark), Color(f.pale))
+        DigestColors(Color(f.fill), Color(f.dark), Color(f.pale), Color.White)
     }
 }

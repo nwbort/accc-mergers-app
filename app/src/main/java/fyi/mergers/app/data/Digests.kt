@@ -79,21 +79,26 @@ object Digests {
     fun sections(d: Digest): List<Pair<DigestSection, List<DigestMerger>>> =
         DigestSection.entries.map { it to it.pick(d) }.filter { it.second.isNotEmpty() }
 
+    /** The sections that are last week's news, not what's still running: the hero's number and the headline's words. */
+    private val NEWS = listOf(
+        DigestSection.NEW to "notified",
+        DigestSection.CLEARED to "cleared",
+        DigestSection.REFERRED to "to phase 2",
+        DigestSection.TO_PUBLIC_BENEFIT to "to public benefit",
+        DigestSection.DECLINED to "declined",
+        DigestSection.CEASED to "ceased",
+        DigestSection.APPEALED to "appealed",
+    )
+
+    /** How many matters were filed or moved on last week. */
+    fun moved(d: Digest): Int = NEWS.sumOf { (s, _) -> s.pick(d).size }
+
     /**
      * The week in a line, for the dashboard: what was filed and decided, not
      * what's still running. "11 notified · 33 cleared", or a quiet week.
      */
     fun headline(d: Digest): String {
-        val words = listOf(
-            DigestSection.NEW to "notified",
-            DigestSection.CLEARED to "cleared",
-            DigestSection.REFERRED to "to phase 2",
-            DigestSection.TO_PUBLIC_BENEFIT to "to public benefit",
-            DigestSection.DECLINED to "declined",
-            DigestSection.CEASED to "ceased",
-            DigestSection.APPEALED to "appealed",
-        )
-        return words.mapNotNull { (s, word) -> s.pick(d).size.takeIf { it > 0 }?.let { "$it $word" } }
+        return NEWS.mapNotNull { (s, word) -> s.pick(d).size.takeIf { it > 0 }?.let { "$it $word" } }
             .joinToString(" · ")
             .ifEmpty { "A quiet week: nothing filed or decided" }
     }

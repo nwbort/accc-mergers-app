@@ -560,6 +560,7 @@ class LogicTest {
         val d = digest()
         assertEquals("26 October to 1 November 2026", Digests.period(d))
         assertEquals("11 notified · 33 cleared", Digests.headline(d))
+        assertEquals(44, Digests.moved(d))
         // Empty sections aren't shown; the rest in the page's order.
         assertEquals(
             listOf(
