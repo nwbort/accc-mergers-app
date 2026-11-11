@@ -23,7 +23,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.NotificationsOff
-import androidx.compose.material.icons.outlined.Tune
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -90,9 +90,9 @@ fun FollowingScreen(vm: AppViewModel) {
                 title = { Text("Following") },
                 actions = {
                     if (unread.isNotEmpty()) TextButton(onClick = vm::markAllRead) { Text("Mark all read") }
-                    // The alert settings, in Settings: always to hand from here.
+                    // Settings (where the alert switches live), with the dashboard's cog.
                     IconButton(onClick = vm::openSettings) {
-                        Icon(Icons.Outlined.Tune, contentDescription = "Alert settings")
+                        Icon(Icons.Outlined.Settings, contentDescription = "Settings")
                     }
                 },
             )
@@ -268,7 +268,7 @@ private fun AlertsLink(vm: AppViewModel) {
         trailing = null,
         onClick = vm::openSettings,
         leading = {
-            Icon(Icons.Outlined.Tune, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            Icon(Icons.Outlined.Settings, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
         },
     )
 }

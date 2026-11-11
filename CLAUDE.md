@@ -64,7 +64,7 @@ draws a widget's `RemoteViews` inside an `AppWidgetHostView` (a list takes no
 rows anywhere else).
 
 Settings (`ui/SettingsScreen.kt`) has no tab: it opens from the cog on the
-dashboard's top bar, from the Following tab (the tune icon, and the Alerts row
+dashboard's top bar, from the Following tab (the same cog, and the Alerts row
 that says how alerts are set; the switches themselves live only in Settings,
 under Notifications), and from the phone's App info ("Additional settings in the
 app", `ACTION_APPLICATION_PREFERENCES`). The theme choice (`ui/theme/Appearance.kt`)

@@ -20,6 +20,11 @@ import androidx.compose.material3.ShortNavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.foundation.pager.PagerState
+import androidx.compose.foundation.interaction.collectIsDraggedAsState
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -48,12 +53,16 @@ fun MergersApp(vm: AppViewModel) {
     val unread = TrackedEvents.inbox(sync?.events.orEmpty(), tracking).count { !it.upcoming && it.key !in tracking.seen }
     val activity = LocalActivity.current
 
+    // The tabs' pager lives here, beside the bar, so the bar can follow a swipe.
+    val pager = rememberPagerState(initialPage = TABS.indexOfFirst { it.route == vm.tab }.coerceAtLeast(0)) { TABS.size }
+    val shown = swipedTab(vm, pager)
+
     Scaffold(
         bottomBar = {
             // Expressive's short bar: a pill behind the chosen tab that springs across.
             ShortNavigationBar {
                 TABS.forEach { tab ->
-                    val selected = vm.tab == tab.route
+                    val selected = shown == tab.route
                     ShortNavigationBarItem(
                         selected = selected,
                         onClick = { vm.selectTab(tab.route) },
@@ -87,7 +96,7 @@ fun MergersApp(vm: AppViewModel) {
                     onBack = { if (!vm.back()) activity?.finish() },
                     modifier = Modifier.padding(bottom = padding.calculateBottomPadding()),
                     entryProvider = entryProvider {
-                        entry<Route.Tabs> { Shared { TabPager(vm) } }
+                        entry<Route.Tabs> { Shared { TabPager(vm, pager) } }
                         entry<Route.Merger> { key -> Shared { MergerDetailScreen(vm, key.id) } }
                         entry<Route.Industries> { IndustriesScreen(vm) }
                         entry<Route.Industry> { key -> Shared { IndustryScreen(vm, key.code) } }
@@ -106,11 +115,30 @@ private fun Shared(content: @Composable () -> Unit) {
     CompositionLocalProvider(LocalNavAnimatedVisibilityScope provides LocalNavAnimatedContentScope.current, content = content)
 }
 
+/**
+ * The tab the bar shows as chosen. Mid-swipe it's where the swipe is heading
+ * (the page past halfway while the finger is down, then the page the fling
+ * will rest on), so the pill slides across with the swipe rather than
+ * jumping once it has settled. The tab itself still changes on settling
+ * ([TabPager]); a tap on the bar, which also scrolls the pager, isn't a swipe
+ * and shows the tapped tab throughout.
+ */
+@Composable
+private fun swipedTab(vm: AppViewModel, pager: PagerState): Route {
+    val dragged by pager.interactionSource.collectIsDraggedAsState()
+    var swiping by remember { mutableStateOf(false) }
+    LaunchedEffect(dragged) { if (dragged) swiping = true }
+    LaunchedEffect(pager.isScrollInProgress, dragged) {
+        if (!pager.isScrollInProgress && !dragged) swiping = false
+    }
+    if (!swiping || vm.backStack.size != 1) return vm.tab
+    return TABS[if (dragged) pager.currentPage else pager.targetPage].route
+}
+
 /** The three tabs, swiped between left and right, kept in step with the bottom bar. */
 @Composable
-private fun TabPager(vm: AppViewModel) {
+private fun TabPager(vm: AppViewModel, pager: PagerState) {
     val index = TABS.indexOfFirst { it.route == vm.tab }.coerceAtLeast(0)
-    val pager = rememberPagerState(initialPage = index) { TABS.size }
 
     // A tap on the bottom bar (or back to the dashboard) moves the pager...
     LaunchedEffect(index) {

@@ -37,7 +37,10 @@ import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performScrollToKey
-import androidx.compose.ui.test.swipeLeft
+import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.isSelectable
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.hasSetTextAction
@@ -176,7 +179,17 @@ class AppTest {
         waitForText("Recent determinations")
 
         // The merger list, swiped to from the dashboard, searched and cleared.
-        compose.onNodeWithTag("dashboard").performTouchInput { swipeLeft() }
+        // Mid-swipe, past halfway with the finger still down, the bar already
+        // shows where it's heading, though the tab only changes once it settles.
+        compose.onNodeWithTag("dashboard").performTouchInput {
+            down(center)
+            repeat(12) { moveBy(Offset(-width * 0.05f, 0f)) }
+        }
+        compose.waitForIdle()
+        compose.onNode(hasText("Mergers") and isSelectable()).assertIsSelected()
+        assertEquals(Route.Dashboard, vm.tab)
+        shot("2-swiping")
+        compose.onNodeWithTag("dashboard").performTouchInput { up() }
         waitUntil { vm.tab == fyi.mergers.app.ui.Route.Mergers }
         waitForText("40 matters")
         shot("2-mergers")
