@@ -23,17 +23,16 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.NotificationsOff
+import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.ListItem
-import androidx.compose.material3.ListItemDefaults
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -56,7 +55,6 @@ import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import fyi.mergers.app.data.Dates
 import fyi.mergers.app.notify.Notifier
-import fyi.mergers.app.notify.Push
 import fyi.mergers.app.tracking.TrackedEvent
 import fyi.mergers.app.tracking.TrackedEvents
 
@@ -92,6 +90,10 @@ fun FollowingScreen(vm: AppViewModel) {
                 title = { Text("Following") },
                 actions = {
                     if (unread.isNotEmpty()) TextButton(onClick = vm::markAllRead) { Text("Mark all read") }
+                    // The alert settings, in Settings: always to hand from here.
+                    IconButton(onClick = vm::openSettings) {
+                        Icon(Icons.Outlined.Tune, contentDescription = "Alert settings")
+                    }
                 },
             )
         },
@@ -182,8 +184,7 @@ fun FollowingScreen(vm: AppViewModel) {
                     items(earlier, key = { "old-" + it.key }) { e -> EventItem(e, unread = false) { open(vm, e) } }
                 }
 
-                stickyHeader { StickyTitle("Alerts") }
-                item { Settings(vm) }
+                item(key = "alerts") { AlertsLink(vm) }
             }
         }
     }
@@ -212,9 +213,9 @@ private fun EventItem(e: TrackedEvent, unread: Boolean, onClick: () -> Unit) {
     )
 }
 
-/** Shown while notifications are off, since then nothing reaches the phone. */
+/** Shown while notifications are off, since then nothing reaches the phone. Here and in Settings. */
 @Composable
-private fun NotificationsBanner() {
+internal fun NotificationsBanner() {
     val context = LocalContext.current
     var allowed by remember { mutableStateOf(Notifier.canPost(context)) }
     LifecycleResumeEffect(Unit) {
@@ -251,32 +252,23 @@ private fun NotificationsBanner() {
     }
 }
 
+/**
+ * The way to the alert settings, which live in Settings: one row saying how
+ * they're set, so the switches aren't in two places.
+ */
 @Composable
-private fun Settings(vm: AppViewModel) {
+private fun AlertsLink(vm: AppViewModel) {
     val tracking by vm.tracking.collectAsStateWithLifecycle()
-    Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
-        ListItem(
-            headlineContent = { Text("Follow every phase 2 matter") },
-            supportingContent = { Text("Matters referred to phase 2 are followed automatically") },
-            trailingContent = { Switch(checked = tracking.autoTrackPhase2, onCheckedChange = vm::setAutoTrackPhase2) },
-            colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surface),
-        )
-        ListItem(
-            headlineContent = { Text("Every new filing") },
-            supportingContent = { Text("A notification for each new merger or waiver on the register") },
-            trailingContent = { Switch(checked = tracking.notifyNewFilings, onCheckedChange = vm::setNotifyNewFilings) },
-            colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surface),
-        )
-        val pushed = Push.ready(LocalContext.current)
-        Text(
-            if (pushed) {
-                "Checked as soon as mergers.fyi publishes a change, which it does several times a weekday from the ACCC register."
-            } else {
-                "Checked about every two hours. mergers.fyi refreshes from the ACCC register several times a weekday."
-            },
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-        )
-    }
+    ListRow(
+        title = "Alerts",
+        subtitle = listOf(
+            if (tracking.autoTrackPhase2) "Phase 2 matters followed" else "Phase 2 matters not followed",
+            if (tracking.notifyNewFilings) "new filings on" else "new filings off",
+        ).joinToString(" · "),
+        trailing = null,
+        onClick = vm::openSettings,
+        leading = {
+            Icon(Icons.Outlined.Tune, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        },
+    )
 }

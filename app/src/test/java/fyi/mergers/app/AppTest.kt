@@ -259,6 +259,16 @@ class AppTest {
         waitForText("Mergers you follow (3)")
         waitForText("New", substring = true)
         shot("6-following")
+        // The alert switches live in Settings; Following links there, saying how they're set.
+        compose.onNodeWithTag("following").performScrollToKey("alerts")
+        waitForText("Phase 2 matters", substring = true)
+        shot("6b-following-alerts")
+        compose.onNodeWithText("Alerts").performClick()
+        waitForText("Every new filing")
+        shot("6c-settings-from-following")
+        back()
+        waitUntil { vm.backStack.lastOrNull() == Route.Following }
+        compose.onNodeWithTag("following").performScrollToIndex(0)
 
         // The followed matter moves on: the background check notices and posts it.
         val m = MergersJson.decodeFromString(MergerDetail.serializer(), Fixtures.read("mergers/MN-20046.json")!!)
