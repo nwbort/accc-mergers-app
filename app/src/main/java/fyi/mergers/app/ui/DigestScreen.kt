@@ -18,8 +18,8 @@ import androidx.compose.material.icons.outlined.HourglassTop
 import androidx.compose.material.icons.outlined.NewReleases
 import androidx.compose.material.icons.outlined.Newspaper
 import androidx.compose.material.icons.outlined.VolunteerActivism
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.FilledTonalIconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.toShape
 import androidx.compose.ui.graphics.Color
@@ -480,12 +480,35 @@ private fun DigestRowCard(
                     )
                 }
             }
-            Text(
-                (listOf(row.merger.merger_id) + row.facts).joinToString(" · "),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = 4.dp),
-            )
+            // The ID line, and at its end the determination: the one thing on
+            // the card that isn't the merger, so a trailing icon button (as
+            // Material's list items take one) rather than a label to read.
+            // The button's touch target already stands it off the title.
+            Row(
+                Modifier.padding(top = if (row.document != null) 0.dp else 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    (listOf(row.merger.merger_id) + row.facts).joinToString(" · "),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.weight(1f),
+                )
+                row.document?.let { doc ->
+                    FilledTonalIconButton(
+                        onClick = { openUrl(context, doc) },
+                        shapes = IconButtonDefaults.shapes(),
+                        colors = IconButtonDefaults.filledTonalIconButtonColors(containerColor = c.wash, contentColor = c.ink),
+                        modifier = Modifier.padding(start = 8.dp).size(IconButtonDefaults.smallContainerSize()),
+                    ) {
+                        Icon(
+                            Icons.Outlined.Description,
+                            contentDescription = "Open the determination (PDF)",
+                            modifier = Modifier.size(IconButtonDefaults.smallIconSize),
+                        )
+                    }
+                }
+            }
             row.outcome?.let {
                 Text(
                     it,
@@ -501,21 +524,6 @@ private fun DigestRowCard(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = 2.dp),
                 )
-            }
-            // The one thing on the card that isn't the merger: its determination,
-            // in an Expressive tonal button whose corners square up under the thumb.
-            row.document?.let { doc ->
-                FilledTonalButton(
-                    onClick = { openUrl(context, doc) },
-                    shapes = ButtonDefaults.shapes(),
-                    colors = ButtonDefaults.filledTonalButtonColors(containerColor = c.wash, contentColor = c.ink),
-                    contentPadding = PaddingValues(start = 14.dp, end = 12.dp),
-                    modifier = Modifier.padding(top = 8.dp).height(36.dp),
-                ) {
-                    Icon(Icons.Outlined.Description, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Text("Determination", style = MaterialTheme.typography.labelLargeEmphasized, modifier = Modifier.padding(horizontal = 6.dp))
-                    Icon(Icons.AutoMirrored.Filled.OpenInNew, contentDescription = "Opens the PDF", modifier = Modifier.size(16.dp))
-                }
             }
             row.summary?.takeIf { it.isNotBlank() }?.let {
                 Text(
