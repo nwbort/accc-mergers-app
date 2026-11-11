@@ -60,6 +60,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -107,6 +109,8 @@ fun DigestScreen(vm: AppViewModel) {
     val state by vm.digest.collectAsStateWithLifecycle()
     val tracking by vm.tracking.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val snackbar = remember { SnackbarHostState() }
+    val toggleFollow = rememberMergerFollowToggle(vm, snackbar)
     LaunchedEffect(Unit) { vm.refreshDigest() }
     val digest = state.value
 
@@ -114,6 +118,7 @@ fun DigestScreen(vm: AppViewModel) {
     Scaffold(
         modifier = Modifier.nestedScroll(bar.nestedScrollConnection),
         contentWindowInsets = WindowInsets(0),
+        snackbarHost = { SnackbarHost(snackbar) },
         topBar = {
             TopAppBar(
                 title = { Text("Catch me up") },
@@ -146,7 +151,7 @@ fun DigestScreen(vm: AppViewModel) {
             when {
                 digest == null && state.loading -> Loading()
                 digest == null -> Centered("Couldn't load the digest. Pull down to try again.")
-                else -> DigestContent(vm, digest, tracking)
+                else -> DigestContent(vm, digest, tracking, toggleFollow)
             }
         }
     }
@@ -154,7 +159,7 @@ fun DigestScreen(vm: AppViewModel) {
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-private fun DigestContent(vm: AppViewModel, digest: Digest, tracking: TrackingState) {
+private fun DigestContent(vm: AppViewModel, digest: Digest, tracking: TrackingState, toggleFollow: (String) -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val listState = rememberLazyListState()
@@ -206,6 +211,7 @@ private fun DigestContent(vm: AppViewModel, digest: Digest, tracking: TrackingSt
                         shape = segment(i, group.rows.size),
                         followed = tracking.isTracked(row.merger.merger_id),
                         onClick = { vm.openMerger(row.merger.merger_id) },
+                        onSwipe = { toggleFollow(row.merger.merger_id) },
                     )
                 }
             }
@@ -271,6 +277,13 @@ private val DigestSection.icon: ImageVector get() = when (this) {
     DigestSection.TO_PUBLIC_BENEFIT, DigestSection.ONGOING_PUBLIC_BENEFIT -> Icons.Outlined.VolunteerActivism
     DigestSection.APPEALED, DigestSection.ONGOING_APPEALS -> Icons.Outlined.Balance
     DigestSection.ONGOING_PHASE_1, DigestSection.ONGOING_PHASE_2 -> Icons.Outlined.HourglassTop
+}
+
+/** A section of what's still under way (or only just filed), where a card can show it's followed. */
+private val DigestSection.running: Boolean get() = when (this) {
+    DigestSection.NEW, DigestSection.ONGOING_PHASE_1, DigestSection.ONGOING_PHASE_2,
+    DigestSection.ONGOING_PUBLIC_BENEFIT, DigestSection.ONGOING_APPEALS -> true
+    else -> false
 }
 
 /** A section's glyph: its icon in its shape, on its colour. Decoration beside its name. */
@@ -453,87 +466,97 @@ private fun DigestRowCard(
     shape: RoundedCornerShape,
     followed: Boolean,
     onClick: () -> Unit,
+    onSwipe: () -> Unit,
 ) {
     val context = LocalContext.current
     val c = digestColors(section.color)
     val presses = remember { MutableInteractionSource() }
-    Surface(
-        onClick = onClick,
-        shape = shape,
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
-        interactionSource = presses,
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 1.dp).then(rememberSquish(presses)),
+    // Swiped either way, it follows or unfollows the merger, as a card in the merger list does.
+    SwipeToFollow(
+        followed,
+        onSwipe,
+        Modifier.padding(horizontal = 16.dp, vertical = 1.dp),
+        shape,
     ) {
-        Column(Modifier.padding(start = 16.dp, end = 12.dp, top = 12.dp, bottom = 12.dp)) {
-            Row(verticalAlignment = Alignment.Top) {
-                Text(
-                    row.merger.merger_name,
-                    style = MaterialTheme.typography.titleSmallEmphasized,
-                    modifier = Modifier.weight(1f),
-                )
-                if (followed) {
-                    Icon(
-                        Icons.Filled.Bookmark,
-                        contentDescription = "Following",
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(start = 8.dp).size(18.dp),
+        Surface(
+            onClick = onClick,
+            shape = shape,
+            color = MaterialTheme.colorScheme.surfaceContainerLow,
+            interactionSource = presses,
+            modifier = Modifier.fillMaxWidth().then(rememberSquish(presses)),
+        ) {
+            Column(Modifier.padding(start = 16.dp, end = 12.dp, top = 12.dp, bottom = 12.dp)) {
+                Row(verticalAlignment = Alignment.Top) {
+                    Text(
+                        row.merger.merger_name,
+                        style = MaterialTheme.typography.titleSmallEmphasized,
+                        modifier = Modifier.weight(1f),
                     )
-                }
-            }
-            // The ID line, and at its end the determination: the one thing on
-            // the card that isn't the merger, so a trailing icon button (as
-            // Material's list items take one) rather than a label to read.
-            // The button's touch target already stands it off the title.
-            Row(
-                Modifier.padding(top = if (row.document != null) 0.dp else 10.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    (listOf(row.merger.merger_id) + row.facts).joinToString(" · "),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.weight(1f),
-                )
-                row.document?.let { doc ->
-                    FilledTonalIconButton(
-                        onClick = { openUrl(context, doc) },
-                        shapes = IconButtonDefaults.shapes(),
-                        colors = IconButtonDefaults.filledTonalIconButtonColors(containerColor = c.wash, contentColor = c.ink),
-                        modifier = Modifier.padding(start = 8.dp).size(IconButtonDefaults.smallContainerSize()),
-                    ) {
+                    // Where nothing sits at the card's end; a decided card has its determination there.
+                    if (followed && section.running) {
                         Icon(
-                            Icons.Outlined.Description,
-                            contentDescription = "Open the determination (PDF)",
-                            modifier = Modifier.size(IconButtonDefaults.smallIconSize),
+                            Icons.Filled.Bookmark,
+                            contentDescription = "Following",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(start = 8.dp).size(18.dp),
                         )
                     }
                 }
-            }
-            row.outcome?.let {
-                Text(
-                    it,
-                    style = MaterialTheme.typography.labelLargeEmphasized,
-                    color = c.ink,
-                    modifier = Modifier.padding(top = 8.dp),
-                )
-            }
-            row.outcomeNote?.let {
-                Text(
-                    it,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 2.dp),
-                )
-            }
-            row.summary?.takeIf { it.isNotBlank() }?.let {
-                Text(
-                    stripMarkdown(it.replace("\n", " ")),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 4,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.padding(top = 8.dp),
-                )
+                // The ID line, and at its end the determination: the one thing on
+                // the card that isn't the merger, so a trailing icon button (as
+                // Material's list items take one) rather than a label to read.
+                // The button's touch target already stands it off the title.
+                Row(
+                    Modifier.padding(top = if (row.document != null) 0.dp else 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        (listOf(row.merger.merger_id) + row.facts).joinToString(" · "),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.weight(1f),
+                    )
+                    row.document?.let { doc ->
+                        FilledTonalIconButton(
+                            onClick = { openUrl(context, doc) },
+                            shapes = IconButtonDefaults.shapes(),
+                            colors = IconButtonDefaults.filledTonalIconButtonColors(containerColor = c.wash, contentColor = c.ink),
+                            modifier = Modifier.padding(start = 8.dp).size(IconButtonDefaults.smallContainerSize()),
+                        ) {
+                            Icon(
+                                Icons.Outlined.Description,
+                                contentDescription = "Open the determination (PDF)",
+                                modifier = Modifier.size(IconButtonDefaults.smallIconSize),
+                            )
+                        }
+                    }
+                }
+                row.outcome?.let {
+                    Text(
+                        it,
+                        style = MaterialTheme.typography.labelLargeEmphasized,
+                        color = c.ink,
+                        modifier = Modifier.padding(top = 8.dp),
+                    )
+                }
+                row.outcomeNote?.let {
+                    Text(
+                        it,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 2.dp),
+                    )
+                }
+                row.summary?.takeIf { it.isNotBlank() }?.let {
+                    Text(
+                        stripMarkdown(it.replace("\n", " ")),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 4,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.padding(top = 8.dp),
+                    )
+                }
             }
         }
     }

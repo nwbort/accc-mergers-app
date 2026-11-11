@@ -109,9 +109,14 @@ both together. A `MergerCard` grows into its merger's header through
 page, follow, share and open live in a floating toolbar, and the top bar takes
 the header's colour and the merger's name once the header has scrolled off.
 Following and unfollowing give a toggle haptic (`rememberFollowHaptics`).
-A merger card swiped either way follows or unfollows it and springs back
-(`MergerCard`'s `onSwipe`, with `rememberMergerFollowToggle` for the snackbar
-and Undo); a screen reader gets the same as the card's custom action.
+A merger card swiped either way, a quarter of its width or a flick, follows
+or unfollows it and springs back (`SwipeToFollow` in `ui/Common.kt`, behind
+`MergerCard`'s `onSwipe` and the digest's cards, with
+`rememberMergerFollowToggle` for the snackbar and Undo); a screen reader gets
+the same as the card's custom action. It isn't Material's `SwipeToDismissBox`,
+whose threshold is skipped when the finger stops before release (it then
+takes half the card). On the digest, a decided card doesn't show the
+following bookmark, since its determination button sits where it would.
 
 ## Commits and pull requests
 

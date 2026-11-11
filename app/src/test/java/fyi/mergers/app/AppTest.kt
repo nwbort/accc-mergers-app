@@ -42,6 +42,8 @@ import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeRight
+import androidx.compose.ui.test.swipeLeft
+import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.performScrollToIndex
@@ -129,6 +131,24 @@ class AppTest {
         compose.onNodeWithTag("digest").performScrollToKey("g-mergers-approved-Waiver")
         waitForText("Waiver")
         shot("1k-digest-cleared")
+        // A card swiped follows its merger, as in the merger list; a decided
+        // card doesn't show the bookmark (its determination sits there).
+        val accel = compose.onNodeWithText("Accel-KKR - Eleco")
+        accel.performTouchInput {
+            down(centerLeft + Offset(40f, 0f))
+            repeat(10) { moveBy(Offset(width * 0.03f, 0f), delayMillis = 20) }
+        }
+        compose.waitForIdle()
+        shot("1k2-digest-swipe")
+        accel.performTouchInput {
+            moveBy(Offset.Zero, delayMillis = 300)
+            up()
+        }
+        waitUntil { Graph.store.current().isTracked("WA-01129") }
+        waitForText("Following: you", substring = true)
+        assertTrue(compose.onAllNodesWithContentDescription("Following").fetchSemanticsNodes().isEmpty())
+        accel.performTouchInput { swipeLeft() }
+        waitUntil { !Graph.store.current().isTracked("WA-01129") }
         // A row opens its merger; back returns to the digest.
         compose.onNodeWithTag("digest").performScrollToKey("ongoing-phase-2-MN-01072")
         // Anywhere on the card, not just its name: here its summary.
@@ -235,12 +255,25 @@ class AppTest {
         }
         compose.waitForIdle()
         shot("2a-swipe-follow")
-        psp.performTouchInput { up() }
+        // Held still before letting go (no fling at all), a third of the way is enough.
+        psp.performTouchInput {
+            moveBy(Offset.Zero, delayMillis = 300)
+            up()
+        }
         waitUntil { Graph.store.current().isTracked("MN-55024") }
         waitForText("Following: you", substring = true)
         psp.performTouchInput { swipeRight() }
         waitUntil { !Graph.store.current().isTracked("MN-55024") }
         waitForText("No longer following")
+        // A short, slow drag springs back without following.
+        psp.performTouchInput {
+            down(centerLeft + Offset(40f, 0f))
+            repeat(5) { moveBy(Offset(width * 0.03f, 0f), delayMillis = 50) }
+            moveBy(Offset.Zero, delayMillis = 300)
+            up()
+        }
+        compose.waitForIdle()
+        assertFalse(runBlocking { Graph.store.current().isTracked("MN-55024") })
         compose.onNode(hasSetTextAction()).performTextInput("asahi")
         waitForText("1 matter")
         compose.onNode(hasSetTextAction()).performTextClearance()
