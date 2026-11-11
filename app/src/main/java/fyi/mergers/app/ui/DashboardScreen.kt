@@ -64,6 +64,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.material3.TopAppBarState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -161,6 +162,7 @@ fun DashboardScreen(vm: AppViewModel) {
                 stats == null -> Centered("Couldn't load the dashboard. Pull down to try again.")
                 else -> DashboardContent(
                     vm, stats, upcomingState.value.orEmpty(), recentState.value, recentEventsState.value.orEmpty(),
+                    bar.state,
                 )
             }
         }
@@ -184,6 +186,7 @@ private fun DashboardContent(
     upcoming: List<UpcomingEvent>,
     recent: StatusWindow?,
     recentEvents: List<RecentEvent>,
+    barState: TopAppBarState,
 ) {
     val soon = upcoming.filter { e ->
         val n = Dates.daysUntil(e.end_date ?: e.date) ?: return@filter false
@@ -210,6 +213,7 @@ private fun DashboardContent(
         }
     }
     val listState = rememberLazyListState()
+    ScrollToTopOnReselect(vm, Route.Dashboard, listState, barState)
     // The day pinned at the top, and the next one while it's pushing that one
     // off: both carry the section's title, so the title rides up with the old
     // day and the new day arrives with it, rather than arriving bare and

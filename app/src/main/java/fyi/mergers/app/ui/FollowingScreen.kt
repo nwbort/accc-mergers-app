@@ -38,6 +38,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -80,6 +81,8 @@ fun FollowingScreen(vm: AppViewModel) {
     // Like the dashboard's, the bar slides away as you scroll down and comes
     // back as soon as you scroll up.
     val bar = TopAppBarDefaults.enterAlwaysScrollBehavior()
+    val list = rememberLazyListState()
+    ScrollToTopOnReselect(vm, Route.Following, list, bar.state)
     Scaffold(
         modifier = Modifier.nestedScroll(bar.nestedScrollConnection),
         contentWindowInsets = WindowInsets(0),
@@ -103,7 +106,7 @@ fun FollowingScreen(vm: AppViewModel) {
             onRefresh = vm::refreshFollowing,
             modifier = Modifier.padding(padding).fillMaxSize(),
         ) {
-            LazyColumn(Modifier.fillMaxSize().testTag("following"), contentPadding = PaddingValues(bottom = 24.dp)) {
+            LazyColumn(Modifier.fillMaxSize().testTag("following"), state = list, contentPadding = PaddingValues(bottom = 24.dp)) {
                 item { NotificationsBanner() }
 
                 if (tracking.followsNothing) {

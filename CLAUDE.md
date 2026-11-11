@@ -63,6 +63,13 @@ picks day or night), so a new type or colour goes in both places. Search
 draws a widget's `RemoteViews` inside an `AppWidgetHostView` (a list takes no
 rows anywhere else).
 
+Tabs (`ui/App.kt`): Dashboard, Mergers and Following change only from the
+bottom bar, never by swiping across the screen (Material's navigation bar
+guidance keeps swipes for things within a screen). Each keeps its scroll and
+state while another shows. Tapping the tab already showing goes back to it
+from a merger or industry open over it, and at the tab itself scrolls it to
+the top (`AppViewModel.tapTab`, `ScrollToTopOnReselect`).
+
 Settings (`ui/SettingsScreen.kt`) has no tab: it opens from the cog on the
 dashboard's top bar, from the Following tab (the same cog, and the Alerts row
 that says how alerts are set; the switches themselves live only in Settings,

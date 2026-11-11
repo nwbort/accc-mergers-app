@@ -39,6 +39,11 @@ import androidx.compose.material3.toShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import kotlinx.coroutines.flow.filter
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.material3.TopAppBarState
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.foundation.lazy.LazyListState
 import fyi.mergers.app.ui.theme.isDarkTheme
 import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.graphicsLayer
@@ -455,5 +460,20 @@ private fun clean(s: String): String =
 fun Centered(text: String, modifier: Modifier = Modifier) {
     Box(modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
         Text(text, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
+/**
+ * A tap on [tab] in the bottom bar while it's already showing scrolls [list]
+ * back to the top, and brings back the top bar ([bar]) if it had slid away.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ScrollToTopOnReselect(vm: AppViewModel, tab: Route, list: LazyListState, bar: TopAppBarState? = null) {
+    LaunchedEffect(vm, tab, list) {
+        vm.reselected.filter { it == tab }.collect {
+            bar?.heightOffset = 0f
+            list.animateScrollToItem(0)
+        }
     }
 }

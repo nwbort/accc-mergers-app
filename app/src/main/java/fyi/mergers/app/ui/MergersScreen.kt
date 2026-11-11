@@ -46,6 +46,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -81,6 +82,7 @@ fun MergersScreen(vm: AppViewModel) {
         all?.let { vm.applyFilter(it, f, tracking.trackedSet) }.orEmpty()
     }
     val lazy = rememberLazyListState()
+    ScrollToTopOnReselect(vm, Route.Mergers, lazy)
     // A new search or filter starts from the top; coming back from a merger
     // keeps the place.
     var lastFilter by rememberSaveable { mutableIntStateOf(f.hashCode()) }
@@ -166,7 +168,7 @@ fun MergersScreen(vm: AppViewModel) {
                         state = lazy,
                         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 24.dp),
                         verticalArrangement = Arrangement.spacedBy(10.dp),
-                        modifier = Modifier.fillMaxSize(),
+                        modifier = Modifier.fillMaxSize().testTag("mergers"),
                     ) {
                         items(shown, key = { it.merger_id }) { m ->
                             val followed = tracking.isTracked(m.merger_id)

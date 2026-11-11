@@ -37,10 +37,8 @@ import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performScrollToKey
-import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.hasText
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.hasSetTextAction
@@ -178,21 +176,18 @@ class AppTest {
         waitUntil { vm.tab == Route.Dashboard }
         waitForText("Recent determinations")
 
-        // The merger list, swiped to from the dashboard, searched and cleared.
-        // Mid-swipe, past halfway with the finger still down, the bar already
-        // shows where it's heading, though the tab only changes once it settles.
-        compose.onNodeWithTag("dashboard").performTouchInput {
-            down(center)
-            repeat(12) { moveBy(Offset(-width * 0.05f, 0f)) }
-        }
-        compose.waitForIdle()
-        compose.onNode(hasText("Mergers") and isSelectable()).assertIsSelected()
-        assertEquals(Route.Dashboard, vm.tab)
-        shot("2-swiping")
-        compose.onNodeWithTag("dashboard").performTouchInput { up() }
+        // The merger list, from the bottom bar (tabs don't swipe), searched and cleared.
+        val mergersTab = hasText("Mergers") and isSelectable()
+        compose.onNode(mergersTab).performClick()
         waitUntil { vm.tab == fyi.mergers.app.ui.Route.Mergers }
         waitForText("40 matters")
         shot("2-mergers")
+        // Tapping the tab that's showing scrolls it back to the top.
+        compose.onNodeWithTag("mergers").performScrollToIndex(20)
+        waitUntil { compose.onAllNodesWithText("Autosports Group", substring = true).fetchSemanticsNodes().isEmpty() }
+        compose.onNode(mergersTab).performClick()
+        waitForText("Autosports Group", substring = true)
+        assertEquals(Route.Mergers, vm.tab)
         compose.onNode(hasSetTextAction()).performTextInput("asahi")
         waitForText("1 matter")
         compose.onNode(hasSetTextAction()).performTextClearance()
