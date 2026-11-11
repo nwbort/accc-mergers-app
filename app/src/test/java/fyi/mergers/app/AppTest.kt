@@ -196,7 +196,8 @@ class AppTest {
         val psp = compose.onAllNodesWithText("PSP Investments", substring = true).onFirst()
         psp.performTouchInput {
             down(centerLeft + Offset(40f, 0f))
-            repeat(10) { moveBy(Offset(width * 0.05f, 0f)) }
+            // A third of the way across is past the quarter that counts.
+            repeat(10) { moveBy(Offset(width * 0.033f, 0f)) }
         }
         compose.waitForIdle()
         shot("2a-swipe-follow")

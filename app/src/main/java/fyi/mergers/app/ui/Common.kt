@@ -309,7 +309,9 @@ fun MergerCard(
     // Swiped either way, past the threshold, a card follows or unfollows its
     // merger, then springs back: it isn't dismissed. Behind it as it moves,
     // what the swipe will do.
-    val swipe = rememberSwipeToDismissBoxState()
+    // A quarter of the card's width is enough (Material's default is half):
+    // following is quick to undo, so it needn't take a long drag.
+    val swipe = rememberSwipeToDismissBoxState(positionalThreshold = { width -> width * SWIPE_THRESHOLD })
     val scope = rememberCoroutineScope()
     val act by rememberUpdatedState(onSwipe)
     SwipeToDismissBox(
@@ -327,6 +329,9 @@ fun MergerCard(
         MergerCardBody(m, followed, onClick, Modifier, onLongClick)
     }
 }
+
+/** How far across a card a swipe must go to follow or unfollow, as a fraction of its width. */
+private const val SWIPE_THRESHOLD = 0.25f
 
 /** What a swipe on a card will do, shown behind it as it moves: follow, or unfollow. */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
