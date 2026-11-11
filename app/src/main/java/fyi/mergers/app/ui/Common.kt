@@ -312,15 +312,23 @@ fun MergerCard(
             ),
         ) {
             Column(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 14.dp)) {
+                val flags = listOfNotNull(
+                    ("Waiver" to WaiverAmber).takeIf { m.is_waiver },
+                    ("Under appeal" to AppealIndigo).takeIf { m.under_appeal },
+                    ("Re-filed" to RefiledAmber).takeIf { m.is_refiled },
+                )
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     StatusGlyph(key, conditions = label.contains("conditions", ignoreCase = true), size = 30.dp)
-                    Text(
-                        label,
-                        style = MaterialTheme.typography.labelLargeEmphasized,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.padding(start = 10.dp).weight(1f),
-                    )
+                    FlowRow(
+                        Modifier.padding(start = 10.dp).weight(1f),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                        itemVerticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(label, style = MaterialTheme.typography.labelLargeEmphasized)
+                        // Flags ride on the status line, so a flagged card is no taller.
+                        flags.forEach { (text, c) -> FlagPill(text, c) }
+                    }
                     if (followed) {
                         Box(
                             Modifier
@@ -336,20 +344,6 @@ fun MergerCard(
                                 modifier = Modifier.size(16.dp),
                             )
                         }
-                    }
-                }
-                val flags = listOfNotNull(
-                    ("Waiver" to WaiverAmber).takeIf { m.is_waiver },
-                    ("Under appeal" to AppealIndigo).takeIf { m.under_appeal },
-                    ("Re-filed" to RefiledAmber).takeIf { m.is_refiled },
-                )
-                if (flags.isNotEmpty()) {
-                    FlowRow(
-                        Modifier.padding(top = 8.dp),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        verticalArrangement = Arrangement.spacedBy(6.dp),
-                    ) {
-                        flags.forEach { (text, c) -> FlagPill(text, c) }
                     }
                 }
                 Text(
@@ -373,19 +367,19 @@ fun MergerCard(
     }
 }
 
-/** A merger's flag beside its outcome (waiver, under appeal, re-filed): a small pill in the site's solid colours. */
+/** A merger's flag on its status line (waiver, under appeal, re-filed): a small pill in the site's solid colours. */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun FlagPill(text: String, c: StatusColors) {
     Text(
         text,
         color = c.onFill,
-        style = MaterialTheme.typography.labelMediumEmphasized,
+        style = MaterialTheme.typography.labelSmallEmphasized,
         maxLines = 1,
         modifier = Modifier
             .clip(CircleShape)
             .background(c.fill)
-            .padding(horizontal = 10.dp, vertical = 3.dp),
+            .padding(horizontal = 8.dp, vertical = 2.dp),
     )
 }
 
