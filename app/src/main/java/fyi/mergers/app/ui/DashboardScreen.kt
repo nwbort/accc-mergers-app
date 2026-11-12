@@ -231,7 +231,7 @@ private fun DashboardContent(
                     ?.let { dayOfKey[it.key] }?.let(::add)
                 visible.forEach { item ->
                     val key = item.key
-                    if (dayOfKey[key] == key && item.offset < item.size) add(key as String)
+                    if (dayOfKey[key] == key && item.offset < item.size) add(key)
                 }
             }
         }
