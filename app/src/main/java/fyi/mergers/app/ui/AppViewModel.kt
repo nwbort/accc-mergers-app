@@ -5,6 +5,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import fyi.mergers.app.Graph
@@ -110,6 +111,33 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         refreshDashboard()
         refreshList()
         refreshFollowing()
+        markReadOnLeavingFollowing()
+    }
+
+    /**
+     * What the Following tab lists as new is taken as read once you leave it
+     * (for another tab, or a merger opened over it): it was highlighted while
+     * you looked, and is under Earlier when you come back. Only what was on
+     * screen: anything that arrives while you're elsewhere stays new.
+     */
+    private fun markReadOnLeavingFollowing() {
+        viewModelScope.launch {
+            var shown = emptySet<String>()
+            fun onFollowing() = backStack.size == 1 && backStack.first() == Route.Following
+            // The flow only says when to look: the back stack is read afresh,
+            // since a check can land before the flow has heard of a change of tab.
+            combine(snapshotFlow { onFollowing() }, sync, tracking) { _, s, t ->
+                onFollowing() to TrackedEvents.inbox(s?.events.orEmpty(), t).filter { !it.upcoming && it.key !in t.seen }.map { it.key }
+            }.collect { (on, unread) ->
+                if (on) {
+                    shown = shown + unread
+                } else if (shown.isNotEmpty()) {
+                    val keys = shown
+                    shown = emptySet()
+                    store.markSeen(keys)
+                }
+            }
+        }
     }
 
     // ---- navigation ---------------------------------------------------------
@@ -335,6 +363,15 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                 spinning--
             }
         }
+    }
+
+    /**
+     * A pull on the Following tab: what's listed as new is taken as read (as
+     * Mark all read), and the check that follows lists only what's newer.
+     */
+    fun pullFollowing() {
+        markAllRead()
+        refreshFollowing()
     }
 
     private var quiet: Job? = null
