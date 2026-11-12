@@ -46,7 +46,8 @@ import kotlin.coroutines.resumeWithException
  */
 object Push {
     /**
-     * The topic names, shared with scripts/push/fcm.py: change both or neither.
+     * The topic names, shared with the site's scripts/push/fcm.py and its
+     * browser notifications (frontend/src/push/topics.js): change all or none.
      * FCM allows [A-Za-z0-9-_.~%] in a name; merger ids (MN-01016) and
      * industry file stems (G, _orphans) are already within that.
      */
