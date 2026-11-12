@@ -45,6 +45,7 @@ import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeRight
 import androidx.compose.ui.test.swipeLeft
+import androidx.compose.ui.test.swipeDown
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.hasSetTextAction
@@ -387,6 +388,12 @@ class AppTest {
         back()
         waitUntil { vm.backStack.lastOrNull() == Route.Following }
         compose.onNodeWithTag("following").performScrollToIndex(0)
+        // A pull takes what's new as read, as Mark all read does.
+        assertTrue(compose.onAllNodesWithText("New (", substring = true).fetchSemanticsNodes().isNotEmpty())
+        compose.onNodeWithTag("following").performTouchInput { swipeDown() }
+        compose.waitUntil(10_000) { compose.onAllNodesWithText("New (", substring = true).fetchSemanticsNodes().isEmpty() }
+        waitUntil { !vm.syncing }
+        shot("6d-following-pulled")
 
         // The followed matter moves on: the background check notices and posts it.
         val m = MergersJson.decodeFromString(MergerDetail.serializer(), Fixtures.read("mergers/MN-20046.json")!!)

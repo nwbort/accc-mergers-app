@@ -108,7 +108,7 @@ fun FollowingScreen(vm: AppViewModel) {
     ) { padding ->
         RefreshBox(
             refreshing = vm.syncing,
-            onRefresh = vm::refreshFollowing,
+            onRefresh = vm::pullFollowing,
             modifier = Modifier.padding(padding).fillMaxSize(),
         ) {
             LazyColumn(Modifier.fillMaxSize().testTag("following"), state = list, contentPadding = PaddingValues(bottom = 24.dp)) {

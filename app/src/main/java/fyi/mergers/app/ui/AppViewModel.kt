@@ -337,6 +337,15 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    /**
+     * A pull on the Following tab: what's listed as new is taken as read (as
+     * Mark all read), and the check that follows lists only what's newer.
+     */
+    fun pullFollowing() {
+        markAllRead()
+        refreshFollowing()
+    }
+
     private var quiet: Job? = null
 
     /**
