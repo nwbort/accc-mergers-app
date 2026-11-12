@@ -1,5 +1,6 @@
 package fyi.mergers.app.ui
 
+import androidx.compose.ui.semantics.heading
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
@@ -293,7 +294,8 @@ fun SectionTitle(text: String, modifier: Modifier = Modifier, trailing: @Composa
         Text(
             text,
             style = MaterialTheme.typography.titleMediumEmphasized,
-            modifier = Modifier.weight(1f),
+            // So TalkBack's headings navigation can jump section to section.
+            modifier = Modifier.weight(1f).semantics { heading() },
         )
         trailing?.invoke()
     }
@@ -317,11 +319,11 @@ fun MergerCard(
     onSwipe: (() -> Unit)? = null,
 ) {
     if (onSwipe == null) {
-        MergerCardBody(m, followed, onClick, modifier, onLongClick)
+        MergerCardBody(m, followed, onClick, modifier, onLongClick, Modifier)
         return
     }
-    SwipeToFollow(followed, onSwipe, modifier, MaterialTheme.shapes.large) {
-        MergerCardBody(m, followed, onClick, Modifier, onLongClick)
+    SwipeToFollow(followed, onSwipe, modifier, MaterialTheme.shapes.large) { actions ->
+        MergerCardBody(m, followed, onClick, Modifier, onLongClick, actions)
     }
 }
 
@@ -336,6 +338,8 @@ private const val SWIPE_FLING_DP = 1000
  * quarter of its width ([SWIPE_THRESHOLD]), or flicked, then springs back: it
  * isn't dismissed. Behind it as it moves, what the swipe will do, in the
  * card's [shape]; a screen reader gets the same as one of the card's actions.
+ * [content] puts the modifier it's handed on its clickable node: an action
+ * on this wrapper would sit on a node TalkBack never lands on.
  *
  * Not Material's SwipeToDismissBox: its threshold is only consulted while the
  * finger is still moving at release. Let go after a pause (the usual end of a
@@ -348,7 +352,7 @@ fun SwipeToFollow(
     onSwipe: () -> Unit,
     modifier: Modifier = Modifier,
     shape: Shape,
-    content: @Composable () -> Unit,
+    content: @Composable (actions: Modifier) -> Unit,
 ) {
     val act by rememberUpdatedState(onSwipe)
     val scope = rememberCoroutineScope()
@@ -360,12 +364,12 @@ fun SwipeToFollow(
     val drag = rememberDraggableState { delta -> offset = (offset + delta).coerceIn(-width.toFloat(), width.toFloat()) }
     val armed = width > 0 && abs(offset) >= width * SWIPE_THRESHOLD
 
+    val actions = Modifier.semantics {
+        customActions = listOf(CustomAccessibilityAction(if (followed) "Unfollow" else "Follow") { act(); true })
+    }
     Box(
         modifier
             .onSizeChanged { width = it.width }
-            .semantics {
-                customActions = listOf(CustomAccessibilityAction(if (followed) "Unfollow" else "Follow") { act(); true })
-            }
             .draggable(
                 drag,
                 Orientation.Horizontal,
@@ -381,7 +385,7 @@ fun SwipeToFollow(
             ),
     ) {
         if (offset != 0f) SwipeBacking(fromStart = offset > 0, armed = armed, followed = followed, shape = shape)
-        Box(Modifier.offset { IntOffset(offset.roundToInt(), 0) }) { content() }
+        Box(Modifier.offset { IntOffset(offset.roundToInt(), 0) }) { content(actions) }
     }
 }
 
@@ -435,6 +439,7 @@ private fun MergerCardBody(
     onClick: () -> Unit,
     modifier: Modifier,
     onLongClick: (() -> Unit)?,
+    actions: Modifier,
 ) {
     val input = m.outcomeInput()
     val header = input.headerStatus()
@@ -463,7 +468,7 @@ private fun MergerCardBody(
         colors = CardDefaults.cardColors(containerColor = tint),
     ) {
         Box(
-            Modifier.combinedClickable(
+            actions.combinedClickable(
                 interactionSource = presses,
                 indication = LocalIndication.current,
                 onClick = onClick,

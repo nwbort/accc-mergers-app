@@ -79,6 +79,16 @@ import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 import java.io.File
+import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.hasStateDescription
+import androidx.compose.ui.test.performScrollToNode
+import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.performCustomAccessibilityActionWithLabel
+import androidx.compose.ui.semantics.getOrNull
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.SemanticsNode
 
 /**
  * Drives the real app through every screen on the JVM, against a snapshot of
@@ -98,6 +108,7 @@ class AppTest {
 
     private val vm get() = ViewModelProvider(compose.activity)[AppViewModel::class.java]
 
+    @OptIn(ExperimentalTestApi::class)
     @Test
     fun browse_follow_and_get_notified() {
         val app = RuntimeEnvironment.getApplication()
@@ -152,6 +163,13 @@ class AppTest {
         waitForText("Following: you", substring = true)
         assertTrue(compose.onAllNodesWithContentDescription("Following").fetchSemanticsNodes().isEmpty())
         accel.performTouchInput { swipeLeft() }
+        waitUntil { !Graph.store.current().isTracked("WA-01129") }
+        // TalkBack can't swipe a card: it gets the same as an action on the
+        // card it reads out, not on a wrapper it never lands on.
+        val accelCard = compose.onNode(hasText("Accel-KKR - Eleco", substring = true) and hasClickAction())
+        accelCard.performCustomAccessibilityActionWithLabel("Follow")
+        waitUntil { Graph.store.current().isTracked("WA-01129") }
+        accelCard.performCustomAccessibilityActionWithLabel("Unfollow")
         waitUntil { !Graph.store.current().isTracked("WA-01129") }
         // Sign up for the email here, not on the site: a bad address is
         // refused before anything is sent; a good one is asked to confirm.
@@ -300,6 +318,12 @@ class AppTest {
         }
         compose.waitForIdle()
         assertFalse(runBlocking { Graph.store.current().isTracked("MN-55024") })
+        // With TalkBack, the card it reads out has the swipe as an action.
+        val pspCard = compose.onAllNodes(hasText("PSP Investments", substring = true) and hasClickAction()).onFirst()
+        pspCard.performCustomAccessibilityActionWithLabel("Follow")
+        waitUntil { Graph.store.current().isTracked("MN-55024") }
+        pspCard.performCustomAccessibilityActionWithLabel("Unfollow")
+        waitUntil { !Graph.store.current().isTracked("MN-55024") }
         compose.onNode(hasSetTextAction()).performTextInput("asahi")
         waitForText("1 matter")
         compose.onNode(hasSetTextAction()).performTextClearance()
@@ -463,6 +487,13 @@ class AppTest {
         )
         waitForText("Asahi – Warehouse site on Tilburn Rd, Deer Park (Vic)")
         shot("7-detail-decided")
+        // Its timeline, and a determination's reasons opened there: the toggle
+        // says which way it is to TalkBack, not only by its arrow.
+        compose.onNodeWithTag("detail").performScrollToNode(hasText("Show reasons"))
+        shot("7a-detail-timeline")
+        compose.onNodeWithText("Show reasons").assert(hasStateDescription("Collapsed")).performClick()
+        compose.onNodeWithText("Hide reasons").assert(hasStateDescription("Expanded"))
+        shot("7b-detail-reasons")
 
         // A page the app has no screen for goes to the browser, and the app stays put.
         val phase2 = "https://mergers.fyi/phase-2"
@@ -628,9 +659,53 @@ class AppTest {
 
     private fun shot(name: String) {
         compose.waitForIdle()
+        checkAccessibility(name)
         val dir = File("build/screenshots").apply { mkdirs() }
         File(dir, "$name.png").outputStream().use {
             compose.onRoot().captureToImage().asAndroidBitmap().compress(Bitmap.CompressFormat.PNG, 100, it)
         }
+    }
+
+    /**
+     * What TalkBack needs of whatever is on [screen], as the merged semantics
+     * tree it walks has it (the screen and any menu over it):
+     *  - everything that acts on a tap says what it is: words, a description
+     *    or a state. A link in a run of text is exempt: it's read, and opened,
+     *    from the text it sits in.
+     *  - no action is out of reach: a custom action (a swipe's Follow, say)
+     *    sits on a node a screen reader can land on, not on a wrapper.
+     * Touch targets aren't checked: Compose widens every tap area to 48 dp
+     * itself, and reports that to TalkBack, so here it can't fail.
+     */
+    private fun checkAccessibility(screen: String) {
+        val dp = compose.density.density
+        val problems = mutableListOf<String>()
+        fun SemanticsNode.words(): String = listOfNotNull(
+            config.getOrNull(SemanticsProperties.ContentDescription)?.joinToString(" "),
+            config.getOrNull(SemanticsProperties.Text)?.joinToString(" "),
+            config.getOrNull(SemanticsProperties.EditableText)?.text,
+            config.getOrNull(SemanticsProperties.StateDescription),
+        ).joinToString(" ").trim()
+        fun SemanticsNode.focusable(): Boolean =
+            config.isMergingSemanticsOfDescendants || words().isNotEmpty() || SemanticsActions.OnClick in config
+        fun SemanticsNode.describe(): String = words().ifEmpty {
+            val role = config.getOrNull(SemanticsProperties.Role) ?: "node"
+            "($role at ${(boundsInRoot.left / dp).toInt()},${(boundsInRoot.top / dp).toInt()} dp," +
+                " under ${parent?.words()?.ifEmpty { null } ?: "?"})"
+        }.take(90)
+        fun walk(n: SemanticsNode) {
+            if (SemanticsProperties.HideFromAccessibility in n.config) return
+            val link = SemanticsProperties.LinkTestMarker in n.config
+            if (SemanticsActions.OnClick in n.config && !link && n.words().isEmpty()) {
+                problems += "tappable with nothing to read: ${n.describe()}"
+            }
+            if (SemanticsActions.CustomActions in n.config && !n.focusable()) {
+                val labels = n.config[SemanticsActions.CustomActions].joinToString { it.label }
+                problems += "custom action ($labels) where a screen reader can't land: ${n.describe()}"
+            }
+            n.children.forEach(::walk)
+        }
+        compose.onAllNodes(isRoot()).fetchSemanticsNodes().forEach(::walk)
+        if (problems.isNotEmpty()) throw AssertionError("Accessibility on $screen:\n" + problems.distinct().joinToString("\n"))
     }
 }
