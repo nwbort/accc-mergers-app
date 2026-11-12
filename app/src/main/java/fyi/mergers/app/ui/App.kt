@@ -1,5 +1,7 @@
 package fyi.mergers.app.ui
 
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalActivity
 import androidx.compose.animation.SharedTransitionLayout
@@ -64,7 +66,14 @@ fun MergersApp(vm: AppViewModel) {
                         icon = {
                             val icon = if (selected) tab.selectedIcon else tab.icon
                             if (tab.route == Route.Following && unread > 0) {
-                                BadgedBox(badge = { Badge { Text(if (unread > 99) "99+" else "$unread") } }) {
+                                BadgedBox(
+                                    badge = {
+                                        // Read as "Following, 3 new", not a bare number.
+                                        Badge(Modifier.clearAndSetSemantics { contentDescription = "$unread new" }) {
+                                            Text(if (unread > 99) "99+" else "$unread")
+                                        }
+                                    },
+                                ) {
                                     Icon(icon, contentDescription = null)
                                 }
                             } else {

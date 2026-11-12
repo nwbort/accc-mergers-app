@@ -1,5 +1,6 @@
 package fyi.mergers.app.ui
 
+import androidx.compose.ui.semantics.stateDescription
 import android.Manifest
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -624,7 +625,7 @@ private fun EventRow(e: MergerEvent, last: Boolean, open: (String) -> Unit) {
         }
         Column(
             Modifier.weight(1f).padding(start = 8.dp, bottom = 14.dp)
-                .then(if (doc != null) Modifier.clickable { open(doc) } else Modifier),
+                .then(if (doc != null) Modifier.clickable(onClickLabel = "Open document") { open(doc) } else Modifier),
         ) {
             Text(
                 Dates.format(e.date) ?: "",
@@ -648,7 +649,11 @@ private fun EventRow(e: MergerEvent, last: Boolean, open: (String) -> Unit) {
             }
             if (reasons.isNotEmpty()) {
                 Row(
-                    Modifier.clickable { expanded = !expanded }.padding(top = 4.dp),
+                    Modifier
+                        .padding(top = 4.dp)
+
+                        .clickable(onClickLabel = if (expanded) "Hide reasons" else "Show reasons") { expanded = !expanded }
+                        .semantics { stateDescription = if (expanded) "Expanded" else "Collapsed" },
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(

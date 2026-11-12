@@ -1,5 +1,7 @@
 package fyi.mergers.app.ui
 
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.heading
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.fadeIn
@@ -364,7 +366,10 @@ private fun DayHeader(section: String, day: String?, pinned: Boolean) {
         Modifier
             .fillMaxWidth()
             .background(MaterialTheme.colorScheme.surface)
-            .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 4.dp),
+            .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 4.dp)
+            // Read as one heading, the day alone: the section's name it gains
+            // while pinned is for the eye, and would change what's read mid-list.
+            .clearAndSetSemantics { heading(); contentDescription = label },
         verticalAlignment = Alignment.CenterVertically,
     ) {
         // Slides in from the start, nudging the date along, rather than popping in.
