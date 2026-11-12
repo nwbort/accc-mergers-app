@@ -41,14 +41,13 @@ val robolectricJars = tasks.register<Sync>("robolectricJars") {
 val firebaseConfig: Map<String, String> = rootProject.file("app/google-services.json")
     .takeIf { it.isFile }
     ?.let { file ->
-        @Suppress("UNCHECKED_CAST")
-        val json = groovy.json.JsonSlurper().parse(file) as Map<String, Any?>
-        val project = json["project_info"] as Map<String, Any?>
-        val clients = json["client"] as List<Map<String, Any?>>
-        fun packageOf(c: Map<String, Any?>) =
+        val json = groovy.json.JsonSlurper().parse(file) as Map<*, *>
+        val project = json["project_info"] as Map<*, *>
+        val clients = (json["client"] as List<*>).map { it as Map<*, *> }
+        fun packageOf(c: Map<*, *>) =
             ((c["client_info"] as Map<*, *>)["android_client_info"] as Map<*, *>)["package_name"]
         val client = clients.firstOrNull { packageOf(it) == "fyi.mergers.app" } ?: clients.first()
-        val apiKey = (client["api_key"] as List<Map<String, Any?>>).first()["current_key"] as String
+        val apiKey = ((client["api_key"] as List<*>).first() as Map<*, *>)["current_key"] as String
         buildMap {
             put("google_app_id", (client["client_info"] as Map<*, *>)["mobilesdk_app_id"] as String)
             put("gcm_defaultSenderId", project["project_number"] as String)

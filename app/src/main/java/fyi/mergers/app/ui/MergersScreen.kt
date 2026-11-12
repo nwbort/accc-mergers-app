@@ -1,5 +1,10 @@
 package fyi.mergers.app.ui
 
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -126,7 +131,8 @@ fun MergersScreen(vm: AppViewModel) {
                     },
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.weight(1f),
+                    // Said when a search or filter changes it, so the result isn't silent.
+                    modifier = Modifier.weight(1f).semantics { liveRegion = LiveRegionMode.Polite },
                 )
                 TextButton(onClick = vm::openIndustries) {
                     Icon(Icons.Filled.Category, contentDescription = null, Modifier.size(16.dp))
@@ -232,6 +238,8 @@ private fun <T> Menu(label: String, selected: Boolean, options: List<Pair<String
                 { Icon(Icons.AutoMirrored.Filled.Sort, contentDescription = "Sort", Modifier.size(FilterChipDefaults.IconSize)) }
             } else null,
             trailingIcon = { Icon(Icons.Filled.ArrowDropDown, contentDescription = null, Modifier.size(FilterChipDefaults.IconSize)) },
+            // Opens a menu: not the on/off a filter chip otherwise reads as.
+            modifier = Modifier.semantics { role = Role.DropdownList },
         )
         DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
             options.forEach { (text, value) ->

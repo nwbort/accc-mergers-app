@@ -1,5 +1,7 @@
 package fyi.mergers.app.ui
 
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -308,7 +310,8 @@ private fun EmailSignup(vm: AppViewModel) {
                 Text(
                     if (state is SignupState.Sent) "Check your inbox" else "Get this every Monday morning",
                     style = MaterialTheme.typography.titleMediumEmphasized,
-                    modifier = Modifier.padding(start = 12.dp).semantics { heading() },
+                    // Announced when it changes to "Check your inbox": the button just pressed is gone.
+                    modifier = Modifier.padding(start = 12.dp).semantics { heading(); liveRegion = LiveRegionMode.Polite },
                 )
             }
             if (state is SignupState.Sent) {
@@ -629,13 +632,13 @@ private fun DigestRowCard(
         onSwipe,
         Modifier.padding(horizontal = 16.dp, vertical = 1.dp),
         shape,
-    ) {
+    ) { actions ->
         Surface(
             onClick = onClick,
             shape = shape,
             color = MaterialTheme.colorScheme.surfaceContainerLow,
             interactionSource = presses,
-            modifier = Modifier.fillMaxWidth().then(rememberSquish(presses)),
+            modifier = actions.fillMaxWidth().then(rememberSquish(presses)),
         ) {
             Column(Modifier.padding(start = 16.dp, end = 12.dp, top = 12.dp, bottom = 12.dp)) {
                 Row(verticalAlignment = Alignment.Top) {

@@ -243,3 +243,15 @@ ignored).
 `AppTest` drives every screen under Robolectric against the fixture snapshot
 in `app/src/test/resources/data/` (with "today" pinned to 6 Nov 2026) and
 writes PNGs to `app/build/screenshots/`. Look at them after UI changes.
+
+Accessibility: every `shot()` in `AppTest` and `AdaptiveTest` also runs `checkAccessibility` (`Accessibility.kt`)
+over the merged semantics tree (the screen and any menu over it). Anything
+tappable must have words to read, and a custom action must sit on a node
+TalkBack can land on. That's why `SwipeToFollow` hands its content a modifier
+for the card's own clickable node. Touch targets aren't checked, because
+Compose already widens taps to 48 dp. `ContrastTest` holds the app's own
+colour pairs (badges, glyphs, event tiles, digest ink) to WCAG: 4.5:1 for
+text and 3:1 for meaningful glyphs, in light and dark. Each palette function
+in `ui/theme/Theme.kt` has a plain `(…, dark)` form for it. A new colour goes
+through that test. Section titles are headings, and a switch row is the
+switch.

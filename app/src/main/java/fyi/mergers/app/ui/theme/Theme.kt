@@ -23,7 +23,7 @@ import fyi.mergers.app.data.Status
 val Brand = Color(0xFF335145)
 val Accent = Color(0xFF10B981)
 
-private val Light = lightColorScheme(
+internal val Light = lightColorScheme(
     primary = Brand,
     onPrimary = Color.White,
     primaryContainer = Color(0xFFD4E8DC),
@@ -42,7 +42,7 @@ private val Light = lightColorScheme(
     surfaceContainerHighest = Color(0xFFE0E6E3),
 )
 
-private val Dark = darkColorScheme(
+internal val Dark = darkColorScheme(
     primary = Color(0xFF9FD3B8),
     onPrimary = Color(0xFF053824),
     primaryContainer = Brand,
@@ -127,9 +127,12 @@ fun statusColors(label: String?): StatusColors = when (label) {
  * its 900 as the ink, as the event tiles do.
  */
 @Composable
-fun statusGlyphColors(label: String?): StatusColors {
+fun statusGlyphColors(label: String?): StatusColors = statusGlyphColors(label, isDarkTheme())
+
+/** [statusGlyphColors] for a given theme, outside composition (the contrast tests). */
+fun statusGlyphColors(label: String?, dark: Boolean): StatusColors {
     val c = statusColors(label)
-    if (!isDarkTheme()) return c
+    if (!dark) return c
     return when (c.fill) {
         emerald.fill -> StatusColors(Color(0xFF6EE7B7), Color(0xFF064E3B))
         red.fill -> StatusColors(Color(0xFFFCA5A5), Color(0xFF7F1D1D))
@@ -154,21 +157,28 @@ val RefiledAmber = StatusColors(Color(0xFFB45309), Color.White)
  * 50 tint under its 600/700 shade; in the dark, the 300 shade on a faint wash.
  */
 @Composable
-fun eventTypeColors(type: String?): StatusColors = when (type) {
-    "consultation_due" -> tile(Tint.BLUE)
-    "notice_of_competition_concerns" -> tile(Tint.AMBER)
-    "public_benefit_assessment", "public_benefit_response_due" -> tile(Tint.TEAL)
-    "determination_due" -> tile(Tint.PURPLE)
-    "tribunal_hearing", "federal_court_hearing" -> tile(Tint.ROSE)
-    else -> tile(Tint.GRAY)
-}
+fun eventTypeColors(type: String?): StatusColors = eventTypeColors(type, isDarkTheme())
+
+fun eventTypeColors(type: String?, dark: Boolean): StatusColors = tile(
+    when (type) {
+        "consultation_due" -> Tint.BLUE
+        "notice_of_competition_concerns" -> Tint.AMBER
+        "public_benefit_assessment", "public_benefit_response_due" -> Tint.TEAL
+        "determination_due" -> Tint.PURPLE
+        "tribunal_hearing", "federal_court_hearing" -> Tint.ROSE
+        else -> Tint.GRAY
+    },
+    dark,
+)
 
 /**
  * A recent event's tile, as the site's Recent events list (`tile` in
  * constants/recentEventTypes.js), in the same families as [eventTypeColors].
  */
 @Composable
-fun recentEventColors(type: RecentEventType): StatusColors = tile(
+fun recentEventColors(type: RecentEventType): StatusColors = recentEventColors(type, isDarkTheme())
+
+fun recentEventColors(type: RecentEventType, dark: Boolean): StatusColors = tile(
     when (type) {
         RecentEventType.TRIBUNAL, RecentEventType.FEDERAL_COURT -> Tint.ROSE
         RecentEventType.PHASE_2_DETERMINATION, RecentEventType.REASONS,
@@ -183,6 +193,7 @@ fun recentEventColors(type: RecentEventType): StatusColors = tile(
         RecentEventType.TIMELINE_EXTENSION -> Tint.SKY
         RecentEventType.CEASED, RecentEventType.WAIVER_DETERMINATION, RecentEventType.OTHER -> Tint.GRAY
     },
+    dark,
 )
 
 /** Tailwind's 50 tint under its 600/700 shade; in the dark, the 300 shade on a faint wash. */
@@ -199,9 +210,8 @@ private enum class Tint(val tint: Long, val ink: Long, val darkInk: Long) {
     GRAY(0xFFF3F4F6, 0xFF4B5563, 0xFFD1D5DB),
 }
 
-@Composable
-private fun tile(t: Tint): StatusColors =
-    if (isDarkTheme()) StatusColors(Color(t.darkInk).copy(alpha = 0.16f), Color(t.darkInk))
+private fun tile(t: Tint, dark: Boolean): StatusColors =
+    if (dark) StatusColors(Color(t.darkInk).copy(alpha = 0.16f), Color(t.darkInk))
     else StatusColors(Color(t.tint), Color(t.ink))
 
 /** The industry pages' group accents: the site's phase-2, phase-1 and waiver fills. */
@@ -232,9 +242,11 @@ private enum class DigestFamily(val fill: Long, val dark: Long, val pale: Long, 
 }
 
 @Composable
-fun digestColors(color: DigestColor): DigestColors {
+fun digestColors(color: DigestColor): DigestColors = digestColors(color, isDarkTheme())
+
+fun digestColors(color: DigestColor, dark: Boolean): DigestColors {
     val f = DigestFamily.valueOf(color.name)
-    return if (isDarkTheme()) {
+    return if (dark) {
         DigestColors(Color(f.night), Color(f.night), Color(f.night).copy(alpha = 0.14f), Color(f.dark))
     } else {
         DigestColors(Color(f.fill), Color(f.dark), Color(f.pale), Color.White)

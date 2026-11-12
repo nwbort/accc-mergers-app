@@ -578,7 +578,8 @@ class LogicTest {
         // The heading says Approved; the row doesn't repeat it.
         assertNull(waiver.outcome)
         assertEquals(listOf("Determined 26 Oct 2026"), waiver.facts)
-        assertTrue(waiver.document!!, waiver.document!!.startsWith("https://mergers.fyi/mergers/WA-") && waiver.document!!.endsWith("?raw=1"))
+        val document = waiver.document!!
+        assertTrue(document, document.startsWith("https://mergers.fyi/mergers/WA-") && document.endsWith("?raw=1"))
         // An ongoing appeal: when it was filed and heard, and what kind.
         val coles = Digests.groups(DigestSection.ONGOING_APPEALS, d.ongoing_tribunal_appeals).single().rows
             .first { it.merger.merger_id == "MN-01068" }

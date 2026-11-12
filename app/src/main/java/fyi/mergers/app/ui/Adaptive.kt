@@ -38,6 +38,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -228,7 +230,7 @@ private fun NothingPicked() {
             Icon(Icons.Outlined.Description, contentDescription = null, Modifier.size(40.dp), tint = MaterialTheme.colorScheme.onSecondaryContainer)
         }
         Spacer(Modifier.height(20.dp))
-        Text("Pick a merger", style = MaterialTheme.typography.titleLargeEmphasized, textAlign = TextAlign.Center)
+        Text("Pick a merger", style = MaterialTheme.typography.titleLargeEmphasized, textAlign = TextAlign.Center, modifier = Modifier.semantics { heading() })
         Spacer(Modifier.height(6.dp))
         Text(
             "Its timeline, documents and determination open here, beside the list.",

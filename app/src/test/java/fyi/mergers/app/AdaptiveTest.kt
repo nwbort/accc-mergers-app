@@ -11,7 +11,7 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
-import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -65,9 +65,9 @@ class AdaptiveTest {
         waitForText("Recent determinations")
         // The rail, open with its labels; no bottom bar.
         compose.onNode(hasText("Dashboard") and rail).assertExists()
-        compose.onNode(hasText("Search") and rail, useUnmergedTree = true).assertExists()
+        compose.onNode(hasContentDescription("Search") and rail).assertExists()
         // The rail's button is search: the dashboard's top bar doesn't repeat it.
-        compose.onNodeWithContentDescription("Search").assertDoesNotExist()
+        compose.onNode(hasContentDescription("Search") and !rail).assertDoesNotExist()
         shot("t1-large-dashboard")
         // The dashboard on its own, this wide: the latest determinations and
         // notifications as the merger list's cards, two to a row, and each
@@ -148,7 +148,7 @@ class AdaptiveTest {
 
         // Search, from the rail's button, is a list to pick from as well.
         compose.runOnUiThread { vm.selectTab(Route.Dashboard) }
-        compose.onNode(hasText("Search") and rail, useUnmergedTree = true).performClick()
+        compose.onNode(hasContentDescription("Search") and rail).performClick()
         waitUntil { vm.backStack.lastOrNull() == Route.Search }
         waitForText("Pick a merger")
         shot("t7-large-search")
@@ -216,6 +216,7 @@ class AdaptiveTest {
 
     private fun shot(name: String) {
         compose.waitForIdle()
+        compose.checkAccessibility(name)
         val dir = File("build/screenshots").apply { mkdirs() }
         File(dir, "$name.png").outputStream().use {
             compose.onRoot().captureToImage().asAndroidBitmap().compress(Bitmap.CompressFormat.PNG, 100, it)

@@ -1,5 +1,7 @@
 package fyi.mergers.app.ui
 
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalActivity
 import androidx.compose.animation.SharedTransitionLayout
@@ -151,8 +153,10 @@ fun MergersApp(vm: AppViewModel) {
                     ExtendedFloatingActionButton(
                         onClick = vm::openSearch,
                         expanded = expanded,
-                        icon = { Icon(Icons.Filled.Search, contentDescription = if (expanded) null else "Search") },
-                        text = { Text("Search") },
+                        // Named by its icon whether or not the label shows, so a screen
+                        // reader has it either way, and doesn't read it twice.
+                        icon = { Icon(Icons.Filled.Search, contentDescription = "Search") },
+                        text = { Text("Search", Modifier.clearAndSetSemantics {}) },
                         modifier = Modifier.padding(start = 16.dp),
                         containerColor = MaterialTheme.colorScheme.tertiaryContainer,
                         contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
@@ -185,7 +189,14 @@ fun MergersApp(vm: AppViewModel) {
 private fun TabIcon(tab: Tab, selected: Boolean, unread: Int) {
     val icon = if (selected) tab.selectedIcon else tab.icon
     if (tab.route == Route.Following && unread > 0) {
-        BadgedBox(badge = { Badge { Text(if (unread > 99) "99+" else "$unread") } }) {
+        BadgedBox(
+            badge = {
+                // Read as "Following, 3 new", not a bare number.
+                Badge(Modifier.clearAndSetSemantics { contentDescription = "$unread new" }) {
+                    Text(if (unread > 99) "99+" else "$unread")
+                }
+            },
+        ) {
             Icon(icon, contentDescription = null)
         }
     } else {
