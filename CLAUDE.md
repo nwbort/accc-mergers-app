@@ -86,6 +86,11 @@ state while another shows. Tapping the tab already showing goes back to it
 from a merger or industry open over it, and at the tab itself scrolls it to
 the top (`AppViewModel.tapTab`, `ScrollToTopOnReselect`).
 
+What the Following tab lists under New is marked read when you leave the tab
+(another tab, or anything opened over it), and by a pull to refresh. Only what
+was listed while it showed: what arrives while you're elsewhere stays new
+(`AppViewModel.markReadOnLeavingFollowing`, `pullFollowing`).
+
 Settings (`ui/SettingsScreen.kt`) has no tab: it opens from the cog on the
 dashboard's top bar, from the Following tab (the same cog, and the Alerts row
 that says how alerts are set; the switches themselves live only in Settings,

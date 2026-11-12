@@ -59,6 +59,7 @@ import fyi.mergers.app.data.IndustryMerger
 import fyi.mergers.app.data.MergerDetail
 import fyi.mergers.app.data.MergerEvent
 import fyi.mergers.app.data.MergersJson
+import fyi.mergers.app.tracking.TrackedEvents
 import fyi.mergers.app.notify.CheckWorker
 import fyi.mergers.app.notify.Push
 import fyi.mergers.app.ui.AppViewModel
@@ -378,6 +379,12 @@ class AppTest {
         waitForText("Mergers you follow (3)")
         waitForText("New", substring = true)
         shot("6-following")
+        // A pull takes what's new as read, as Mark all read does.
+        assertTrue(compose.onAllNodesWithText("New (", substring = true).fetchSemanticsNodes().isNotEmpty())
+        compose.onNodeWithTag("following").performTouchInput { swipeDown() }
+        compose.waitUntil(10_000) { compose.onAllNodesWithText("New (", substring = true).fetchSemanticsNodes().isEmpty() }
+        waitUntil { !vm.syncing }
+        shot("6a-following-pulled")
         // The alert switches live in Settings; Following links there, saying how they're set.
         compose.onNodeWithTag("following").performScrollToKey("alerts")
         waitForText("Phase 2 matters", substring = true)
@@ -388,12 +395,8 @@ class AppTest {
         back()
         waitUntil { vm.backStack.lastOrNull() == Route.Following }
         compose.onNodeWithTag("following").performScrollToIndex(0)
-        // A pull takes what's new as read, as Mark all read does.
-        assertTrue(compose.onAllNodesWithText("New (", substring = true).fetchSemanticsNodes().isNotEmpty())
-        compose.onNodeWithTag("following").performTouchInput { swipeDown() }
-        compose.waitUntil(10_000) { compose.onAllNodesWithText("New (", substring = true).fetchSemanticsNodes().isEmpty() }
-        waitUntil { !vm.syncing }
-        shot("6d-following-pulled")
+        // Elsewhere while the check below runs, so what it finds is still new on return.
+        compose.runOnUiThread { vm.selectTab(Route.Dashboard) }
 
         // The followed matter moves on: the background check notices and posts it.
         val m = MergersJson.decodeFromString(MergerDetail.serializer(), Fixtures.read("mergers/MN-20046.json")!!)
@@ -497,11 +500,19 @@ class AppTest {
         assertTrue("merger-WA-99001" in Push.topics(runBlocking { Graph.store.current() }))
 
         compose.runOnUiThread { vm.selectTab(Route.Following) }
+        // What the check found waits under New...
+        waitForText("New (", substring = true)
         compose.onNodeWithTag("following").performScrollToKey("f-WA-99001")
         waitForText("Not on the register yet")
         shot("9-following-waiting")
         compose.onNodeWithText("Not on the register yet").performClick()
         waitForText("It isn't on the register yet", substring = true)
+        // ...and once the tab is left, it has been read.
+        waitUntil {
+            val t = Graph.store.current()
+            val listed = TrackedEvents.inbox(Graph.tracker.last.value?.events.orEmpty(), t).filter { !it.upcoming }
+            listed.isNotEmpty() && listed.all { it.key in t.seen }
+        }
         shot("10-detail-waiting")
 
         // It's decided and published: the next check tells the follower.
