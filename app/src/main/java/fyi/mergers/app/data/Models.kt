@@ -334,3 +334,50 @@ data class Phase2Feed(val current: List<Phase2Matter> = emptyList())
 
 @Serializable
 data class Phase2Matter(val merger_id: String? = null)
+
+// ---- digest.json (the weekly digest, /digest) -------------------------------
+
+/**
+ * The weekly digest (scripts/generate/generate_weekly_digest.py), written each
+ * Sunday for the Monday to Sunday just gone. Each list is one bucket of the
+ * week; see [DigestSection] for how the site lays them out.
+ */
+@Serializable
+data class Digest(
+    val generated_at: String? = null,
+    val period_start: String? = null,
+    val period_end: String? = null,
+    val new_deals_notified: List<DigestMerger> = emptyList(),
+    val deals_cleared: List<DigestMerger> = emptyList(),
+    val deals_referred_to_phase_2: List<DigestMerger> = emptyList(),
+    val deals_to_public_benefit: List<DigestMerger> = emptyList(),
+    val deals_declined: List<DigestMerger> = emptyList(),
+    val deals_assessment_ceased: List<DigestMerger> = emptyList(),
+    val deals_appealed_to_tribunal: List<DigestMerger> = emptyList(),
+    val ongoing_phase_1: List<DigestMerger> = emptyList(),
+    val ongoing_phase_2: List<DigestMerger> = emptyList(),
+    val ongoing_public_benefit: List<DigestMerger> = emptyList(),
+    val ongoing_tribunal_appeals: List<DigestMerger> = emptyList(),
+)
+
+/** A merger in the digest: create_merger_summary's fields. [events] are only its determination documents. */
+@Serializable
+data class DigestMerger(
+    val merger_id: String,
+    val merger_name: String = "",
+    val effective_notification_datetime: String? = null,
+    val determination_publication_date: String? = null,
+    val end_of_determination_period: String? = null,
+    val accc_determination: String? = null,
+    val has_conditions: Boolean = false,
+    val stage: String? = null,
+    val is_waiver: Boolean = false,
+    val phase_1_determination: String? = null,
+    val phase_1_determination_date: String? = null,
+    val phase_2_determination: String? = null,
+    val public_benefit_application_date: String? = null,
+    val ceased_date: String? = null,
+    val merger_description: String? = null,
+    val events: List<MergerEvent> = emptyList(),
+    val appeal: AppealSummary? = null,
+)

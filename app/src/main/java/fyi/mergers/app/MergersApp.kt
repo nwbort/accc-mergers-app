@@ -3,6 +3,8 @@ package fyi.mergers.app
 import android.app.Application
 import android.content.Context
 import fyi.mergers.app.data.DataSource
+import fyi.mergers.app.data.DigestSignup
+import fyi.mergers.app.data.HttpDigestSignup
 import fyi.mergers.app.data.HttpDataSource
 import fyi.mergers.app.data.Repository
 import fyi.mergers.app.notify.CheckWorker
@@ -31,7 +33,7 @@ open class MergersApp : Application() {
         // it, so record it instead and let MainActivity put it on screen.
         try {
             Appearance.apply(this)
-            Graph.init(this, dataSource())
+            Graph.init(this, dataSource(), digestSignup())
             Notifier.createChannels(this)
             scheduleChecks()
             startPush()
@@ -43,6 +45,9 @@ open class MergersApp : Application() {
 
     /** mergers.fyi itself; the tests swap in the JSON they carry. */
     protected open fun dataSource(): DataSource = HttpDataSource(File(cacheDir, "data"))
+
+    /** The weekly digest's email signup; the tests swap in one that only records. */
+    protected open fun digestSignup(): DigestSignup = HttpDigestSignup()
 
     protected open fun scheduleChecks() = CheckWorker.schedule(this)
 
@@ -59,9 +64,12 @@ object Graph {
         private set
     lateinit var tracker: Tracker
         private set
+    lateinit var signup: DigestSignup
+        private set
 
-    fun init(context: Context, source: DataSource) {
+    fun init(context: Context, source: DataSource, digestSignup: DigestSignup = HttpDigestSignup()) {
         repo = Repository(source)
+        signup = digestSignup
         if (!::store.isInitialized) store = TrackingStore(context.applicationContext)
         tracker = Tracker(repo, store)
     }

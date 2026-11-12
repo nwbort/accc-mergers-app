@@ -62,6 +62,7 @@
                 <data android:path="/mergers" />
                 <data android:pathPrefix="/mergers/" />
                 <data android:pathPrefix="/industries" />
+                <data android:path="/digest" />
                 <!-- A matter's documents live under its page's path
                      (/mergers/MN-01016/notice.pdf): those are the browser's. -->
                 <uri-relative-filter-group android:allow="false">

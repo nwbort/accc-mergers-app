@@ -14,6 +14,7 @@ import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import fyi.mergers.app.data.DigestColor
 import fyi.mergers.app.data.IndustryPhase
 import fyi.mergers.app.data.RecentEventType
 import fyi.mergers.app.data.Status
@@ -208,4 +209,34 @@ fun phaseAccent(phase: IndustryPhase): Color = when (phase) {
     IndustryPhase.PHASE_2 -> Color(0xFF52489C)
     IndustryPhase.PHASE_1 -> Color(0xFFB8935C)
     IndustryPhase.WAIVER -> Color(0xFFFBBF24)
+}
+
+/**
+ * A digest section's colours, from the site's tailwind families for each
+ * DIGEST_COLOR_KEYS (tailwind.config.js): [bar] the section's rail (the
+ * family's fill), [ink] its numbers and links (the `dark` shade, which clears
+ * 4.5:1 on white), [wash] its chip (the `pale` shade), [onInk] a glyph drawn
+ * on [ink]. In the dark, a light shade for both, on a faint wash of it.
+ */
+data class DigestColors(val bar: Color, val ink: Color, val wash: Color, val onInk: Color)
+
+private enum class DigestFamily(val fill: Long, val dark: Long, val pale: Long, val night: Long) {
+    NEW_MERGER(0xFF5B3758, 0xFF3D2539, 0xFFF3EBF2, 0xFFD9B8D5),
+    CLEARED(0xFF10B981, 0xFF047857, 0xFFD1FAE5, 0xFF6EE7B7),
+    DECLINED(0xFFF49097, 0xFFC42A38, 0xFFFEE7E9, 0xFFFCA5A5),
+    CEASED(0xFF9333EA, 0xFF7E22CE, 0xFFFAF5FF, 0xFFD8B4FE),
+    TRIBUNAL_APPEAL(0xFF2563EB, 0xFF1D4ED8, 0xFFDBEAFE, 0xFF93C5FD),
+    PHASE_2_REFERRAL(0xFFD97706, 0xFFB45309, 0xFFFEF3C7, 0xFFFCD34D),
+    PHASE_1(0xFFB8935C, 0xFF6F562F, 0xFFFCECC9, 0xFFDDC197),
+    PHASE_2(0xFF52489C, 0xFF3A3372, 0xFFE8E5F3, 0xFFB9B2E6),
+}
+
+@Composable
+fun digestColors(color: DigestColor): DigestColors {
+    val f = DigestFamily.valueOf(color.name)
+    return if (isDarkTheme()) {
+        DigestColors(Color(f.night), Color(f.night), Color(f.night).copy(alpha = 0.14f), Color(f.dark))
+    } else {
+        DigestColors(Color(f.fill), Color(f.dark), Color(f.pale), Color.White)
+    }
 }

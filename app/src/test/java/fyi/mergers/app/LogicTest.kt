@@ -1,6 +1,10 @@
 package fyi.mergers.app
 
 import fyi.mergers.app.data.Dates
+import fyi.mergers.app.data.Digest
+import fyi.mergers.app.data.DigestMerger
+import fyi.mergers.app.data.DigestSection
+import fyi.mergers.app.data.Digests
 import fyi.mergers.app.data.UpcomingEvents
 import fyi.mergers.app.widget.EventKind
 import fyi.mergers.app.widget.Upcoming
@@ -322,6 +326,9 @@ class LogicTest {
         assertNull(SiteLink.from("https://mergers.fyi/mergers/not-a-matter"))
         assertNull(SiteLink.from("https://mergers.fyi/industriesx"))
         assertNull(SiteLink.from("https://mergers.fyi/industries/4110/a/b"))
+        // The digest, and a section of it, as the weekly email links them.
+        assertEquals(SiteLink.Digest(), SiteLink.from("https://mergers.fyi/digest"))
+        assertEquals(SiteLink.Digest("mergers-referred"), SiteLink.from("https://mergers.fyi/digest?utm_source=email#mergers-referred"))
         assertNull(SiteLink.from("https://mergers.fyi/phase-2"))
         assertNull(SiteLink.from("https://mergers.fyi/parties/abc"))
         assertNull(SiteLink.from("https://mergers.fyi.example.com/mergers/MN-01016"))
@@ -542,5 +549,71 @@ class LogicTest {
             Party("Telopea Real Estate Partners Pty Ltd"),
         )
         assertEquals(listOf("Octopus Australia", "ABP", "Telopea Real Estate Partners Pty Ltd"), parties.displayNames())
+    }
+
+    // ---- the weekly digest ---------------------------------------------------
+
+    private fun digest(): Digest = MergersJson.decodeFromString(Digest.serializer(), Fixtures.read("digest.json")!!)
+
+    @Test
+    fun digest_as_the_site_lays_it_out() {
+        val d = digest()
+        assertEquals("26 October to 1 November 2026", Digests.period(d))
+        assertEquals("11 notified · 33 cleared", Digests.headline(d))
+        assertEquals(44, Digests.moved(d))
+        // Empty sections aren't shown; the rest in the page's order.
+        assertEquals(
+            listOf(
+                DigestSection.NEW, DigestSection.CLEARED, DigestSection.ONGOING_PHASE_1,
+                DigestSection.ONGOING_PHASE_2, DigestSection.ONGOING_PUBLIC_BENEFIT, DigestSection.ONGOING_APPEALS,
+            ),
+            Digests.sections(d).map { it.first },
+        )
+        // Approved splits by phase, waivers last.
+        val cleared = Digests.groups(DigestSection.CLEARED, d.deals_cleared)
+        assertEquals(listOf("Phase 1 · initial assessment", "Waiver"), cleared.map { it.label })
+        assertEquals(33, cleared.sumOf { it.rows.size })
+        val waiver = cleared.last().rows.first()
+        assertTrue(waiver.merger.is_waiver)
+        // The heading says Approved; the row doesn't repeat it.
+        assertNull(waiver.outcome)
+        assertEquals(listOf("Determined 26 Oct 2026"), waiver.facts)
+        assertTrue(waiver.document!!, waiver.document!!.startsWith("https://mergers.fyi/mergers/WA-") && waiver.document!!.endsWith("?raw=1"))
+        // An ongoing appeal: when it was filed and heard, and what kind.
+        val coles = Digests.groups(DigestSection.ONGOING_APPEALS, d.ongoing_tribunal_appeals).single().rows
+            .first { it.merger.merger_id == "MN-01068" }
+        assertEquals(listOf("Filed 15 July 2026", "Hearing 9 Nov 2026"), coles.facts)
+        assertEquals("Appeal against refusal", coles.outcome)
+        assertEquals("Lodged by Coles · ACT 1 of 2026", coles.outcomeNote)
+        // A new filing carries its summary; nothing was decided yet.
+        val fresh = Digests.groups(DigestSection.NEW, d.new_deals_notified).single().rows.first()
+        assertNull(fresh.outcome)
+        assertTrue(fresh.summary!!.split(" ").size > 1)
+    }
+
+    @Test
+    fun digest_rows() {
+        val m = DigestMerger(merger_id = "MN-1", phase_1_determination = "Referred to phase 2", phase_2_determination = "Not approved")
+        // Declined at Phase 2 sits under Phase 2, whatever Phase 1 said.
+        assertEquals(listOf("Phase 2 · detailed assessment"), Digests.groups(DigestSection.DECLINED, listOf(m)).map { it.label })
+        assertEquals("Ceased N/A", Digests.row(DigestSection.CEASED, m).facts.first())
+        assertNull(Digests.row(DigestSection.DECLINED, m).outcome)
+        assertEquals("With conditions", Digests.row(DigestSection.CLEARED, m.copy(has_conditions = true)).facts.last())
+        assertEquals("Not approved", Digests.row(DigestSection.TO_PUBLIC_BENEFIT, m).outcome)
+        assertEquals("Under review at the Competition Tribunal", Digests.row(DigestSection.APPEALED, m).outcome)
+        assertEquals("Hearing TBC", Digests.row(DigestSection.ONGOING_APPEALS, m).facts.last())
+        // The newest determination document, and only one that is a determination.
+        val docs = m.copy(
+            events = listOf(
+                MergerEvent(date = "2026-01-01T12:00:00Z", display_title = "Phase 1 determination", url_gh = "/a.pdf"),
+                MergerEvent(date = "2026-03-01T12:00:00Z", display_title = "Phase 2 determination", url_gh = "/b.pdf"),
+                MergerEvent(date = "2026-04-01T12:00:00Z", display_title = "Notice", url_gh = "/c.pdf"),
+            ),
+        )
+        assertEquals("https://mergers.fyi/b.pdf?raw=1", Digests.determinationDocument(docs))
+        assertEquals("Second para here", Digests.firstParagraph("**Short**\n\nSecond para here"))
+        assertEquals("A quiet week: nothing filed or decided", Digests.headline(Digest()))
+        assertEquals("2–8 November 2026", Digests.period(Digest(period_start = "2026-11-02T00:00:00+11:00", period_end = "2026-11-08T23:59:59+11:00")))
+        assertEquals(DigestSection.REFERRED, DigestSection.byId("mergers-referred"))
     }
 }

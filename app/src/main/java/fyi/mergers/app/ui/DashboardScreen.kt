@@ -78,6 +78,7 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.graphics.vector.ImageVector
+import fyi.mergers.app.data.Digest
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -110,6 +111,7 @@ fun DashboardScreen(vm: AppViewModel) {
     val upcomingState by vm.upcoming.collectAsStateWithLifecycle()
     val recentState by vm.currentStatus.collectAsStateWithLifecycle()
     val recentEventsState by vm.recentEvents.collectAsStateWithLifecycle()
+    val digestState by vm.digest.collectAsStateWithLifecycle()
     val stats = statsState.value
 
     // The name bar slides away as you scroll down the dashboard and comes
@@ -162,7 +164,7 @@ fun DashboardScreen(vm: AppViewModel) {
                 stats == null -> Centered("Couldn't load the dashboard. Pull down to try again.")
                 else -> DashboardContent(
                     vm, stats, upcomingState.value.orEmpty(), recentState.value, recentEventsState.value.orEmpty(),
-                    bar.state,
+                    digestState.value, bar.state,
                 )
             }
         }
@@ -186,6 +188,7 @@ private fun DashboardContent(
     upcoming: List<UpcomingEvent>,
     recent: StatusWindow?,
     recentEvents: List<RecentEvent>,
+    digest: Digest?,
     barState: TopAppBarState,
 ) {
     val soon = upcoming.filter { e ->
@@ -258,6 +261,8 @@ private fun DashboardContent(
                         DecisionTimeCard("Notification – phase 1", w.notifications, open, Modifier.weight(1f).fillMaxHeight())
                     }
                 }
+                // Last week's digest: the site's "Catch me up".
+                digest?.let { DigestCard(it, onClick = { vm.openDigest() }) }
             }
         }
 

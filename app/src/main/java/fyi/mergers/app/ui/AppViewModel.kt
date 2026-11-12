@@ -15,6 +15,7 @@ import fyi.mergers.app.data.Loaded
 import fyi.mergers.app.data.MergerDetail
 import fyi.mergers.app.data.MergerSummary
 import fyi.mergers.app.data.PhaseFilter
+import fyi.mergers.app.data.SignupResult
 import fyi.mergers.app.data.SortOrder
 import fyi.mergers.app.data.Status
 import fyi.mergers.app.data.node
@@ -46,10 +47,22 @@ sealed interface Route {
     data class Industry(val code: String) : Route
     data object Search : Route
     data object Settings : Route
+    data object Digest : Route
 
     /** Only on screen, never in [AppViewModel.backStack]: the root that holds all three tabs. */
     data object Tabs : Route
 }
+
+/** The digest's email signup, as the form shows it. */
+sealed interface SignupState {
+    data object Idle : SignupState
+    data object Sending : SignupState
+    data class Sent(val email: String, val message: String) : SignupState
+    data class Failed(val message: String) : SignupState
+}
+
+/** The worker's own check (EMAIL_RE): something@something.something, no spaces. */
+private val EMAIL = Regex("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$")
 
 /** The merger list's search and filters, kept while you go in and out of mergers. */
 data class ListFilter(
@@ -74,6 +87,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     val recentEvents get() = repo.recent
     val currentStatus get() = repo.currentStatus
     val list get() = repo.list
+    val digest get() = repo.digest
     val industries: StateFlow<Loaded<IndustryIndex>> get() = repo.industries
 
     /**
@@ -183,6 +197,46 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     fun showMergersWithStatus(status: String) {
         filter = ListFilter(status = status)
         selectTab(Route.Mergers)
+    }
+
+    // ---- the weekly digest -------------------------------------------------------
+
+    /** The section a link asked for (/digest#mergers-referred); the digest scrolls to it, then clears it. */
+    var digestSection by mutableStateOf<String?>(null)
+
+    /** The dashboard's Catch me up card, or a link to /digest (with its section, if it named one). */
+    fun openDigest(section: String? = null) {
+        digestSection = section
+        goTo(Route.Digest)
+    }
+
+    fun refreshDigest() {
+        viewModelScope.launch { repo.refreshDigest() }
+    }
+
+    /** Where the digest's email signup is up to, kept while you go in and out of the digest. */
+    var signup by mutableStateOf<SignupState>(SignupState.Idle)
+        private set
+
+    fun subscribeToDigest(email: String) {
+        val address = email.trim()
+        if (!EMAIL.matches(address)) {
+            signup = SignupState.Failed("Please enter a valid email address")
+            return
+        }
+        if (signup == SignupState.Sending) return
+        signup = SignupState.Sending
+        viewModelScope.launch {
+            signup = when (val r = Graph.signup.subscribe(address)) {
+                is SignupResult.Sent -> SignupState.Sent(address, r.message)
+                is SignupResult.Failed -> SignupState.Failed(r.message)
+            }
+        }
+    }
+
+    /** "Use another address": back to the empty form. */
+    fun resetDigestSignup() {
+        signup = SignupState.Idle
     }
 
     // ---- settings ---------------------------------------------------------------

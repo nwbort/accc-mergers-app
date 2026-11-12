@@ -40,13 +40,27 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import kotlinx.coroutines.launch
+import androidx.compose.animation.core.animate
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.draggable
+import androidx.compose.foundation.gestures.rememberDraggableState
+import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.offset
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.IntOffset
+import kotlinx.coroutines.Job
+import kotlin.math.abs
+import kotlin.math.roundToInt
+import kotlin.math.sign
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.material3.rememberSwipeToDismissBoxState
-import androidx.compose.material3.SwipeToDismissBoxValue
-import androidx.compose.material3.SwipeToDismissBoxState
-import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarDuration
@@ -306,38 +320,75 @@ fun MergerCard(
         MergerCardBody(m, followed, onClick, modifier, onLongClick)
         return
     }
-    // Swiped either way, past the threshold, a card follows or unfollows its
-    // merger, then springs back: it isn't dismissed. Behind it as it moves,
-    // what the swipe will do.
-    // A quarter of the card's width is enough (Material's default is half):
-    // following is quick to undo, so it needn't take a long drag.
-    val swipe = rememberSwipeToDismissBoxState(positionalThreshold = { width -> width * SWIPE_THRESHOLD })
-    val scope = rememberCoroutineScope()
-    val act by rememberUpdatedState(onSwipe)
-    SwipeToDismissBox(
-        state = swipe,
-        // The same, for a screen reader, as one of the card's actions.
-        modifier = modifier.semantics {
-            customActions = listOf(CustomAccessibilityAction(if (followed) "Unfollow" else "Follow") { act(); true })
-        },
-        backgroundContent = { SwipeBacking(swipe, followed) },
-        onDismiss = {
-            act()
-            scope.launch { swipe.reset() }
-        },
-    ) {
+    SwipeToFollow(followed, onSwipe, modifier, MaterialTheme.shapes.large) {
         MergerCardBody(m, followed, onClick, Modifier, onLongClick)
     }
 }
 
 /** How far across a card a swipe must go to follow or unfollow, as a fraction of its width. */
-private const val SWIPE_THRESHOLD = 0.25f
+internal const val SWIPE_THRESHOLD = 0.25f
+
+/** A flick this fast (dp a second) towards a side follows or unfollows however short it was. */
+private const val SWIPE_FLING_DP = 1000
+
+/**
+ * A card that follows or unfollows its merger when swiped either way past a
+ * quarter of its width ([SWIPE_THRESHOLD]), or flicked, then springs back: it
+ * isn't dismissed. Behind it as it moves, what the swipe will do, in the
+ * card's [shape]; a screen reader gets the same as one of the card's actions.
+ *
+ * Not Material's SwipeToDismissBox: its threshold is only consulted while the
+ * finger is still moving at release. Let go after a pause (the usual end of a
+ * deliberate drag) and it settles on the nearer end, so in practice it took
+ * half the card; and any drag over 125 dp/s counted as a flick.
+ */
+@Composable
+fun SwipeToFollow(
+    followed: Boolean,
+    onSwipe: () -> Unit,
+    modifier: Modifier = Modifier,
+    shape: Shape,
+    content: @Composable () -> Unit,
+) {
+    val act by rememberUpdatedState(onSwipe)
+    val scope = rememberCoroutineScope()
+    val density = LocalDensity.current
+    val back = MaterialTheme.motionScheme.fastSpatialSpec<Float>()
+    var width by remember { mutableIntStateOf(0) }
+    var offset by remember { mutableFloatStateOf(0f) }
+    var settling by remember { mutableStateOf<Job?>(null) }
+    val drag = rememberDraggableState { delta -> offset = (offset + delta).coerceIn(-width.toFloat(), width.toFloat()) }
+    val armed = width > 0 && abs(offset) >= width * SWIPE_THRESHOLD
+
+    Box(
+        modifier
+            .onSizeChanged { width = it.width }
+            .semantics {
+                customActions = listOf(CustomAccessibilityAction(if (followed) "Unfollow" else "Follow") { act(); true })
+            }
+            .draggable(
+                drag,
+                Orientation.Horizontal,
+                onDragStarted = { settling?.cancel() },
+                onDragStopped = { velocity ->
+                    val flung = abs(velocity) >= with(density) { SWIPE_FLING_DP.dp.toPx() } &&
+                        sign(velocity) == sign(offset)
+                    if (armed || flung) act()
+                    settling = scope.launch {
+                        animate(offset, 0f, initialVelocity = velocity, animationSpec = back) { v, _ -> offset = v }
+                    }
+                },
+            ),
+    ) {
+        if (offset != 0f) SwipeBacking(fromStart = offset > 0, armed = armed, followed = followed, shape = shape)
+        Box(Modifier.offset { IntOffset(offset.roundToInt(), 0) }) { content() }
+    }
+}
 
 /** What a swipe on a card will do, shown behind it as it moves: follow, or unfollow. */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-private fun SwipeBacking(swipe: SwipeToDismissBoxState, followed: Boolean) {
-    val armed = swipe.targetValue != SwipeToDismissBoxValue.Settled
+private fun BoxScope.SwipeBacking(fromStart: Boolean, armed: Boolean, followed: Boolean, shape: Shape) {
     val haptics = LocalHapticFeedback.current
     LaunchedEffect(armed) { if (armed) haptics.performHapticFeedback(HapticFeedbackType.GestureThresholdActivate) }
     val grow by animateFloatAsState(
@@ -350,15 +401,12 @@ private fun SwipeBacking(swipe: SwipeToDismissBoxState, followed: Boolean) {
     } else {
         MaterialTheme.colorScheme.primaryContainer to MaterialTheme.colorScheme.onPrimaryContainer
     }
-    // Only while a swipe is under way, and only for the eye: a screen reader
-    // has the card's Follow or Unfollow action instead.
-    if (swipe.dismissDirection == SwipeToDismissBoxValue.Settled) return
-    val fromStart = swipe.dismissDirection == SwipeToDismissBoxValue.StartToEnd
+    // Only for the eye: a screen reader has the card's Follow or Unfollow action instead.
     Row(
         Modifier
-            .fillMaxSize()
+            .matchParentSize()
             .clearAndSetSemantics {}
-            .clip(MaterialTheme.shapes.large)
+            .clip(shape)
             .background(fill)
             .padding(horizontal = 24.dp),
         horizontalArrangement = if (fromStart) Arrangement.Start else Arrangement.End,
@@ -549,18 +597,18 @@ fun Prose(text: String, modifier: Modifier = Modifier) {
                 lines.filter { it.isNotBlank() }.forEach { line ->
                     Row {
                         Text("•", modifier = Modifier.width(16.dp), style = MaterialTheme.typography.bodyMedium)
-                        Text(clean(line.trimStart().drop(2)), style = MaterialTheme.typography.bodyMedium)
+                        Text(stripMarkdown(line.trimStart().drop(2)), style = MaterialTheme.typography.bodyMedium)
                     }
                 }
             } else {
-                Text(clean(para.replace("\n", " ")), style = MaterialTheme.typography.bodyMedium)
+                Text(stripMarkdown(para.replace("\n", " ")), style = MaterialTheme.typography.bodyMedium)
             }
         }
     }
 }
 
 /** Drop markdown emphasis and turn [text](link) into its text. */
-private fun clean(s: String): String =
+internal fun stripMarkdown(s: String): String =
     s.replace(Regex("\\[([^]]+)]\\([^)]+\\)"), "$1").replace("**", "").replace("__", "")
 
 @Composable

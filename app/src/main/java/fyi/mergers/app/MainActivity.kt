@@ -66,6 +66,7 @@ class MainActivity : ComponentActivity() {
             SiteLink.Industries -> vm.openIndustries()
             SiteLink.Mergers -> vm.selectTab(Route.Mergers)
             SiteLink.Dashboard -> vm.selectTab(Route.Dashboard)
+            is SiteLink.Digest -> vm.openDigest(link.section)
             null -> if (openInBrowser(this, url) && fresh) finish()
         }
     }

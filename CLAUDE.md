@@ -51,6 +51,22 @@ their order within a day are `data/RecentEventTypes.kt`, a port of the site's
 `frontend/src/constants/recentEventTypes.js` (`shown` and key order): keep the
 two in step. A type the app doesn't know reads as Other.
 
+Catch me up (`ui/DigestScreen.kt`, `Route.Digest`) is the site's weekly
+digest page (`frontend/src/pages/Digest.jsx`) over `digest.json`. The card under
+the dashboard's decision times opens it, and so does a link to `/digest`,
+`#section` included, as the weekly email sends them (`SiteLink.Digest`). Which
+sections it shows, their order, names, anchors and colours, and what each row
+says, are `data/Digests.kt`. Keep those in step with `Digest.jsx` and
+`DIGEST_COLOR_KEYS`. Each section has its own `MaterialShapes` glyph
+(`DigestSection.shape()` in the screen; a decision takes its outcome's
+`outcomeShape`), on its count card and its heading. The test fixture is a copy of the site's archived digest
+for 26 Oct to 1 Nov 2026. At its foot, a native email signup (`EmailSignup`,
+`AppViewModel.subscribeToDigest`) posts to the site's signup worker's
+`/app-signup` route (`data/DigestSignup.kt`), which emails a link to confirm
+(double opt-in) because the app can't show the website's Turnstile check. The
+tests swap in `FakeSignup` (`MergersApp.digestSignup`). Google Play asks a form
+like this to say what's collected and link the privacy policy: keep both.
+
 Widgets (`widget/`): plain `RemoteViews`, no Glance. Coming up
 (`UpcomingWidget`) lists `upcoming-events.json` from the copy kept on the
 phone, filtered by each widget's `UpcomingConfig` (followed only, and the
@@ -98,9 +114,14 @@ both together. A `MergerCard` grows into its merger's header through
 page, follow, share and open live in a floating toolbar, and the top bar takes
 the header's colour and the merger's name once the header has scrolled off.
 Following and unfollowing give a toggle haptic (`rememberFollowHaptics`).
-A merger card swiped either way follows or unfollows it and springs back
-(`MergerCard`'s `onSwipe`, with `rememberMergerFollowToggle` for the snackbar
-and Undo); a screen reader gets the same as the card's custom action.
+A merger card swiped either way, a quarter of its width or a flick, follows
+or unfollows it and springs back (`SwipeToFollow` in `ui/Common.kt`, behind
+`MergerCard`'s `onSwipe` and the digest's cards, with
+`rememberMergerFollowToggle` for the snackbar and Undo); a screen reader gets
+the same as the card's custom action. It isn't Material's `SwipeToDismissBox`,
+whose threshold is skipped when the finger stops before release (it then
+takes half the card). On the digest, a decided card doesn't show the
+following bookmark, since its determination button sits where it would.
 
 ## Commits and pull requests
 

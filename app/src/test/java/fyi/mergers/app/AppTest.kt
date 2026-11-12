@@ -39,9 +39,13 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performScrollToKey
 import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeRight
+import androidx.compose.ui.test.swipeLeft
+import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.performScrollToIndex
@@ -117,6 +121,75 @@ class AppTest {
         shot("1e-dashboard-recent-events-day")
         compose.onNodeWithTag("dashboard").performScrollToIndex(0)
 
+        // Catch me up: last week's digest, from its card under the decision times.
+        compose.onNodeWithText("11 notified · 33 cleared").performClick()
+        waitForText("26 October to 1 November 2026")
+        waitForText("Deals cleared")
+        shot("1i-digest")
+        // A count jumps to its section.
+        compose.onNodeWithText("Ongoing ACT appeals").performClick()
+        waitForText("Lodged by Coles · ACT 1 of 2026")
+        shot("1j-digest-appeals")
+        compose.onNodeWithTag("digest").performScrollToKey("g-mergers-approved-Waiver")
+        waitForText("Waiver")
+        shot("1k-digest-cleared")
+        // A card swiped follows its merger, as in the merger list; a decided
+        // card doesn't show the bookmark (its determination sits there).
+        val accel = compose.onNodeWithText("Accel-KKR - Eleco")
+        accel.performTouchInput {
+            down(centerLeft + Offset(40f, 0f))
+            repeat(10) { moveBy(Offset(width * 0.03f, 0f), delayMillis = 20) }
+        }
+        compose.waitForIdle()
+        shot("1k2-digest-swipe")
+        accel.performTouchInput {
+            moveBy(Offset.Zero, delayMillis = 300)
+            up()
+        }
+        waitUntil { Graph.store.current().isTracked("WA-01129") }
+        waitForText("Following: you", substring = true)
+        assertTrue(compose.onAllNodesWithContentDescription("Following").fetchSemanticsNodes().isEmpty())
+        accel.performTouchInput { swipeLeft() }
+        waitUntil { !Graph.store.current().isTracked("WA-01129") }
+        // Sign up for the email here, not on the site: a bad address is
+        // refused before anything is sent; a good one is asked to confirm.
+        // (Once the swipe's snackbar has gone, so the form is in full view.)
+        compose.waitUntil(10_000) { compose.onAllNodesWithText("No longer following").fetchSemanticsNodes().isEmpty() }
+        compose.onNodeWithTag("digest").performScrollToKey("email")
+        waitForText("Get this every Monday morning")
+        val field = compose.onNode(hasSetTextAction() and hasAnyAncestor(hasTestTag("digest-signup")))
+        field.performTextInput("not an email")
+        compose.onNodeWithText("Subscribe").performClick()
+        waitForText("Please enter a valid email address")
+        assertTrue(FakeSignup.asked.isEmpty())
+        shot("1m-digest-signup-error")
+        field.performTextClearance()
+        field.performTextInput("reader@example.com")
+        compose.onNodeWithText("Subscribe").performClick()
+        waitForText("Check your inbox")
+        assertEquals(listOf("reader@example.com"), FakeSignup.asked)
+        compose.onNodeWithTag("digest").performScrollToKey("email")
+        shot("1n-digest-signup-sent")
+        compose.onNodeWithText("Use another address").performClick()
+        waitForText("Get this every Monday morning")
+
+        // A row opens its merger; back returns to the digest.
+        compose.onNodeWithTag("digest").performScrollToKey("ongoing-phase-2-MN-01072")
+        // Anywhere on the card, not just its name: here its summary.
+        compose.onNodeWithText("proposes to merge with Subsea7", substring = true).performClick()
+        waitUntil { vm.backStack.lastOrNull() == Route.Merger("MN-01072") }
+        back()
+        waitUntil { vm.backStack.lastOrNull() == Route.Digest }
+        back()
+        waitUntil { vm.backStack.lastOrNull() == Route.Dashboard }
+        // The weekly email's link to a section opens the digest there.
+        compose.activity.onNewIntent(Intent(Intent.ACTION_VIEW, Uri.parse("https://mergers.fyi/digest#ongoing-public-benefit")))
+        waitUntil { vm.backStack.lastOrNull() == Route.Digest && vm.digestSection == null }
+        waitForText("Ongoing · public benefit phase")
+        shot("1l-digest-from-link")
+        back()
+        waitUntil { vm.backStack.lastOrNull() == Route.Dashboard }
+
         // Settings, from the cog on the dashboard's top bar. Dark is kept,
         // handed to the system, and the dashboard behind it is drawn dark.
         assertEquals(ThemeChoice.SYSTEM, vm.theme)
@@ -134,6 +207,11 @@ class AppTest {
         back()
         waitUntil { vm.backStack.lastOrNull() == Route.Dashboard }
         shot("1h-dashboard-dark")
+        compose.runOnUiThread { vm.openDigest() }
+        waitForText("Deals cleared")
+        shot("1h-digest-dark")
+        back()
+        waitUntil { vm.backStack.lastOrNull() == Route.Dashboard }
         // The phone's App info ("Additional settings in the app") opens it too.
         compose.activity.onNewIntent(Intent(Intent.ACTION_APPLICATION_PREFERENCES))
         waitUntil { vm.backStack.lastOrNull() == Route.Settings }
@@ -201,12 +279,25 @@ class AppTest {
         }
         compose.waitForIdle()
         shot("2a-swipe-follow")
-        psp.performTouchInput { up() }
+        // Held still before letting go (no fling at all), a third of the way is enough.
+        psp.performTouchInput {
+            moveBy(Offset.Zero, delayMillis = 300)
+            up()
+        }
         waitUntil { Graph.store.current().isTracked("MN-55024") }
         waitForText("Following: you", substring = true)
         psp.performTouchInput { swipeRight() }
         waitUntil { !Graph.store.current().isTracked("MN-55024") }
         waitForText("No longer following")
+        // A short, slow drag springs back without following.
+        psp.performTouchInput {
+            down(centerLeft + Offset(40f, 0f))
+            repeat(5) { moveBy(Offset(width * 0.03f, 0f), delayMillis = 50) }
+            moveBy(Offset.Zero, delayMillis = 300)
+            up()
+        }
+        compose.waitForIdle()
+        assertFalse(runBlocking { Graph.store.current().isTracked("MN-55024") })
         compose.onNode(hasSetTextAction()).performTextInput("asahi")
         waitForText("1 matter")
         compose.onNode(hasSetTextAction()).performTextClearance()

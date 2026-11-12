@@ -12,8 +12,11 @@ sealed interface SiteLink {
     data object Mergers : SiteLink
     data object Dashboard : SiteLink
 
+    /** The weekly digest, scrolled to [section] (its anchor, as the weekly email links them) if one is named. */
+    data class Digest(val section: String? = null) : SiteLink
+
     companion object {
-        private val SITE = Regex("^https?://(?:www\\.)?mergers\\.fyi(/[^?#]*)?(?:[?#].*)?$", RegexOption.IGNORE_CASE)
+        private val SITE = Regex("^https?://(?:www\\.)?mergers\\.fyi(/[^?#]*)?(?:\\?[^#]*)?(?:#(.*))?$", RegexOption.IGNORE_CASE)
         private val MERGER = Regex("^/mergers/([A-Za-z]{2}-\\d+)(?:/[a-z0-9-]*)?/?$")
 
         /** A division letter, or a 2 to 4 digit subdivision, group or class. */
@@ -25,13 +28,15 @@ sealed interface SiteLink {
          * screen here (/phase-2, /parties/…, /quarterly …).
          */
         fun from(url: String?): SiteLink? {
-            val path = url?.let { SITE.find(it) }?.groupValues?.get(1)?.ifEmpty { "/" } ?: return null
+            val match = url?.let { SITE.find(it) } ?: return null
+            val path = match.groupValues[1].ifEmpty { "/" }
             MERGER.find(path)?.let { return Merger(it.groupValues[1].uppercase()) }
             INDUSTRY.find(path)?.let { return Industry(it.groupValues[1].uppercase()) }
             return when (path.trimEnd('/')) {
                 "" -> Dashboard
                 "/mergers" -> Mergers
                 "/industries" -> Industries
+                "/digest" -> Digest(match.groupValues[2].ifEmpty { null })
                 else -> null
             }
         }
