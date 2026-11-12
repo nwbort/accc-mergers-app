@@ -123,7 +123,9 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     private fun markReadOnLeavingFollowing() {
         viewModelScope.launch {
             var shown = emptySet<String>()
-            fun onFollowing() = backStack.size == 1 && backStack.first() == Route.Following
+            // Beside a merger open in the detail pane, the tab is still showing.
+            fun onFollowing() = backStack.first() == Route.Following &&
+                (backStack.size == 1 || (listDetail && backStack.drop(1).all { it is Route.Merger }))
             // The flow only says when to look: the back stack is read afresh,
             // since a check can land before the flow has heard of a change of tab.
             combine(snapshotFlow { onFollowing() }, sync, tracking) { _, s, t ->
@@ -165,7 +167,29 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         if (tab == Route.Following) checkFollowing()
     }
 
+    /**
+     * Whether a merger opens beside the list it's picked from (a wide window:
+     * ListDetailStrategy) rather than over it. Set by the UI as the window changes.
+     */
+    var listDetail by mutableStateOf(false)
+
+    /**
+     * A merger picked from a list. Beside the list, it takes the detail pane
+     * from whatever was there: going down a list shouldn't pile up a stack
+     * that back has to walk through.
+     */
     fun openMerger(id: String) {
+        if (listDetail) {
+            while (backStack.size > 1 && backStack.last() is Route.Merger && backStack.last() != Route.Merger(id)) {
+                backStack.removeAt(backStack.lastIndex)
+            }
+        }
+        if (backStack.lastOrNull() == Route.Merger(id)) return
+        backStack.add(Route.Merger(id))
+    }
+
+    /** A merger linked from another's page: on top of it, so back returns to the first, in either layout. */
+    fun openRelatedMerger(id: String) {
         if (backStack.lastOrNull() == Route.Merger(id)) return
         backStack.add(Route.Merger(id))
     }

@@ -72,7 +72,7 @@ fun SettingsScreen(vm: AppViewModel) {
             )
         },
     ) { padding ->
-        Column(Modifier.padding(padding).fillMaxSize().verticalScroll(rememberScrollState())) {
+        Column(Modifier.padding(padding).fillMaxSize().verticalScroll(rememberScrollState()).readableWidth()) {
             // What reaches the phone, first: it's what most people come here for.
             SectionTitle("Notifications")
             NotificationsBanner()

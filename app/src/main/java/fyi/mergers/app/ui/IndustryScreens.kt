@@ -109,13 +109,13 @@ fun IndustriesScreen(vm: AppViewModel) {
         },
     ) { padding ->
         Column(Modifier.padding(padding)) {
-            SearchField(query, { query = it }, "Search by industry name or code")
+            Box(Modifier.readableWidth()) { SearchField(query, { query = it }, "Search by industry name or code") }
             if (index != null) {
                 Text(
                     "${shown.size} of ${index.industries.size} industries · ${index.total_mergers} reviews",
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                    modifier = Modifier.readableWidth().padding(horizontal = 16.dp, vertical = 4.dp),
                 )
             }
             RefreshBox(
@@ -127,7 +127,7 @@ fun IndustriesScreen(vm: AppViewModel) {
                     index == null && state.loading -> Loading()
                     index == null -> Centered("Couldn't load the industries. Pull down to try again.")
                     shown.isEmpty() -> Centered("No industries match.")
-                    else -> LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 24.dp)) {
+                    else -> LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 24.dp).readable()) {
                         items(shown, key = { it.code }) { i ->
                             IndustryRow(
                                 i,
@@ -302,7 +302,7 @@ private fun IndustryContent(vm: AppViewModel, node: IndustryNode, toggleMerger: 
     }
     val searchable = node.mergers.size > 5
 
-    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 32.dp)) {
+    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 32.dp).readable()) {
         item(key = "crumbs") { Breadcrumb(vm, node.ancestors) }
 
         item(key = "head") {

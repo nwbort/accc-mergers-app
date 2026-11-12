@@ -144,8 +144,11 @@ fun DashboardScreen(vm: AppViewModel) {
                     }
                 },
                 actions = {
-                    IconButton(onClick = vm::openSearch) {
-                        Icon(Icons.Filled.Search, contentDescription = "Search")
+                    // With the rail, search is its button instead.
+                    if (windowWidthClass() == WidthClass.Compact) {
+                        IconButton(onClick = vm::openSearch) {
+                            Icon(Icons.Filled.Search, contentDescription = "Search")
+                        }
                     }
                     IconButton(onClick = vm::openSettings) {
                         Icon(Icons.Outlined.Settings, contentDescription = "Settings")
@@ -238,7 +241,7 @@ private fun DashboardContent(
     LazyColumn(
         Modifier.fillMaxSize().testTag("dashboard"),
         state = listState,
-        contentPadding = PaddingValues(bottom = 24.dp),
+        contentPadding = PaddingValues(bottom = 24.dp).readable(),
     ) {
         item {
             Column(Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {

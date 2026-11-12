@@ -216,7 +216,7 @@ private fun DigestContent(vm: AppViewModel, digest: Digest, tracking: TrackingSt
     LazyColumn(
         Modifier.fillMaxSize().testTag("digest"),
         state = listState,
-        contentPadding = PaddingValues(bottom = 32.dp),
+        contentPadding = PaddingValues(bottom = 32.dp).readable(),
     ) {
         item(key = "intro") { DigestHero(digest) }
 

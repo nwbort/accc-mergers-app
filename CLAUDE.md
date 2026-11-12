@@ -80,11 +80,34 @@ draws a widget's `RemoteViews` inside an `AppWidgetHostView` (a list takes no
 rows anywhere else).
 
 Tabs (`ui/App.kt`): Dashboard, Mergers and Following change only from the
-bottom bar, never by swiping across the screen (Material's navigation bar
+bottom bar (or the rail), never by swiping across the screen (Material's navigation bar
 guidance keeps swipes for things within a screen). Each keeps its scroll and
 state while another shows. Tapping the tab already showing goes back to it
 from a merger or industry open over it, and at the tab itself scrolls it to
 the top (`AppViewModel.tapTab`, `ScrollToTopOnReselect`).
+
+Wide windows (`ui/Adaptive.kt`): Material's width classes (`windowWidthClass()`:
+Compact < 600dp, Medium < 840, Expanded < 1200, Large). Compact has the
+`ShortNavigationBar`; anything wider has the Expressive `WideNavigationRail`
+instead, with search as its FAB (the dashboard's top bar then drops its search
+button). The rail is collapsed on Medium, opens with its labels by default on
+Large, and from Expanded up its menu button toggles it (kept in
+`rememberSaveable`). From Expanded up, `ListDetailStrategy` (a Navigation 3
+`SceneStrategy`) opens a merger beside the list it came from: entries tagged
+`ListDetailStrategy.list(name)` take the list pane, `detail()` the detail pane,
+which crossfades between mergers (no shared card-to-header transition there).
+The Mergers and Following tabs, an industry and search keep an empty "Pick a
+merger" pane until one is picked; the dashboard and the digest have the whole
+window. With `vm.listDetail` on, `openMerger` replaces the merger in the
+detail pane instead of stacking; a merger linked from another's page
+(`openRelatedMerger`) still stacks. Following beside a detail pane still counts
+as showing, for marking read. Past `ReadableWidth` (840dp) a screen's content
+keeps to the middle: lists take `PaddingValues(...).readable()` as content
+padding (so the margins still scroll them), and fields and filter rows above a
+list `Modifier.readableWidth()`. A new screen should do the same. `AdaptiveTest`
+drives it all at 1280dp, then resizes through Expanded, Medium and Compact
+(`t*.png` screenshots). Test classes run in their own JVMs (`forkEvery = 1`):
+`Graph` outlives one Application.
 
 What the Following tab lists under New is marked read when you leave the tab
 (another tab, or anything opened over it), and by a pull to refresh. Only what
