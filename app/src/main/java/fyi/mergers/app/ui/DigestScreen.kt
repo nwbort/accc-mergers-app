@@ -10,7 +10,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -114,6 +113,17 @@ import fyi.mergers.app.tracking.TrackingState
 import fyi.mergers.app.ui.theme.DigestColors
 import fyi.mergers.app.ui.theme.digestColors
 import kotlinx.coroutines.launch
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
+import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.runtime.snapshotFlow
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
 
 /** The site's weekly digest page. */
 const val DIGEST_URL = "$SITE/digest"
@@ -167,7 +177,8 @@ fun DigestScreen(vm: AppViewModel) {
         RefreshBox(
             refreshing = state.loading && digest != null,
             onRefresh = vm::refreshDigest,
-            modifier = Modifier.padding(padding).fillMaxSize(),
+            // Above the keyboard, so the signup at the foot can scroll clear of it.
+            modifier = Modifier.padding(padding).fillMaxSize().imePadding(),
         ) {
             when {
                 digest == null && state.loading -> Loading()
@@ -248,17 +259,35 @@ private fun DigestContent(vm: AppViewModel, digest: Digest, tracking: TrackingSt
  * goes on the list once that's pressed. Says what's collected and links the
  * privacy policy, as Play asks of a form like this.
  */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalFoundationApi::class)
 @Composable
 private fun EmailSignup(vm: AppViewModel) {
     val context = LocalContext.current
     val state = vm.signup
     var email by rememberSaveable { mutableStateOf("") }
     val ink = MaterialTheme.colorScheme.onSecondaryContainer
+    // While the address is being typed, the whole card (Subscribe included)
+    // stays above the keyboard: once it has finished opening, and again if
+    // the card grows (an error under the field).
+    val card = remember { BringIntoViewRequester() }
+    var typing by remember { mutableStateOf(false) }
+    val ime = WindowInsets.ime
+    val density = LocalDensity.current
+    LaunchedEffect(typing) {
+        if (!typing) return@LaunchedEffect
+        snapshotFlow { ime.getBottom(density) }.collectLatest {
+            delay(120) // until the keyboard stops moving
+            card.bringIntoView()
+        }
+    }
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer, contentColor = ink),
         shape = MaterialTheme.shapes.extraLarge,
-        modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 24.dp).testTag("digest-signup"),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 16.dp, end = 16.dp, top = 24.dp)
+            .bringIntoViewRequester(card)
+            .testTag("digest-signup"),
     ) {
         Column(Modifier.padding(start = 20.dp, end = 20.dp, top = 18.dp, bottom = 14.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -284,11 +313,23 @@ private fun EmailSignup(vm: AppViewModel) {
             }
             if (state is SignupState.Sent) {
                 Text(
-                    "We’ve sent a link to ${state.email}. Tap it, then Confirm, and the digest will arrive each Monday.",
+                    "We’ve sent a link to ${state.email}. Tap it to confirm, and the digest will arrive each Monday.",
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.padding(top = 10.dp),
                 )
-                TextButton(onClick = vm::resetDigestSignup, modifier = Modifier.padding(top = 2.dp)) {
+                // Filled, so it reads as a button and its edge lines up with the text above.
+                FilledTonalButton(
+                    onClick = vm::resetDigestSignup,
+                    shapes = ButtonDefaults.shapes(),
+                    colors = ButtonDefaults.filledTonalButtonColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
+                        contentColor = ink,
+                    ),
+                    contentPadding = ButtonDefaults.ButtonWithIconContentPadding,
+                    modifier = Modifier.padding(top = 12.dp, bottom = 4.dp),
+                ) {
+                    Icon(Icons.Outlined.Edit, contentDescription = null, modifier = Modifier.size(ButtonDefaults.IconSize))
+                    Spacer(Modifier.width(ButtonDefaults.IconSpacing))
                     Text("Use another address")
                 }
                 return@Column
@@ -313,7 +354,11 @@ private fun EmailSignup(vm: AppViewModel) {
                 ),
                 keyboardActions = KeyboardActions(onSend = { submit() }),
                 shape = MaterialTheme.shapes.medium,
-                modifier = Modifier.fillMaxWidth().padding(top = 12.dp).semantics { contentType = ContentType.EmailAddress },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 12.dp)
+                    .onFocusChanged { typing = it.isFocused }
+                    .semantics { contentType = ContentType.EmailAddress },
             )
             Row(Modifier.padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text(
