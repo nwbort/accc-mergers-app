@@ -23,6 +23,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import fyi.mergers.app.tracking.TrackingState
+import fyi.mergers.app.data.MergerSummary
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.layout.Spacer
+import fyi.mergers.app.data.RecentDetermination
+import fyi.mergers.app.data.RecentMerger
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
@@ -87,6 +95,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import fyi.mergers.app.data.Dates
@@ -119,9 +128,12 @@ fun DashboardScreen(vm: AppViewModel) {
     // The name bar slides away as you scroll down the dashboard and comes
     // back as soon as you scroll up.
     val bar = TopAppBarDefaults.enterAlwaysScrollBehavior()
+    // For the merger cards a wide dashboard shows: swiped, they follow, as in the list.
+    val snackbar = remember { SnackbarHostState() }
     Scaffold(
         modifier = Modifier.nestedScroll(bar.nestedScrollConnection),
         contentWindowInsets = WindowInsets(0),
+        snackbarHost = { SnackbarHost(snackbar) },
         topBar = {
             TopAppBar(
                 scrollBehavior = bar,
@@ -146,8 +158,11 @@ fun DashboardScreen(vm: AppViewModel) {
                     }
                 },
                 actions = {
-                    IconButton(onClick = vm::openSearch) {
-                        Icon(Icons.Filled.Search, contentDescription = "Search")
+                    // With the rail, search is its button instead.
+                    if (windowWidthClass() == WidthClass.Compact) {
+                        IconButton(onClick = vm::openSearch) {
+                            Icon(Icons.Filled.Search, contentDescription = "Search")
+                        }
                     }
                     IconButton(onClick = vm::openSettings) {
                         Icon(Icons.Outlined.Settings, contentDescription = "Settings")
@@ -166,7 +181,7 @@ fun DashboardScreen(vm: AppViewModel) {
                 stats == null -> Centered("Couldn't load the dashboard. Pull down to try again.")
                 else -> DashboardContent(
                     vm, stats, upcomingState.value.orEmpty(), recentState.value, recentEventsState.value.orEmpty(),
-                    digestState.value, bar.state,
+                    digestState.value, bar.state, snackbar,
                 )
             }
         }
@@ -192,6 +207,7 @@ private fun DashboardContent(
     recentEvents: List<RecentEvent>,
     digest: Digest?,
     barState: TopAppBarState,
+    snackbar: SnackbarHostState,
 ) {
     val soon = upcoming.filter { e ->
         val n = Dates.daysUntil(e.end_date ?: e.date) ?: return@filter false
@@ -219,6 +235,13 @@ private fun DashboardContent(
     }
     val listState = rememberLazyListState()
     ScrollToTopOnReselect(vm, Route.Dashboard, listState, barState)
+    val register by vm.list.collectAsStateWithLifecycle()
+    val registerById = remember(register.value) { register.value.orEmpty().associateBy { it.merger_id } }
+    val tracking by vm.tracking.collectAsStateWithLifecycle()
+    val toggleFollow = rememberMergerFollowToggle(vm, snackbar)
+    // A desktop window or a big tablet sideways, the dashboard on its own:
+    // room for two columns (DashboardColumns).
+    val wide = LocalPaneWidth.current.let { it != Dp.Unspecified && it >= WideDashboard }
     // The day pinned at the top, and the next one while it's pushing that one
     // off: both carry the section's title, so the title rides up with the old
     // day and the new day arrives with it, rather than arriving bare and
@@ -240,7 +263,7 @@ private fun DashboardContent(
     LazyColumn(
         Modifier.fillMaxSize().testTag("dashboard"),
         state = listState,
-        contentPadding = PaddingValues(bottom = 24.dp),
+        contentPadding = PaddingValues(bottom = 24.dp).readable(if (wide) WideDashboardWidth else ReadableWidth),
     ) {
         item {
             Column(Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -268,31 +291,46 @@ private fun DashboardContent(
             }
         }
 
-        if (stats.recent_determinations.isNotEmpty()) {
-            stickyHeader(key = "h-Recent determinations") { StickyTitle("Recent determinations") }
-            items(stats.recent_determinations.take(8), key = { "d-" + it.merger_id }) { d ->
-                ListRow(
-                    title = d.merger_name,
-                    subtitle = listOfNotNull(
-                        if (d.is_waiver) "Waiver" else d.stage?.split(" - ")?.first(),
-                        d.merger_id,
-                    ).joinToString(" · "),
-                    trailing = Dates.format(d.determination_date, compact = true),
-                    onClick = { vm.openMerger(d.merger_id) },
-                    leading = { StatusGlyph(d.determination, conditions = d.has_conditions) },
-                )
-            }
+        val determinations = stats.recent_determinations.take(8)
+        // A wide dashboard draws these as the merger list's cards, from the register's
+        // own entries (list.json); one it doesn't have yet keeps its row, on a card.
+        val cards = MergerCards(registerById, tracking, vm, toggleFollow)
+        val notified = stats.recent_mergers.take(8)
+        val determinationRow: @Composable (RecentDetermination) -> Unit = { d ->
+            ListRow(
+                title = d.merger_name,
+                subtitle = listOfNotNull(
+                    if (d.is_waiver) "Waiver" else d.stage?.split(" - ")?.first(),
+                    d.merger_id,
+                ).joinToString(" · "),
+                trailing = Dates.format(d.determination_date, compact = true),
+                onClick = { vm.openMerger(d.merger_id) },
+                leading = { StatusGlyph(d.determination, conditions = d.has_conditions) },
+            )
+        }
+        val notifiedRow: @Composable (RecentMerger) -> Unit = { m ->
+            ListRow(
+                title = m.merger_name,
+                subtitle = listOfNotNull(if (m.is_waiver) "Waiver" else "Notification", m.merger_id).joinToString(" · "),
+                trailing = Dates.format(m.effective_notification_datetime, compact = true),
+                onClick = { vm.openMerger(m.merger_id) },
+            )
         }
 
-        if (stats.recent_mergers.isNotEmpty()) {
+        if (determinations.isNotEmpty()) {
+            stickyHeader(key = "h-Recent determinations") { StickyTitle("Recent determinations") }
+            if (wide) {
+                mergerCards(determinations, { "d-" + it.merger_id }, { it.merger_id }, cards) { determinationRow(it) }
+            } else {
+                items(determinations, key = { "d-" + it.merger_id }) { determinationRow(it) }
+            }
+        }
+        if (notified.isNotEmpty()) {
             stickyHeader(key = "h-Recently notified") { StickyTitle("Recently notified") }
-            items(stats.recent_mergers.take(8), key = { "n-" + it.merger_id }) { m ->
-                ListRow(
-                    title = m.merger_name,
-                    subtitle = listOfNotNull(if (m.is_waiver) "Waiver" else "Notification", m.merger_id).joinToString(" · "),
-                    trailing = Dates.format(m.effective_notification_datetime, compact = true),
-                    onClick = { vm.openMerger(m.merger_id) },
-                )
+            if (wide) {
+                mergerCards(notified, { "n-" + it.merger_id }, { it.merger_id }, cards) { notifiedRow(it) }
+            } else {
+                items(notified, key = { "n-" + it.merger_id }) { notifiedRow(it) }
             }
         }
 
@@ -300,13 +338,14 @@ private fun DashboardContent(
             stickyHeader(key = "h-Coming up") { StickyTitle("Coming up") }
             days.forEach { (day, events) ->
                 stickyHeader(key = dayKey(day)) { DayHeader("Coming up", day, pinned = dayKey(day) in pinnedDays) }
-                items(events, key = ::eventKey) { e ->
+                columnsOf(events, wide, ::eventKey) { e, modifier ->
                     ListRow(
                         title = e.merger_name,
                         subtitle = Upcoming.detail(e),
                         trailing = null,
                         onClick = { vm.openMerger(e.merger_id) },
                         leading = { EventTypeTile(e.type, e.event_type_display) },
+                        modifier = modifier,
                     )
                 }
             }
@@ -318,7 +357,7 @@ private fun DashboardContent(
             stickyHeader(key = "h-Recent events") { StickyTitle("Recent events") }
             pastDays.forEach { (day, events) ->
                 stickyHeader(key = pastDayKey(day)) { DayHeader("Recent events", day, pinned = pastDayKey(day) in pinnedDays) }
-                items(events, key = ::eventKey) { e ->
+                columnsOf(events, wide, ::eventKey) { e, modifier ->
                     val type = RecentEventType.of(e.type)
                     ListRow(
                         title = e.merger_name,
@@ -326,11 +365,91 @@ private fun DashboardContent(
                         trailing = null,
                         onClick = { vm.openMerger(e.merger_id) },
                         leading = { RecentEventTile(type) },
+                        modifier = modifier,
                     )
                 }
             }
         }
 
+    }
+}
+
+/** How wide the dashboard's pane must be for two columns. */
+private val WideDashboard = 1000.dp
+
+/** How far two columns may spread before the rest is margin, as [ReadableWidth] is for one. */
+private val WideDashboardWidth = 1280.dp
+
+/**
+ * A day's events: one per row, or on a wide dashboard two, read across then
+ * down, each row as tall as the taller of its two. Keyed on the first of
+ * each pair, so a day header's pinning (dayOfKey) still finds them.
+ */
+private fun <T> LazyListScope.columnsOf(
+    events: List<T>,
+    wide: Boolean,
+    key: (T) -> String,
+    row: @Composable (T, Modifier) -> Unit,
+) {
+    if (!wide) {
+        items(events, key = key) { row(it, Modifier) }
+        return
+    }
+    items(events.chunked(2), key = { key(it.first()) }) { pair ->
+        Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
+            pair.forEach { row(it, Modifier.weight(1f).fillMaxHeight()) }
+            if (pair.size == 1) Spacer(Modifier.weight(1f))
+        }
+    }
+}
+
+/** What a wide dashboard's merger cards need: the register's entries, and following. */
+private class MergerCards(
+    val byId: Map<String, MergerSummary>,
+    val tracking: TrackingState,
+    val vm: AppViewModel,
+    val toggleFollow: (String) -> Unit,
+)
+
+/**
+ * A section's mergers as the merger list's cards, two to a row, each row as
+ * tall as its taller card. A merger the register doesn't list yet keeps its
+ * plain row, on a card of the same shape.
+ */
+private fun <T> LazyListScope.mergerCards(
+    rows: List<T>,
+    key: (T) -> String,
+    id: (T) -> String,
+    cards: MergerCards,
+    fallback: @Composable (T) -> Unit,
+) {
+    items(rows.chunked(2), key = { key(it.first()) }) { pair ->
+        Row(
+            Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 5.dp).height(IntrinsicSize.Min),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            pair.forEach { r ->
+                val mergerId = id(r)
+                val m = cards.byId[mergerId]
+                val modifier = Modifier.weight(1f).fillMaxHeight()
+                if (m != null) {
+                    MergerCard(
+                        m,
+                        cards.tracking.isTracked(mergerId),
+                        onClick = { cards.vm.openMerger(mergerId) },
+                        modifier = modifier,
+                        onSwipe = { cards.toggleFollow(mergerId) },
+                    )
+                } else {
+                    Card(
+                        modifier,
+                        shape = MaterialTheme.shapes.large,
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+                    ) { Box(Modifier.fillMaxHeight(), contentAlignment = Alignment.CenterStart) { fallback(r) } }
+                }
+            }
+            if (pair.size == 1) Spacer(Modifier.weight(1f))
+        }
     }
 }
 

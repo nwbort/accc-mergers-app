@@ -272,7 +272,7 @@ private fun Detail(vm: AppViewModel, m: MergerDetail, listState: LazyListState) 
     val upcoming = remember(m) { TrackedEvents.upcoming(m).sortedBy { it.date } }
 
     // Room at the foot for the floating toolbar.
-    LazyColumn(Modifier.fillMaxSize().testTag("detail"), state = listState, contentPadding = PaddingValues(bottom = 104.dp)) {
+    LazyColumn(Modifier.fillMaxSize().testTag("detail"), state = listState, contentPadding = PaddingValues(bottom = 104.dp).readable()) {
         item {
             // Scrolling away, the header recedes: it fades and shrinks a little
             // as it goes, behind the facts sliding up over it.
@@ -313,7 +313,7 @@ private fun Detail(vm: AppViewModel, m: MergerDetail, listState: LazyListState) 
                     else -> "Related"
                 }
                 SectionTitle(what)
-                ListRow(m.related_merger.merger_name ?: relatedId, relatedId, null, onClick = { vm.openMerger(relatedId) })
+                ListRow(m.related_merger.merger_name ?: relatedId, relatedId, null, onClick = { vm.openRelatedMerger(relatedId) })
             }
         }
 
@@ -402,7 +402,7 @@ private fun Detail(vm: AppViewModel, m: MergerDetail, listState: LazyListState) 
                     s.merger_name,
                     s.merger_id,
                     null,
-                    onClick = { vm.openMerger(s.merger_id) },
+                    onClick = { vm.openRelatedMerger(s.merger_id) },
                     // Decided matters show their outcome; live ones their status
                     // (under assessment, referred to phase 2 and so on).
                     leading = (s.accc_determination ?: s.status)?.let { { StatusBadge(it) } },

@@ -124,6 +124,9 @@ android {
             // Robolectric's Android sandbox reaches into JDK internals.
             it.dependsOn(robolectricJars)
             it.systemProperty("robolectric.offline", "true")
+            // The app's singletons (Graph) outlive one Application, so each
+            // class that drives the app (AppTest, AdaptiveTest) gets its own JVM.
+            it.forkEvery = 1
             it.systemProperty("robolectric.dependency.dir", robolectricJarsDir.get().asFile.path)
             it.jvmArgs(
                 "--add-exports=java.base/jdk.internal.access=ALL-UNNAMED",

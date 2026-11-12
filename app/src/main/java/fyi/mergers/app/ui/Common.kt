@@ -383,9 +383,11 @@ fun SwipeToFollow(
                     }
                 },
             ),
+        // Stretched (a card beside a taller one, on a wide dashboard), the card stretches with it.
+        propagateMinConstraints = true,
     ) {
         if (offset != 0f) SwipeBacking(fromStart = offset > 0, armed = armed, followed = followed, shape = shape)
-        Box(Modifier.offset { IntOffset(offset.roundToInt(), 0) }) { content(actions) }
+        Box(Modifier.offset { IntOffset(offset.roundToInt(), 0) }, propagateMinConstraints = true) { content(actions) }
     }
 }
 
@@ -557,9 +559,10 @@ fun ListRow(
     onClick: () -> Unit,
     leading: @Composable (() -> Unit)? = null,
     emphasis: Boolean = false,
+    modifier: Modifier = Modifier,
 ) {
     Row(
-        Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 16.dp, vertical = 10.dp),
+        modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 16.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {

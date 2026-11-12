@@ -141,6 +141,7 @@ fun SearchScreen(vm: AppViewModel) {
                 keyboardActions = KeyboardActions(onSearch = { focus.clearFocus() }),
                 modifier = Modifier
                     .fillMaxWidth()
+                    .readableWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp)
                     .focusRequester(field),
             )
@@ -150,7 +151,7 @@ fun SearchScreen(vm: AppViewModel) {
                 unlisted == null && mergers.isEmpty() && industries.isEmpty() -> Centered("Nothing matches.")
                 else -> LazyColumn(
                     Modifier.fillMaxSize().testTag("search-results"),
-                    contentPadding = PaddingValues(bottom = 24.dp),
+                    contentPadding = PaddingValues(bottom = 24.dp).readable(),
                 ) {
                     if (unlisted != null) {
                         item(key = "unlisted") { NotOnRegister(vm, unlisted, tracking.isTracked(unlisted)) }

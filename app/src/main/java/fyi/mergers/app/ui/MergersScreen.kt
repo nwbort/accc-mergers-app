@@ -119,10 +119,10 @@ fun MergersScreen(vm: AppViewModel) {
                 singleLine = true,
                 shape = RoundedCornerShape(28.dp),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+                modifier = Modifier.fillMaxWidth().readableWidth().padding(horizontal = 16.dp, vertical = 8.dp),
             )
-            Filters(vm, f)
-            Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.readableWidth()) { Filters(vm, f) }
+            Row(Modifier.fillMaxWidth().readableWidth().padding(start = 16.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     when {
                         all == null -> ""
@@ -150,7 +150,7 @@ fun MergersScreen(vm: AppViewModel) {
                     shown.isEmpty() -> Centered("Nothing matches.")
                     else -> LazyColumn(
                         state = lazy,
-                        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 24.dp),
+                        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 24.dp).readable(),
                         verticalArrangement = Arrangement.spacedBy(10.dp),
                         modifier = Modifier.fillMaxSize().testTag("mergers"),
                     ) {

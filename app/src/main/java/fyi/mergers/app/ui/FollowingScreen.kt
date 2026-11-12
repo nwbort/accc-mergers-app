@@ -111,7 +111,7 @@ fun FollowingScreen(vm: AppViewModel) {
             onRefresh = vm::pullFollowing,
             modifier = Modifier.padding(padding).fillMaxSize(),
         ) {
-            LazyColumn(Modifier.fillMaxSize().testTag("following"), state = list, contentPadding = PaddingValues(bottom = 24.dp)) {
+            LazyColumn(Modifier.fillMaxSize().testTag("following"), state = list, contentPadding = PaddingValues(bottom = 24.dp).readable()) {
                 item { NotificationsBanner() }
 
                 if (tracking.followsNothing) {
