@@ -3,6 +3,8 @@ package fyi.mergers.app.ui
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalActivity
 import androidx.compose.animation.SharedTransitionLayout
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
@@ -86,7 +88,11 @@ fun MergersApp(vm: AppViewModel) {
                 NavDisplay(
                     backStack = listOf<Route>(Route.Tabs) + vm.backStack.drop(1),
                     onBack = { if (!vm.back()) activity?.finish() },
-                    modifier = Modifier.padding(bottom = padding.calculateBottomPadding()),
+                    // The bar's height is spoken for: a screen's imePadding() below takes
+                    // only what the keyboard covers beyond it.
+                    modifier = Modifier
+                        .padding(bottom = padding.calculateBottomPadding())
+                        .consumeWindowInsets(PaddingValues(bottom = padding.calculateBottomPadding())),
                     entryProvider = entryProvider {
                         entry<Route.Tabs> { Shared { Tabs(vm) } }
                         entry<Route.Merger> { key -> Shared { MergerDetailScreen(vm, key.id) } }
