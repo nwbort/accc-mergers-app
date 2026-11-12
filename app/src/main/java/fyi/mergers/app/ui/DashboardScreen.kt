@@ -21,6 +21,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import fyi.mergers.app.tracking.TrackingState
+import fyi.mergers.app.data.MergerSummary
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarHost
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.layout.Spacer
 import fyi.mergers.app.data.RecentDetermination
@@ -122,9 +126,12 @@ fun DashboardScreen(vm: AppViewModel) {
     // The name bar slides away as you scroll down the dashboard and comes
     // back as soon as you scroll up.
     val bar = TopAppBarDefaults.enterAlwaysScrollBehavior()
+    // For the merger cards a wide dashboard shows: swiped, they follow, as in the list.
+    val snackbar = remember { SnackbarHostState() }
     Scaffold(
         modifier = Modifier.nestedScroll(bar.nestedScrollConnection),
         contentWindowInsets = WindowInsets(0),
+        snackbarHost = { SnackbarHost(snackbar) },
         topBar = {
             TopAppBar(
                 scrollBehavior = bar,
@@ -172,7 +179,7 @@ fun DashboardScreen(vm: AppViewModel) {
                 stats == null -> Centered("Couldn't load the dashboard. Pull down to try again.")
                 else -> DashboardContent(
                     vm, stats, upcomingState.value.orEmpty(), recentState.value, recentEventsState.value.orEmpty(),
-                    digestState.value, bar.state,
+                    digestState.value, bar.state, snackbar,
                 )
             }
         }
@@ -198,6 +205,7 @@ private fun DashboardContent(
     recentEvents: List<RecentEvent>,
     digest: Digest?,
     barState: TopAppBarState,
+    snackbar: SnackbarHostState,
 ) {
     val soon = upcoming.filter { e ->
         val n = Dates.daysUntil(e.end_date ?: e.date) ?: return@filter false
@@ -225,6 +233,10 @@ private fun DashboardContent(
     }
     val listState = rememberLazyListState()
     ScrollToTopOnReselect(vm, Route.Dashboard, listState, barState)
+    val register by vm.list.collectAsStateWithLifecycle()
+    val registerById = remember(register.value) { register.value.orEmpty().associateBy { it.merger_id } }
+    val tracking by vm.tracking.collectAsStateWithLifecycle()
+    val toggleFollow = rememberMergerFollowToggle(vm, snackbar)
     // A desktop window or a big tablet sideways, the dashboard on its own:
     // room for two columns (DashboardColumns).
     val wide = LocalPaneWidth.current.let { it != Dp.Unspecified && it >= WideDashboard }
@@ -278,6 +290,9 @@ private fun DashboardContent(
         }
 
         val determinations = stats.recent_determinations.take(8)
+        // A wide dashboard draws these as the merger list's cards, from the register's
+        // own entries (list.json); one it doesn't have yet keeps its row, on a card.
+        val cards = MergerCards(registerById, tracking, vm, toggleFollow)
         val notified = stats.recent_mergers.take(8)
         val determinationRow: @Composable (RecentDetermination) -> Unit = { d ->
             ListRow(
@@ -300,24 +315,19 @@ private fun DashboardContent(
             )
         }
 
-        if (wide && (determinations.isNotEmpty() || notified.isNotEmpty())) {
-            // Side by side, each its own card.
-            item(key = "recent-cards") {
-                Row(
-                    Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp).height(IntrinsicSize.Min),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    SectionCard("Recent determinations", determinations, determinationRow, Modifier.weight(1f).fillMaxHeight())
-                    SectionCard("Recently notified", notified, notifiedRow, Modifier.weight(1f).fillMaxHeight())
-                }
-            }
-        } else {
-            if (determinations.isNotEmpty()) {
-                stickyHeader(key = "h-Recent determinations") { StickyTitle("Recent determinations") }
+        if (determinations.isNotEmpty()) {
+            stickyHeader(key = "h-Recent determinations") { StickyTitle("Recent determinations") }
+            if (wide) {
+                mergerCards(determinations, { "d-" + it.merger_id }, { it.merger_id }, cards) { determinationRow(it) }
+            } else {
                 items(determinations, key = { "d-" + it.merger_id }) { determinationRow(it) }
             }
-            if (notified.isNotEmpty()) {
-                stickyHeader(key = "h-Recently notified") { StickyTitle("Recently notified") }
+        }
+        if (notified.isNotEmpty()) {
+            stickyHeader(key = "h-Recently notified") { StickyTitle("Recently notified") }
+            if (wide) {
+                mergerCards(notified, { "n-" + it.merger_id }, { it.merger_id }, cards) { notifiedRow(it) }
+            } else {
                 items(notified, key = { "n-" + it.merger_id }) { notifiedRow(it) }
             }
         }
@@ -391,21 +401,53 @@ private fun <T> LazyListScope.columnsOf(
     }
 }
 
-/** A dashboard section as a card of its own, for two side by side. */
-@Composable
-private fun <T> SectionCard(title: String, rows: List<T>, row: @Composable (T) -> Unit, modifier: Modifier) {
-    Card(
-        modifier,
-        shape = MaterialTheme.shapes.large,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
-    ) {
-        Text(
-            title,
-            style = MaterialTheme.typography.titleMediumEmphasized,
-            modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 6.dp),
-        )
-        rows.forEach { row(it) }
-        Spacer(Modifier.height(8.dp))
+/** What a wide dashboard's merger cards need: the register's entries, and following. */
+private class MergerCards(
+    val byId: Map<String, MergerSummary>,
+    val tracking: TrackingState,
+    val vm: AppViewModel,
+    val toggleFollow: (String) -> Unit,
+)
+
+/**
+ * A section's mergers as the merger list's cards, two to a row, each row as
+ * tall as its taller card. A merger the register doesn't list yet keeps its
+ * plain row, on a card of the same shape.
+ */
+private fun <T> LazyListScope.mergerCards(
+    rows: List<T>,
+    key: (T) -> String,
+    id: (T) -> String,
+    cards: MergerCards,
+    fallback: @Composable (T) -> Unit,
+) {
+    items(rows.chunked(2), key = { key(it.first()) }) { pair ->
+        Row(
+            Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 5.dp).height(IntrinsicSize.Min),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            pair.forEach { r ->
+                val mergerId = id(r)
+                val m = cards.byId[mergerId]
+                val modifier = Modifier.weight(1f).fillMaxHeight()
+                if (m != null) {
+                    MergerCard(
+                        m,
+                        cards.tracking.isTracked(mergerId),
+                        onClick = { cards.vm.openMerger(mergerId) },
+                        modifier = modifier,
+                        onSwipe = { cards.toggleFollow(mergerId) },
+                    )
+                } else {
+                    Card(
+                        modifier,
+                        shape = MaterialTheme.shapes.large,
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+                    ) { Box(Modifier.fillMaxHeight(), contentAlignment = Alignment.CenterStart) { fallback(r) } }
+                }
+            }
+            if (pair.size == 1) Spacer(Modifier.weight(1f))
+        }
     }
 }
 

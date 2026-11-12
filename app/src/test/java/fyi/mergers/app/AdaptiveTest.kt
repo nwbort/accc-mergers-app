@@ -70,9 +70,12 @@ class AdaptiveTest {
         compose.onNodeWithContentDescription("Search").assertDoesNotExist()
         shot("t1-large-dashboard")
         // The dashboard on its own, this wide: the latest determinations and
-        // notifications as two cards side by side, and each day's events in two columns.
-        compose.onNodeWithTag("dashboard").performScrollToKey("recent-cards")
-        shot("t1b-large-dashboard-cards")
+        // notifications as the merger list's cards, two to a row, and each
+        // day's events in two columns.
+        compose.onNodeWithTag("dashboard").performScrollToKey("h-Recent determinations")
+        shot("t1b-large-dashboard-determinations")
+        compose.onNodeWithTag("dashboard").performScrollToKey("h-Recently notified")
+        shot("t1b2-large-dashboard-notified")
         compose.onNodeWithTag("dashboard").performScrollToKey("h-Coming up")
         shot("t1c-large-dashboard-coming-up")
         compose.onNodeWithTag("dashboard").performScrollToKey("h-Recent events")

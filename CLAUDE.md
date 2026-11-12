@@ -103,8 +103,9 @@ detail pane instead of stacking; a merger linked from another's page
 (`openRelatedMerger`) still stacks. Switching to Mergers or Following keeps
 the merger open beside the new tab (`selectTab`); the dashboard, or the
 showing tab tapped again (`tapTab`), closes it. On a dashboard pane 1000dp
-and wider, Recent determinations and Recently notified sit side by side as
-cards (`SectionCard`), and each day of Coming up and Recent events lists its
+and wider, Recent determinations and then Recently notified show their
+mergers as the merger list's `MergerCard`s, two to a row (`mergerCards`, from
+`list.json`; swiped, they follow), and each day of Coming up and Recent events lists its
 events two to a row (`columnsOf`, keyed on the first of each pair), spread to
 1280dp rather than 840. Following beside a detail pane still counts
 as showing, for marking read. Past `ReadableWidth` (840dp) a screen's content

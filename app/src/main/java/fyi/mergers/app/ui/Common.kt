@@ -379,9 +379,11 @@ fun SwipeToFollow(
                     }
                 },
             ),
+        // Stretched (a card beside a taller one, on a wide dashboard), the card stretches with it.
+        propagateMinConstraints = true,
     ) {
         if (offset != 0f) SwipeBacking(fromStart = offset > 0, armed = armed, followed = followed, shape = shape)
-        Box(Modifier.offset { IntOffset(offset.roundToInt(), 0) }) { content() }
+        Box(Modifier.offset { IntOffset(offset.roundToInt(), 0) }, propagateMinConstraints = true) { content() }
     }
 }
 
