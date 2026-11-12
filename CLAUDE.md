@@ -60,7 +60,11 @@ says, are `data/Digests.kt`. Keep those in step with `Digest.jsx` and
 `DIGEST_COLOR_KEYS`. Each section has its own `MaterialShapes` glyph
 (`DigestSection.shape()` in the screen; a decision takes its outcome's
 `outcomeShape`), on its count card and its heading. The test fixture is a copy of the site's archived digest
-for 26 Oct to 1 Nov 2026. At its foot, a native email signup (`EmailSignup`,
+for 26 Oct to 1 Nov 2026. Down its end edge, a scrubber (`SectionRail` in `ui/SectionRail.kt`) has a
+mark per section in that shape and colour: a vertical drag from the edge moves
+the list, with a light tick per card and a firmer tap per section, and names
+the section beside the finger. It watches the edge from the list's parent, so a
+sideways swipe from a card's edge still follows or unfollows. At its foot, a native email signup (`EmailSignup`,
 `AppViewModel.subscribeToDigest`) posts to the site's signup worker's
 `/app-signup` route (`data/DigestSignup.kt`), which emails a link to confirm
 (double opt-in) because the app can't show the website's Turnstile check. The

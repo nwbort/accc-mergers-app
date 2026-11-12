@@ -132,6 +132,17 @@ class AppTest {
         compose.onNodeWithText("Ongoing ACT appeals").performClick()
         waitForText("Lodged by Coles · ACT 1 of 2026")
         shot("1j-digest-appeals")
+        // The scrubber down the edge: dragged, it names the section under
+        // the finger and takes the list there; let go, the name goes.
+        compose.onNodeWithTag("section-rail").performTouchInput {
+            down(Offset(centerX, 1f))
+            repeat(8) { moveBy(Offset(0f, height * 0.04f), delayMillis = 30) }
+        }
+        compose.waitForIdle()
+        compose.onNodeWithTag("section-rail-label").assertExists()
+        shot("1j2-digest-scrub")
+        compose.onNodeWithTag("section-rail").performTouchInput { up() }
+        compose.waitUntil(5_000) { compose.onAllNodesWithTag("section-rail-label").fetchSemanticsNodes().isEmpty() }
         compose.onNodeWithTag("digest").performScrollToKey("g-mergers-approved-Waiver")
         waitForText("Waiver")
         shot("1k-digest-cleared")

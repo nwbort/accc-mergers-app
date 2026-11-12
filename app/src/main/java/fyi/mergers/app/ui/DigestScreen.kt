@@ -213,43 +213,53 @@ private fun DigestContent(vm: AppViewModel, digest: Digest, tracking: TrackingSt
         vm.digestSection = null
     }
 
-    LazyColumn(
-        Modifier.fillMaxSize().testTag("digest"),
-        state = listState,
-        contentPadding = PaddingValues(bottom = 32.dp),
-    ) {
-        item(key = "intro") { DigestHero(digest) }
+    // The scrubber's marks: one for each section, in its colour and shape.
+    val marks = sections.map { (s, _, _) ->
+        val c = digestColors(s.color)
+        RailMark(headingIndex.getValue(s), s.chip, s.shape(), s.icon, c.ink, c.onInk, c.wash)
+    }
+    // The signup's place: the scrubber runs from the first heading up to it.
+    val end = 2 + sections.sumOf { (_, _, groups) -> 1 + groups.sumOf { g -> (if (g.label != null) 1 else 0) + g.rows.size } }
 
-        if (sections.isEmpty()) {
-            item(key = "quiet") { Centered("No merger activity to report for this period.") }
-        } else {
-            item(key = "counts") {
-                Counts(sections.map { it.first to it.second }) { s ->
-                    headingIndex[s]?.let { scope.launch { listState.animateScrollToItem(it) } }
+    SectionRail(listState, marks, end, Modifier.fillMaxSize()) {
+        LazyColumn(
+            Modifier.fillMaxSize().testTag("digest"),
+            state = listState,
+            contentPadding = PaddingValues(bottom = 32.dp),
+        ) {
+            item(key = "intro") { DigestHero(digest) }
+
+            if (sections.isEmpty()) {
+                item(key = "quiet") { Centered("No merger activity to report for this period.") }
+            } else {
+                item(key = "counts") {
+                    Counts(sections.map { it.first to it.second }) { s ->
+                        headingIndex[s]?.let { scope.launch { listState.animateScrollToItem(it) } }
+                    }
                 }
             }
-        }
 
-        sections.forEach { (section, count, groups) ->
-            stickyHeader(key = "h-" + section.id) { SectionHeading(section, count) }
-            groups.forEach { group ->
-                group.label?.let { label ->
-                    item(key = "g-${section.id}-$label") { GroupLabel(label) }
-                }
-                itemsIndexed(group.rows, key = { _, r -> "${section.id}-${r.merger.merger_id}" }) { i, row ->
-                    DigestRowCard(
-                        row,
-                        section,
-                        shape = segment(i, group.rows.size),
-                        followed = tracking.isTracked(row.merger.merger_id),
-                        onClick = { vm.openMerger(row.merger.merger_id) },
-                        onSwipe = { toggleFollow(row.merger.merger_id) },
-                    )
+            sections.forEach { (section, count, groups) ->
+                stickyHeader(key = "h-" + section.id) { SectionHeading(section, count) }
+                groups.forEach { group ->
+                    group.label?.let { label ->
+                        item(key = "g-${section.id}-$label") { GroupLabel(label) }
+                    }
+                    itemsIndexed(group.rows, key = { _, r -> "${section.id}-${r.merger.merger_id}" }) { i, row ->
+                        DigestRowCard(
+                            row,
+                            section,
+                            shape = segment(i, group.rows.size),
+                            followed = tracking.isTracked(row.merger.merger_id),
+                            onClick = { vm.openMerger(row.merger.merger_id) },
+                            onSwipe = { toggleFollow(row.merger.merger_id) },
+                        )
+                    }
                 }
             }
-        }
 
-        item(key = "email") { EmailSignup(vm) }
+            item(key = "email") { EmailSignup(vm) }
+        }
     }
 }
 
