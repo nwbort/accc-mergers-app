@@ -148,19 +148,17 @@ fun SettingsScreen(vm: AppViewModel) {
 private fun AlertSettings(vm: AppViewModel) {
     val tracking by vm.tracking.collectAsStateWithLifecycle()
     ListItem(
-        headlineContent = { Text("Follow every phase 2 matter") },
         supportingContent = { Text("Matters referred to phase 2 are followed automatically") },
         trailingContent = { Switch(checked = tracking.autoTrackPhase2, onCheckedChange = null) },
         colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surface),
         modifier = Modifier.toggleable(tracking.autoTrackPhase2, role = Role.Switch, onValueChange = vm::setAutoTrackPhase2),
-    )
+    ) { Text("Follow every phase 2 matter") }
     ListItem(
-        headlineContent = { Text("Every new filing") },
         supportingContent = { Text("A notification for each new merger or waiver on the register") },
         trailingContent = { Switch(checked = tracking.notifyNewFilings, onCheckedChange = null) },
         colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surface),
         modifier = Modifier.toggleable(tracking.notifyNewFilings, role = Role.Switch, onValueChange = vm::setNotifyNewFilings),
-    )
+    ) { Text("Every new filing") }
     Text(
         if (Push.ready(LocalContext.current)) {
             "Checked as soon as mergers.fyi publishes a change, which it does several times a weekday from the ACCC register."

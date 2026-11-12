@@ -119,6 +119,11 @@ class TopicSyncWorker(context: Context, params: WorkerParameters) : CoroutineWor
 
         val messaging = FirebaseMessaging.getInstance()
         return try {
+            // Firebase Messaging 26 deprecates the token for register(), which
+            // works only with firebase_messaging_installation_id_enabled in the
+            // manifest. Moving over wants a try on a real phone first, so the
+            // token (and onNewToken, below) stays for now.
+            @Suppress("DEPRECATION")
             if (want.isNotEmpty()) messaging.token.await()
             for (topic in want - have) {
                 messaging.subscribeToTopic(topic).await()
@@ -162,7 +167,12 @@ class PushService : FirebaseMessagingService() {
         CheckWorker.checkNow(applicationContext)
     }
 
-    /** Topic subscriptions belong to a token: a new one starts with none. */
+    /**
+     * Topic subscriptions belong to a token: a new one starts with none.
+     * Deprecated along with the token (see [TopicSyncWorker]), but it's still
+     * what Firebase calls without the installation-id opt-in.
+     */
+    @Suppress("OVERRIDE_DEPRECATION")
     override fun onNewToken(token: String) {
         Push.prefs(this).edit().remove(Push.SUBSCRIBED).apply()
         TopicSyncWorker.enqueue(applicationContext)
