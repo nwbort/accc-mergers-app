@@ -88,10 +88,10 @@ fun Pane(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
 
 /** The margin either side that keeps this pane's content to [ReadableWidth]: none on a phone. */
 @Composable
-fun readableInset(): Dp {
+fun readableInset(maxWidth: Dp = ReadableWidth): Dp {
     val width = LocalPaneWidth.current
     if (width == Dp.Unspecified) return 0.dp
-    return max(0.dp, (width - ReadableWidth) / 2)
+    return max(0.dp, (width - maxWidth) / 2)
 }
 
 /**
@@ -100,8 +100,8 @@ fun readableInset(): Dp {
  * wheel or a trackpad over them, on a tablet or a desktop).
  */
 @Composable
-fun PaddingValues.readable(): PaddingValues {
-    val inset = readableInset()
+fun PaddingValues.readable(maxWidth: Dp = ReadableWidth): PaddingValues {
+    val inset = readableInset(maxWidth)
     if (inset == 0.dp) return this
     val dir = LocalLayoutDirection.current
     return PaddingValues(
@@ -200,7 +200,9 @@ private class ListDetailScene(
                         label = "detail",
                     ) { shown ->
                         Pane(Modifier.fillMaxSize()) {
-                            if (shown == null) NothingPicked() else shown.Content()
+                            // On the surface, as the screens' own Scaffolds are, so its
+                            // text takes onSurface (light or dark) rather than the default black.
+                            if (shown == null) Surface(Modifier.fillMaxSize()) { NothingPicked() } else shown.Content()
                         }
                     }
                 }

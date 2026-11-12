@@ -22,6 +22,9 @@ import androidx.compose.ui.test.performClick
 import androidx.lifecycle.ViewModelProvider
 import fyi.mergers.app.ui.AppViewModel
 import fyi.mergers.app.ui.Route
+import fyi.mergers.app.ui.theme.ThemeChoice
+import androidx.compose.ui.test.performScrollToIndex
+import androidx.compose.ui.test.performScrollToKey
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -66,6 +69,15 @@ class AdaptiveTest {
         // The rail's button is search: the dashboard's top bar doesn't repeat it.
         compose.onNodeWithContentDescription("Search").assertDoesNotExist()
         shot("t1-large-dashboard")
+        // The dashboard on its own, this wide: the latest determinations and
+        // notifications as two cards side by side, and each day's events in two columns.
+        compose.onNodeWithTag("dashboard").performScrollToKey("recent-cards")
+        shot("t1b-large-dashboard-cards")
+        compose.onNodeWithTag("dashboard").performScrollToKey("h-Coming up")
+        shot("t1c-large-dashboard-coming-up")
+        compose.onNodeWithTag("dashboard").performScrollToKey("h-Recent events")
+        shot("t1d-large-dashboard-recent-events")
+        compose.onNodeWithTag("dashboard").performScrollToIndex(0)
 
         // The Mergers tab keeps the detail pane, empty until a merger's picked.
         compose.onNode(hasText("Mergers") and rail).performClick()
@@ -80,15 +92,36 @@ class AdaptiveTest {
         shot("t3-large-list-detail")
 
         // Another picked from the list takes its place, rather than piling on top.
-        compose.onAllNodesWithText("PSP Investments", substring = true).onFirst().performClick()
-        waitUntil { vm.backStack.lastOrNull() == Route.Merger("MN-55024") }
-        assertEquals(listOf(Route.Mergers, Route.Merger("MN-55024")), vm.backStack.toList())
+        // (One the fixtures carry in full: not every card in the list has its file.)
+        compose.runOnUiThread { vm.openMerger("MN-01068") }
+        waitForText("Tribunal hearing")
+        assertEquals(listOf(Route.Mergers, Route.Merger("MN-01068")), vm.backStack.toList())
         shot("t4-large-list-detail-2")
 
-        // Back closes the detail; the list is still there.
-        back()
+        // Over to Following and back, the merger stays open beside each.
+        compose.onNode(hasText("Following") and rail).performClick()
+        waitUntil { vm.tab == Route.Following }
+        assertEquals(listOf(Route.Following, Route.Merger("MN-01068")), vm.backStack.toList())
+        waitForText("not following anything", substring = true)
+        waitForText("Tribunal hearing")
+        shot("t4b-large-following-keeps-merger")
+        compose.onNode(hasText("Mergers") and rail).performClick()
+        waitUntil { vm.tab == Route.Mergers }
+        assertEquals(listOf(Route.Mergers, Route.Merger("MN-01068")), vm.backStack.toList())
+
+        // Its own tab, tapped again, closes the detail; the list is still there.
+        compose.onNode(hasText("Mergers") and rail).performClick()
         waitForText("Pick a merger")
         assertEquals(listOf<Route>(Route.Mergers), vm.backStack.toList())
+
+        // Dark, the empty pane's words are light.
+        compose.runOnUiThread { vm.chooseTheme(ThemeChoice.DARK) }
+        waitUntil { vm.theme == ThemeChoice.DARK }
+        waitForText("Pick a merger")
+        shot("t4c-large-mergers-dark")
+        compose.runOnUiThread { vm.chooseTheme(ThemeChoice.SYSTEM) }
+        waitUntil { vm.theme == ThemeChoice.SYSTEM }
+        waitForText("Pick a merger")
 
         // Closed, the rail keeps its icons only.
         compose.onNodeWithContentDescription("Collapse navigation").performClick()
@@ -97,9 +130,14 @@ class AdaptiveTest {
         compose.onNodeWithContentDescription("Expand navigation").performClick()
         waitUntil { compose.onAllNodes(hasContentDescription("Collapse navigation")).fetchSemanticsNodes().isNotEmpty() }
 
-        // From the dashboard, a merger opens beside it too.
-        compose.runOnUiThread { vm.selectTab(Route.Dashboard) }
+        // The dashboard closes a merger open beside a list: it has the window to itself.
+        compose.runOnUiThread { vm.openMerger("MN-20046") }
+        waitForText("Consultation responses due")
+        compose.onNode(hasText("Dashboard") and rail).performClick()
+        waitUntil { vm.backStack.toList() == listOf<Route>(Route.Dashboard) }
         waitForText("Recent determinations")
+
+        // From the dashboard, a merger opens beside it too.
         compose.runOnUiThread { vm.openMerger("MN-01068") }
         waitForText("Tribunal hearing")
         waitForText("Recent determinations")

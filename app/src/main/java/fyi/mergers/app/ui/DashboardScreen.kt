@@ -21,6 +21,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.layout.Spacer
+import fyi.mergers.app.data.RecentDetermination
+import fyi.mergers.app.data.RecentMerger
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
@@ -85,6 +89,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import fyi.mergers.app.data.Dates
@@ -220,6 +225,9 @@ private fun DashboardContent(
     }
     val listState = rememberLazyListState()
     ScrollToTopOnReselect(vm, Route.Dashboard, listState, barState)
+    // A desktop window or a big tablet sideways, the dashboard on its own:
+    // room for two columns (DashboardColumns).
+    val wide = LocalPaneWidth.current.let { it != Dp.Unspecified && it >= WideDashboard }
     // The day pinned at the top, and the next one while it's pushing that one
     // off: both carry the section's title, so the title rides up with the old
     // day and the new day arrives with it, rather than arriving bare and
@@ -241,7 +249,7 @@ private fun DashboardContent(
     LazyColumn(
         Modifier.fillMaxSize().testTag("dashboard"),
         state = listState,
-        contentPadding = PaddingValues(bottom = 24.dp).readable(),
+        contentPadding = PaddingValues(bottom = 24.dp).readable(if (wide) WideDashboardWidth else ReadableWidth),
     ) {
         item {
             Column(Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -269,31 +277,48 @@ private fun DashboardContent(
             }
         }
 
-        if (stats.recent_determinations.isNotEmpty()) {
-            stickyHeader(key = "h-Recent determinations") { StickyTitle("Recent determinations") }
-            items(stats.recent_determinations.take(8), key = { "d-" + it.merger_id }) { d ->
-                ListRow(
-                    title = d.merger_name,
-                    subtitle = listOfNotNull(
-                        if (d.is_waiver) "Waiver" else d.stage?.split(" - ")?.first(),
-                        d.merger_id,
-                    ).joinToString(" · "),
-                    trailing = Dates.format(d.determination_date, compact = true),
-                    onClick = { vm.openMerger(d.merger_id) },
-                    leading = { StatusGlyph(d.determination, conditions = d.has_conditions) },
-                )
-            }
+        val determinations = stats.recent_determinations.take(8)
+        val notified = stats.recent_mergers.take(8)
+        val determinationRow: @Composable (RecentDetermination) -> Unit = { d ->
+            ListRow(
+                title = d.merger_name,
+                subtitle = listOfNotNull(
+                    if (d.is_waiver) "Waiver" else d.stage?.split(" - ")?.first(),
+                    d.merger_id,
+                ).joinToString(" · "),
+                trailing = Dates.format(d.determination_date, compact = true),
+                onClick = { vm.openMerger(d.merger_id) },
+                leading = { StatusGlyph(d.determination, conditions = d.has_conditions) },
+            )
+        }
+        val notifiedRow: @Composable (RecentMerger) -> Unit = { m ->
+            ListRow(
+                title = m.merger_name,
+                subtitle = listOfNotNull(if (m.is_waiver) "Waiver" else "Notification", m.merger_id).joinToString(" · "),
+                trailing = Dates.format(m.effective_notification_datetime, compact = true),
+                onClick = { vm.openMerger(m.merger_id) },
+            )
         }
 
-        if (stats.recent_mergers.isNotEmpty()) {
-            stickyHeader(key = "h-Recently notified") { StickyTitle("Recently notified") }
-            items(stats.recent_mergers.take(8), key = { "n-" + it.merger_id }) { m ->
-                ListRow(
-                    title = m.merger_name,
-                    subtitle = listOfNotNull(if (m.is_waiver) "Waiver" else "Notification", m.merger_id).joinToString(" · "),
-                    trailing = Dates.format(m.effective_notification_datetime, compact = true),
-                    onClick = { vm.openMerger(m.merger_id) },
-                )
+        if (wide && (determinations.isNotEmpty() || notified.isNotEmpty())) {
+            // Side by side, each its own card.
+            item(key = "recent-cards") {
+                Row(
+                    Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp).height(IntrinsicSize.Min),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    SectionCard("Recent determinations", determinations, determinationRow, Modifier.weight(1f).fillMaxHeight())
+                    SectionCard("Recently notified", notified, notifiedRow, Modifier.weight(1f).fillMaxHeight())
+                }
+            }
+        } else {
+            if (determinations.isNotEmpty()) {
+                stickyHeader(key = "h-Recent determinations") { StickyTitle("Recent determinations") }
+                items(determinations, key = { "d-" + it.merger_id }) { determinationRow(it) }
+            }
+            if (notified.isNotEmpty()) {
+                stickyHeader(key = "h-Recently notified") { StickyTitle("Recently notified") }
+                items(notified, key = { "n-" + it.merger_id }) { notifiedRow(it) }
             }
         }
 
@@ -301,13 +326,14 @@ private fun DashboardContent(
             stickyHeader(key = "h-Coming up") { StickyTitle("Coming up") }
             days.forEach { (day, events) ->
                 stickyHeader(key = dayKey(day)) { DayHeader("Coming up", day, pinned = dayKey(day) in pinnedDays) }
-                items(events, key = ::eventKey) { e ->
+                columnsOf(events, wide, ::eventKey) { e, modifier ->
                     ListRow(
                         title = e.merger_name,
                         subtitle = Upcoming.detail(e),
                         trailing = null,
                         onClick = { vm.openMerger(e.merger_id) },
                         leading = { EventTypeTile(e.type, e.event_type_display) },
+                        modifier = modifier,
                     )
                 }
             }
@@ -319,7 +345,7 @@ private fun DashboardContent(
             stickyHeader(key = "h-Recent events") { StickyTitle("Recent events") }
             pastDays.forEach { (day, events) ->
                 stickyHeader(key = pastDayKey(day)) { DayHeader("Recent events", day, pinned = pastDayKey(day) in pinnedDays) }
-                items(events, key = ::eventKey) { e ->
+                columnsOf(events, wide, ::eventKey) { e, modifier ->
                     val type = RecentEventType.of(e.type)
                     ListRow(
                         title = e.merger_name,
@@ -327,11 +353,59 @@ private fun DashboardContent(
                         trailing = null,
                         onClick = { vm.openMerger(e.merger_id) },
                         leading = { RecentEventTile(type) },
+                        modifier = modifier,
                     )
                 }
             }
         }
 
+    }
+}
+
+/** How wide the dashboard's pane must be for two columns. */
+private val WideDashboard = 1000.dp
+
+/** How far two columns may spread before the rest is margin, as [ReadableWidth] is for one. */
+private val WideDashboardWidth = 1280.dp
+
+/**
+ * A day's events: one per row, or on a wide dashboard two, read across then
+ * down, each row as tall as the taller of its two. Keyed on the first of
+ * each pair, so a day header's pinning (dayOfKey) still finds them.
+ */
+private fun <T> LazyListScope.columnsOf(
+    events: List<T>,
+    wide: Boolean,
+    key: (T) -> String,
+    row: @Composable (T, Modifier) -> Unit,
+) {
+    if (!wide) {
+        items(events, key = key) { row(it, Modifier) }
+        return
+    }
+    items(events.chunked(2), key = { key(it.first()) }) { pair ->
+        Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
+            pair.forEach { row(it, Modifier.weight(1f).fillMaxHeight()) }
+            if (pair.size == 1) Spacer(Modifier.weight(1f))
+        }
+    }
+}
+
+/** A dashboard section as a card of its own, for two side by side. */
+@Composable
+private fun <T> SectionCard(title: String, rows: List<T>, row: @Composable (T) -> Unit, modifier: Modifier) {
+    Card(
+        modifier,
+        shape = MaterialTheme.shapes.large,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+    ) {
+        Text(
+            title,
+            style = MaterialTheme.typography.titleMediumEmphasized,
+            modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 6.dp),
+        )
+        rows.forEach { row(it) }
+        Spacer(Modifier.height(8.dp))
     }
 }
 

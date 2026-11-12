@@ -100,7 +100,13 @@ The Mergers and Following tabs, an industry and search keep an empty "Pick a
 merger" pane until one is picked; the dashboard and the digest have the whole
 window. With `vm.listDetail` on, `openMerger` replaces the merger in the
 detail pane instead of stacking; a merger linked from another's page
-(`openRelatedMerger`) still stacks. Following beside a detail pane still counts
+(`openRelatedMerger`) still stacks. Switching to Mergers or Following keeps
+the merger open beside the new tab (`selectTab`); the dashboard, or the
+showing tab tapped again (`tapTab`), closes it. On a dashboard pane 1000dp
+and wider, Recent determinations and Recently notified sit side by side as
+cards (`SectionCard`), and each day of Coming up and Recent events lists its
+events two to a row (`columnsOf`, keyed on the first of each pair), spread to
+1280dp rather than 840. Following beside a detail pane still counts
 as showing, for marking read. Past `ReadableWidth` (840dp) a screen's content
 keeps to the middle: lists take `PaddingValues(...).readable()` as content
 padding (so the margins still scroll them), and fields and filter rows above a

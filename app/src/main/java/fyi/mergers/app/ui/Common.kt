@@ -552,9 +552,10 @@ fun ListRow(
     onClick: () -> Unit,
     leading: @Composable (() -> Unit)? = null,
     emphasis: Boolean = false,
+    modifier: Modifier = Modifier,
 ) {
     Row(
-        Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 16.dp, vertical = 10.dp),
+        modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 16.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {

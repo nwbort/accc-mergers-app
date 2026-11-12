@@ -151,19 +151,35 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     val reselected: SharedFlow<Route> = _reselected
 
     /**
-     * A tap on the bottom bar. On the tab already showing, with a merger or
-     * industry open over it, it goes back to the tab itself; at the tab's own
+     * A tap on the bottom bar or the rail. On the tab already showing, with a
+     * merger or industry open over (or beside) it, it goes back to the tab itself; at the tab's own
      * screen, it scrolls back to the top (Material's guidance for re-selecting
      * the current destination).
      */
     fun tapTab(tab: Route) {
-        if (backStack.size == 1 && backStack.first() == tab) _reselected.tryEmit(tab) else selectTab(tab)
+        when {
+            backStack.size == 1 && backStack.first() == tab -> _reselected.tryEmit(tab)
+            // Its own tab closes a merger open beside it, too (selectTab would keep it).
+            backStack.first() == tab -> {
+                backStack.clear()
+                backStack.add(tab)
+            }
+            else -> selectTab(tab)
+        }
     }
 
     fun selectTab(tab: Route) {
         if (backStack.size == 1 && backStack.first() == tab) return
+        // Beside a list, the merger in the detail pane stays open for the
+        // other lists (Mergers, Following); the dashboard has the window to itself.
+        val keep = if (listDetail && (tab == Route.Mergers || tab == Route.Following)) {
+            backStack.drop(1).takeLastWhile { it is Route.Merger }
+        } else {
+            emptyList()
+        }
         backStack.clear()
         backStack.add(tab)
+        backStack.addAll(keep)
         if (tab == Route.Following) checkFollowing()
     }
 
