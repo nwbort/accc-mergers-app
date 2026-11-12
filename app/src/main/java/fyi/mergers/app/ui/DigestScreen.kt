@@ -3,6 +3,27 @@ package fyi.mergers.app.ui
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.outlined.MarkEmailRead
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.LoadingIndicator
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.autofill.ContentType
+import androidx.compose.ui.semantics.contentType
+import androidx.compose.ui.text.LinkAnnotation
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextLinkStyles
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.withLink
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.offset
@@ -217,21 +238,107 @@ private fun DigestContent(vm: AppViewModel, digest: Digest, tracking: TrackingSt
             }
         }
 
-        // The site signs you up for the email; that takes its Turnstile check, so it stays there.
-        item(key = "email") {
-            Card(
-                onClick = { openUrl(context, DIGEST_URL) },
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
-                shape = MaterialTheme.shapes.large,
-                modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 24.dp),
-            ) {
-                Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Outlined.MarkEmailUnread, contentDescription = null)
-                    Column(Modifier.padding(start = 14.dp).weight(1f)) {
-                        Text("Get this every Monday morning", style = MaterialTheme.typography.titleSmallEmphasized)
-                        Text("Subscribe by email on mergers.fyi", style = MaterialTheme.typography.bodySmall)
+        item(key = "email") { EmailSignup(vm) }
+    }
+}
+
+/**
+ * The digest by email, signed up for here: the site's worker emails a link
+ * to confirm (it can't ask the app for its Turnstile check), and the address
+ * goes on the list once that's pressed. Says what's collected and links the
+ * privacy policy, as Play asks of a form like this.
+ */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+private fun EmailSignup(vm: AppViewModel) {
+    val context = LocalContext.current
+    val state = vm.signup
+    var email by rememberSaveable { mutableStateOf("") }
+    val ink = MaterialTheme.colorScheme.onSecondaryContainer
+    Card(
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer, contentColor = ink),
+        shape = MaterialTheme.shapes.extraLarge,
+        modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 24.dp).testTag("digest-signup"),
+    ) {
+        Column(Modifier.padding(start = 20.dp, end = 20.dp, top = 18.dp, bottom = 14.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    Modifier
+                        .size(36.dp)
+                        .clip(MaterialShapes.Cookie9Sided.toShape())
+                        .background(ink),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        if (state is SignupState.Sent) Icons.Outlined.MarkEmailRead else Icons.Outlined.MarkEmailUnread,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.secondaryContainer,
+                        modifier = Modifier.size(20.dp),
+                    )
+                }
+                Text(
+                    if (state is SignupState.Sent) "Check your inbox" else "Get this every Monday morning",
+                    style = MaterialTheme.typography.titleMediumEmphasized,
+                    modifier = Modifier.padding(start = 12.dp).semantics { heading() },
+                )
+            }
+            if (state is SignupState.Sent) {
+                Text(
+                    "We’ve sent a link to ${state.email}. Tap it, then Confirm, and the digest will arrive each Monday.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(top = 10.dp),
+                )
+                TextButton(onClick = vm::resetDigestSignup, modifier = Modifier.padding(top = 2.dp)) {
+                    Text("Use another address")
+                }
+                return@Column
+            }
+            val sending = state == SignupState.Sending
+            val submit = { vm.subscribeToDigest(email) }
+            OutlinedTextField(
+                value = email,
+                onValueChange = {
+                    email = it
+                    if (state is SignupState.Failed) vm.resetDigestSignup()
+                },
+                label = { Text("Email address") },
+                singleLine = true,
+                enabled = !sending,
+                isError = state is SignupState.Failed,
+                supportingText = (state as? SignupState.Failed)?.let { f -> { Text(f.message) } },
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Email,
+                    autoCorrectEnabled = false,
+                    imeAction = ImeAction.Send,
+                ),
+                keyboardActions = KeyboardActions(onSend = { submit() }),
+                shape = MaterialTheme.shapes.medium,
+                modifier = Modifier.fillMaxWidth().padding(top = 12.dp).semantics { contentType = ContentType.EmailAddress },
+            )
+            Row(Modifier.padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    buildAnnotatedString {
+                        append("We’ll email a link to confirm. ")
+                        withLink(
+                            LinkAnnotation.Url(
+                                "$SITE/privacy",
+                                TextLinkStyles(SpanStyle(fontWeight = FontWeight.SemiBold, textDecoration = TextDecoration.Underline)),
+                            ) { openUrl(context, "$SITE/privacy") },
+                        ) { append("Privacy policy") }
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.weight(1f).padding(end = 12.dp),
+                )
+                Button(
+                    onClick = submit,
+                    enabled = !sending && email.isNotBlank(),
+                    shapes = ButtonDefaults.shapes(),
+                ) {
+                    if (sending) {
+                        LoadingIndicator(Modifier.size(20.dp), color = MaterialTheme.colorScheme.onPrimary)
+                    } else {
+                        Text("Subscribe")
                     }
-                    Icon(Icons.AutoMirrored.Filled.OpenInNew, contentDescription = null, modifier = Modifier.size(18.dp))
                 }
             }
         }

@@ -60,7 +60,12 @@ says, are `data/Digests.kt`. Keep those in step with `Digest.jsx` and
 `DIGEST_COLOR_KEYS`. Each section has its own `MaterialShapes` glyph
 (`DigestSection.shape()` in the screen; a decision takes its outcome's
 `outcomeShape`), on its count card and its heading. The test fixture is a copy of the site's archived digest
-for 26 Oct to 1 Nov 2026.
+for 26 Oct to 1 Nov 2026. At its foot, a native email signup (`EmailSignup`,
+`AppViewModel.subscribeToDigest`) posts to the site's signup worker's
+`/app-signup` route (`data/DigestSignup.kt`), which emails a link to confirm
+(double opt-in) because the app can't show the website's Turnstile check. The
+tests swap in `FakeSignup` (`MergersApp.digestSignup`). Google Play asks a form
+like this to say what's collected and link the privacy policy: keep both.
 
 Widgets (`widget/`): plain `RemoteViews`, no Glance. Coming up
 (`UpcomingWidget`) lists `upcoming-events.json` from the copy kept on the

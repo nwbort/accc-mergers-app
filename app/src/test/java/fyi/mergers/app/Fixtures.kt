@@ -2,6 +2,8 @@ package fyi.mergers.app
 
 import fyi.mergers.app.data.DataSource
 import fyi.mergers.app.data.Dates
+import fyi.mergers.app.data.DigestSignup
+import fyi.mergers.app.data.SignupResult
 import fyi.mergers.app.data.Manifest
 import fyi.mergers.app.data.ManifestHash
 import fyi.mergers.app.data.MergersJson
@@ -84,4 +86,16 @@ class TestApp : MergersApp() {
     override fun scheduleChecks() {}
 
     override fun startPush() {}
+
+    override fun digestSignup(): DigestSignup = FakeSignup
+}
+
+/** The digest's email signup, recording each address instead of emailing it. */
+object FakeSignup : DigestSignup {
+    val asked = mutableListOf<String>()
+
+    override suspend fun subscribe(email: String): SignupResult {
+        synchronized(asked) { asked += email }
+        return SignupResult.Sent("Check your inbox: we’ve sent a link to confirm.")
+    }
 }

@@ -39,6 +39,8 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performScrollToKey
 import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeRight
@@ -149,6 +151,28 @@ class AppTest {
         assertTrue(compose.onAllNodesWithContentDescription("Following").fetchSemanticsNodes().isEmpty())
         accel.performTouchInput { swipeLeft() }
         waitUntil { !Graph.store.current().isTracked("WA-01129") }
+        // Sign up for the email here, not on the site: a bad address is
+        // refused before anything is sent; a good one is asked to confirm.
+        // (Once the swipe's snackbar has gone, so the form is in full view.)
+        compose.waitUntil(10_000) { compose.onAllNodesWithText("No longer following").fetchSemanticsNodes().isEmpty() }
+        compose.onNodeWithTag("digest").performScrollToKey("email")
+        waitForText("Get this every Monday morning")
+        val field = compose.onNode(hasSetTextAction() and hasAnyAncestor(hasTestTag("digest-signup")))
+        field.performTextInput("not an email")
+        compose.onNodeWithText("Subscribe").performClick()
+        waitForText("Please enter a valid email address")
+        assertTrue(FakeSignup.asked.isEmpty())
+        shot("1m-digest-signup-error")
+        field.performTextClearance()
+        field.performTextInput("reader@example.com")
+        compose.onNodeWithText("Subscribe").performClick()
+        waitForText("Check your inbox")
+        assertEquals(listOf("reader@example.com"), FakeSignup.asked)
+        compose.onNodeWithTag("digest").performScrollToKey("email")
+        shot("1n-digest-signup-sent")
+        compose.onNodeWithText("Use another address").performClick()
+        waitForText("Get this every Monday morning")
+
         // A row opens its merger; back returns to the digest.
         compose.onNodeWithTag("digest").performScrollToKey("ongoing-phase-2-MN-01072")
         // Anywhere on the card, not just its name: here its summary.
