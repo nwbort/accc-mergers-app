@@ -16,6 +16,7 @@ import fyi.mergers.app.ui.theme.eventTypeColors
 import fyi.mergers.app.ui.theme.recentEventColors
 import fyi.mergers.app.ui.theme.statusColors
 import fyi.mergers.app.ui.theme.statusGlyphColors
+import fyi.mergers.app.ui.theme.swipeBackingColors
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -81,6 +82,20 @@ class ContrastTest {
                 assertText("$what on the page", c.ink, scheme.surface)
                 assertText("$what on a card", c.ink, scheme.surfaceContainerLow)
                 assertText("$what on its chip", c.ink, c.wash.compositeOver(scheme.surface))
+            }
+        }
+    }
+
+    @Test
+    fun swipe_backing_reads_in_every_card_colour() {
+        for (dark in listOf(false, true)) {
+            val accents = statuses.map { "status ${it ?: "unknown"}" to statusGlyphColors(it, dark).fill } +
+                DigestColor.entries.map { "digest $it" to digestColors(it, dark).let { c -> if (dark) c.ink else c.bar } }
+            accents.forEach { (what, accent) ->
+                for (followed in listOf(false, true)) {
+                    val c = swipeBackingColors(accent, followed, dark)
+                    assertText("$what swipe, followed=$followed, dark=$dark", c.onFill, c.fill)
+                }
             }
         }
     }

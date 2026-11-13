@@ -53,6 +53,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
@@ -117,6 +118,7 @@ import fyi.mergers.app.ui.theme.StatusColors
 import fyi.mergers.app.ui.theme.WaiverAmber
 import fyi.mergers.app.ui.theme.statusColors
 import fyi.mergers.app.ui.theme.statusGlyphColors
+import fyi.mergers.app.ui.theme.swipeBackingColors
 
 /**
  * Open a link in a Custom Tab (documents, the site, the ACCC's page), or
@@ -353,7 +355,8 @@ fun MergerCard(
         MergerCardBody(m, followed, onClick, modifier, onLongClick, Modifier)
         return
     }
-    SwipeToFollow(followed, onSwipe, modifier, MaterialTheme.shapes.large) { actions ->
+    val key = m.outcomeInput().headerStatus()?.label ?: m.status
+    SwipeToFollow(followed, onSwipe, modifier, MaterialTheme.shapes.large, statusGlyphColors(key).fill) { actions ->
         MergerCardBody(m, followed, onClick, Modifier, onLongClick, actions)
     }
 }
@@ -368,7 +371,7 @@ private const val SWIPE_FLING_DP = 1000
  * A card that follows or unfollows its merger when swiped either way past a
  * quarter of its width ([SWIPE_THRESHOLD]), or flicked, then springs back: it
  * isn't dismissed. Behind it as it moves, what the swipe will do, in the
- * card's [shape]; a screen reader gets the same as one of the card's actions.
+ * card's [shape] and a wash of its [accent]; a screen reader gets the same as one of the card's actions.
  * [content] puts the modifier it's handed on its clickable node: an action
  * on this wrapper would sit on a node TalkBack never lands on.
  *
@@ -383,6 +386,7 @@ fun SwipeToFollow(
     onSwipe: () -> Unit,
     modifier: Modifier = Modifier,
     shape: Shape,
+    accent: Color,
     content: @Composable (actions: Modifier) -> Unit,
 ) {
     val act by rememberUpdatedState(onSwipe)
@@ -417,7 +421,7 @@ fun SwipeToFollow(
         // Stretched (a card beside a taller one, on a wide dashboard), the card stretches with it.
         propagateMinConstraints = true,
     ) {
-        if (offset != 0f) SwipeBacking(fromStart = offset > 0, armed = armed, followed = followed, shape = shape)
+        if (offset != 0f) SwipeBacking(fromStart = offset > 0, armed = armed, followed = followed, shape = shape, accent = accent)
         Box(Modifier.offset { IntOffset(offset.roundToInt(), 0) }, propagateMinConstraints = true) { content(actions) }
     }
 }
@@ -425,7 +429,7 @@ fun SwipeToFollow(
 /** What a swipe on a card will do, shown behind it as it moves: follow, or unfollow. */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-private fun BoxScope.SwipeBacking(fromStart: Boolean, armed: Boolean, followed: Boolean, shape: Shape) {
+private fun BoxScope.SwipeBacking(fromStart: Boolean, armed: Boolean, followed: Boolean, shape: Shape, accent: Color) {
     val haptics = LocalHapticFeedback.current
     LaunchedEffect(armed) { if (armed) haptics.performHapticFeedback(HapticFeedbackType.GestureThresholdActivate) }
     val grow by animateFloatAsState(
@@ -433,11 +437,7 @@ private fun BoxScope.SwipeBacking(fromStart: Boolean, armed: Boolean, followed: 
         MaterialTheme.motionScheme.fastSpatialSpec(),
         label = "swipeIcon",
     )
-    val (fill, ink) = if (followed) {
-        MaterialTheme.colorScheme.surfaceContainerHighest to MaterialTheme.colorScheme.onSurfaceVariant
-    } else {
-        MaterialTheme.colorScheme.primaryContainer to MaterialTheme.colorScheme.onPrimaryContainer
-    }
+    val (fill, ink) = swipeBackingColors(accent, followed, isDarkTheme())
     // Only for the eye: a screen reader has the card's Follow or Unfollow action instead.
     Row(
         Modifier
