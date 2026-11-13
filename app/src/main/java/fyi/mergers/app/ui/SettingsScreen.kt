@@ -127,6 +127,12 @@ fun SettingsScreen(vm: AppViewModel) {
                 trailing = null,
                 onClick = { openUrl(context, "https://mergers.fyi/") },
             )
+            ListRow(
+                title = "Made by Nick Twort",
+                subtitle = "About me, on mergers.fyi",
+                trailing = null,
+                onClick = { openUrl(context, "https://mergers.fyi/nick-twort") },
+            )
             if (version != null) {
                 Text(
                     "Version $version",
