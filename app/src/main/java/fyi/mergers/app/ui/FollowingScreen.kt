@@ -87,6 +87,9 @@ fun FollowingScreen(vm: AppViewModel) {
     val snackbar = remember { SnackbarHostState() }
     val toggleFollow = rememberMergerFollowToggle(vm, snackbar)
     ScrollToTopOnReselect(vm, Route.Following, list, bar.state)
+    // Item positions of the section headings, refilled as the list is built.
+    val sections = remember { mutableSetOf<Int>() }
+    SectionHeadingHaptics(list) { it.index in sections }
     Scaffold(
         modifier = Modifier.nestedScroll(bar.nestedScrollConnection),
         contentWindowInsets = WindowInsets(0),
@@ -112,9 +115,14 @@ fun FollowingScreen(vm: AppViewModel) {
             modifier = Modifier.padding(padding).fillMaxSize(),
         ) {
             LazyColumn(Modifier.fillMaxSize().testTag("following"), state = list, contentPadding = PaddingValues(bottom = 24.dp).readable()) {
+                sections.clear()
+                var count = 0
+                fun section() { sections.add(count); count++ }
                 item { NotificationsBanner() }
+                count++
 
                 if (tracking.followsNothing) {
+                    count++
                     item {
                         Column(Modifier.fillMaxWidth().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                             Text("You're not following anything yet", style = MaterialTheme.typography.titleMedium)
@@ -135,12 +143,16 @@ fun FollowingScreen(vm: AppViewModel) {
                 }
 
                 if (unread.isNotEmpty()) {
+                    section()
                     stickyHeader { StickyTitle("New (${unread.size})") }
+                    count += unread.size
                     items(unread, key = { "new-" + it.key }) { e -> EventItem(e, unread = true) { open(vm, e) } }
                 }
 
                 if (upcoming.isNotEmpty()) {
+                    section()
                     stickyHeader { StickyTitle("Coming up") }
+                    count += upcoming.size
                     items(upcoming, key = { "up-" + it.key }) { e ->
                         ListRow(
                             title = e.mergerName,
@@ -152,7 +164,9 @@ fun FollowingScreen(vm: AppViewModel) {
                 }
 
                 if (tracking.tracked.isNotEmpty()) {
+                    section()
                     stickyHeader { StickyTitle("Mergers you follow (${tracking.tracked.size})") }
+                    count += tracking.tracked.size
                     items(tracking.tracked.reversed(), key = { "f-$it" }) { id ->
                         val m = summaries[id]
                         if (m != null) {
@@ -177,7 +191,9 @@ fun FollowingScreen(vm: AppViewModel) {
                 }
 
                 if (tracking.industries.isNotEmpty()) {
+                    section()
                     stickyHeader { StickyTitle("Industries you follow (${tracking.industries.size})") }
+                    count += tracking.industries.size
                     items(tracking.industries.reversed(), key = { "fi-" + it.code }) { ind ->
                         ListRow(
                             title = ind.name,
@@ -189,7 +205,9 @@ fun FollowingScreen(vm: AppViewModel) {
                 }
 
                 if (earlier.isNotEmpty()) {
+                    section()
                     stickyHeader { StickyTitle("Earlier") }
+                    count += earlier.size
                     items(earlier, key = { "old-" + it.key }) { e -> EventItem(e, unread = false) { open(vm, e) } }
                 }
 

@@ -40,6 +40,7 @@ import androidx.compose.material3.toShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.snapshotFlow
 import kotlinx.coroutines.launch
 import androidx.compose.animation.core.animate
 import androidx.compose.foundation.gestures.Orientation
@@ -201,6 +202,36 @@ fun rememberFollowHaptics(): (Boolean) -> Unit {
     val haptics = LocalHapticFeedback.current
     return remember(haptics) {
         { on -> haptics.performHapticFeedback(if (on) HapticFeedbackType.ToggleOn else HapticFeedbackType.ToggleOff) }
+    }
+}
+
+/** Key prefix of a section's sticky heading, which [SectionHeadingHaptics] ticks for. */
+const val SectionHeaderPrefix = "h-"
+
+/**
+ * A faint tick as a section heading sticks to the top of [state]'s list. Only
+ * headings keyed with [SectionHeaderPrefix] count, so a dashboard's day headers
+ * under a section stay quiet.
+ */
+@Composable
+fun SectionHeadingHaptics(
+    state: androidx.compose.foundation.lazy.LazyListState,
+    isSection: (androidx.compose.foundation.lazy.LazyListItemInfo) -> Boolean = { (it.key as? String)?.startsWith(SectionHeaderPrefix) == true },
+) {
+    val haptics = LocalHapticFeedback.current
+    LaunchedEffect(state, haptics) {
+        var last: Any? = null
+        snapshotFlow {
+            // Stuck: scrolled past its natural place (not merely sitting at the top).
+            val first = state.firstVisibleItemIndex
+            val scrolled = state.firstVisibleItemScrollOffset > 0
+            state.layoutInfo.visibleItemsInfo
+                .lastOrNull { isSection(it) && (it.index < first || (it.index == first && scrolled)) }
+                ?.index
+        }.collect { stuck ->
+            if (stuck != null && stuck != last) haptics.performHapticFeedback(HapticFeedbackType.SegmentTick)
+            last = stuck
+        }
     }
 }
 

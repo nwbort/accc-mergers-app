@@ -197,6 +197,7 @@ private fun DigestContent(vm: AppViewModel, digest: Digest, tracking: TrackingSt
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val listState = rememberLazyListState()
+    SectionHeadingHaptics(listState)
     val sections = remember(digest) {
         Digests.sections(digest).map { (s, mergers) -> Triple(s, mergers.size, Digests.groups(s, mergers)) }
     }
@@ -233,7 +234,7 @@ private fun DigestContent(vm: AppViewModel, digest: Digest, tracking: TrackingSt
         }
 
         sections.forEach { (section, count, groups) ->
-            stickyHeader(key = "h-" + section.id) { SectionHeading(section, count) }
+            stickyHeader(key = SectionHeaderPrefix + section.id) { SectionHeading(section, count) }
             groups.forEach { group ->
                 group.label?.let { label ->
                     item(key = "g-${section.id}-$label") { GroupLabel(label) }
