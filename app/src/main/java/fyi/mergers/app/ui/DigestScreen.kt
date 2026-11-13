@@ -114,6 +114,7 @@ import fyi.mergers.app.data.SITE
 import fyi.mergers.app.tracking.TrackingState
 import fyi.mergers.app.ui.theme.DigestColors
 import fyi.mergers.app.ui.theme.digestColors
+import fyi.mergers.app.ui.theme.isDarkTheme
 import kotlinx.coroutines.launch
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.ime
@@ -633,6 +634,8 @@ private fun DigestRowCard(
         onSwipe,
         Modifier.padding(horizontal = 16.dp, vertical = 1.dp),
         shape,
+        // The section's colour: in the dark its ink is the light shade, its bar the deep one.
+        if (isDarkTheme()) c.ink else c.bar,
     ) { actions ->
         Surface(
             onClick = onClick,

@@ -13,6 +13,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.unit.dp
 import fyi.mergers.app.data.DigestColor
 import fyi.mergers.app.data.IndustryPhase
@@ -118,6 +119,24 @@ fun statusColors(label: String?): StatusColors = when (label) {
     Status.ASSESSMENT_SUSPENDED -> StatusColors(Color(0xFFC2410C), Color.White)
     Status.ASSESSMENT_CEASED -> StatusColors(Color(0xFF7E22CE), Color.White)
     else -> StatusColors(Color(0xFF4B5563), Color.White)
+}
+
+/**
+ * Behind a card as it's swiped (SwipeToFollow): a wash of the card's own
+ * [accent] (its status, or its digest section), stronger to follow than to
+ * unfollow, and the ink for the icon and words on it.
+ */
+fun swipeBackingColors(accent: Color, followed: Boolean, dark: Boolean): StatusColors {
+    val scheme = if (dark) Dark else Light
+    val alpha = when {
+        followed -> 0.12f
+        dark -> 0.24f
+        else -> 0.30f
+    }
+    return StatusColors(
+        accent.copy(alpha = alpha).compositeOver(scheme.surfaceContainerHigh),
+        if (followed) scheme.onSurfaceVariant else scheme.onSurface,
+    )
 }
 
 /**
