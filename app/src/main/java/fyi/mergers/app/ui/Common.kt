@@ -214,14 +214,20 @@ const val SectionHeaderPrefix = "h-"
  * under a section stay quiet.
  */
 @Composable
-fun SectionHeadingHaptics(state: androidx.compose.foundation.lazy.LazyListState) {
+fun SectionHeadingHaptics(
+    state: androidx.compose.foundation.lazy.LazyListState,
+    isSection: (androidx.compose.foundation.lazy.LazyListItemInfo) -> Boolean = { (it.key as? String)?.startsWith(SectionHeaderPrefix) == true },
+) {
     val haptics = LocalHapticFeedback.current
     LaunchedEffect(state, haptics) {
         var last: Any? = null
         snapshotFlow {
+            // Stuck: scrolled past its natural place (not merely sitting at the top).
+            val first = state.firstVisibleItemIndex
+            val scrolled = state.firstVisibleItemScrollOffset > 0
             state.layoutInfo.visibleItemsInfo
-                .lastOrNull { (it.key as? String)?.startsWith(SectionHeaderPrefix) == true && it.offset <= 0 }
-                ?.key
+                .lastOrNull { isSection(it) && (it.index < first || (it.index == first && scrolled)) }
+                ?.index
         }.collect { stuck ->
             if (stuck != null && stuck != last) haptics.performHapticFeedback(HapticFeedbackType.SegmentTick)
             last = stuck
