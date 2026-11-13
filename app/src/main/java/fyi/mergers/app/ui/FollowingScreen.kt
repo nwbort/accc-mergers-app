@@ -87,6 +87,7 @@ fun FollowingScreen(vm: AppViewModel) {
     val snackbar = remember { SnackbarHostState() }
     val toggleFollow = rememberMergerFollowToggle(vm, snackbar)
     ScrollToTopOnReselect(vm, Route.Following, list, bar.state)
+    SectionHeadingHaptics(list)
     Scaffold(
         modifier = Modifier.nestedScroll(bar.nestedScrollConnection),
         contentWindowInsets = WindowInsets(0),
@@ -135,12 +136,12 @@ fun FollowingScreen(vm: AppViewModel) {
                 }
 
                 if (unread.isNotEmpty()) {
-                    stickyHeader { StickyTitle("New (${unread.size})") }
+                    stickyHeader(key = SectionHeaderPrefix + "New") { StickyTitle("New (${unread.size})") }
                     items(unread, key = { "new-" + it.key }) { e -> EventItem(e, unread = true) { open(vm, e) } }
                 }
 
                 if (upcoming.isNotEmpty()) {
-                    stickyHeader { StickyTitle("Coming up") }
+                    stickyHeader(key = SectionHeaderPrefix + "Coming up") { StickyTitle("Coming up") }
                     items(upcoming, key = { "up-" + it.key }) { e ->
                         ListRow(
                             title = e.mergerName,
@@ -152,7 +153,7 @@ fun FollowingScreen(vm: AppViewModel) {
                 }
 
                 if (tracking.tracked.isNotEmpty()) {
-                    stickyHeader { StickyTitle("Mergers you follow (${tracking.tracked.size})") }
+                    stickyHeader(key = SectionHeaderPrefix + "Mergers") { StickyTitle("Mergers you follow (${tracking.tracked.size})") }
                     items(tracking.tracked.reversed(), key = { "f-$it" }) { id ->
                         val m = summaries[id]
                         if (m != null) {
@@ -177,7 +178,7 @@ fun FollowingScreen(vm: AppViewModel) {
                 }
 
                 if (tracking.industries.isNotEmpty()) {
-                    stickyHeader { StickyTitle("Industries you follow (${tracking.industries.size})") }
+                    stickyHeader(key = SectionHeaderPrefix + "Industries") { StickyTitle("Industries you follow (${tracking.industries.size})") }
                     items(tracking.industries.reversed(), key = { "fi-" + it.code }) { ind ->
                         ListRow(
                             title = ind.name,
@@ -189,7 +190,7 @@ fun FollowingScreen(vm: AppViewModel) {
                 }
 
                 if (earlier.isNotEmpty()) {
-                    stickyHeader { StickyTitle("Earlier") }
+                    stickyHeader(key = SectionHeaderPrefix + "Earlier") { StickyTitle("Earlier") }
                     items(earlier, key = { "old-" + it.key }) { e -> EventItem(e, unread = false) { open(vm, e) } }
                 }
 

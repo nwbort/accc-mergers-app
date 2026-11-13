@@ -235,6 +235,7 @@ private fun DashboardContent(
     }
     val listState = rememberLazyListState()
     ScrollToTopOnReselect(vm, Route.Dashboard, listState, barState)
+    SectionHeadingHaptics(listState)
     val register by vm.list.collectAsStateWithLifecycle()
     val registerById = remember(register.value) { register.value.orEmpty().associateBy { it.merger_id } }
     val tracking by vm.tracking.collectAsStateWithLifecycle()
@@ -318,7 +319,7 @@ private fun DashboardContent(
         }
 
         if (determinations.isNotEmpty()) {
-            stickyHeader(key = "h-Recent determinations") { StickyTitle("Recent determinations") }
+            stickyHeader(key = SectionHeaderPrefix + "Recent determinations") { StickyTitle("Recent determinations") }
             if (wide) {
                 mergerCards(determinations, { "d-" + it.merger_id }, { it.merger_id }, cards) { determinationRow(it) }
             } else {
@@ -326,7 +327,7 @@ private fun DashboardContent(
             }
         }
         if (notified.isNotEmpty()) {
-            stickyHeader(key = "h-Recently notified") { StickyTitle("Recently notified") }
+            stickyHeader(key = SectionHeaderPrefix + "Recently notified") { StickyTitle("Recently notified") }
             if (wide) {
                 mergerCards(notified, { "n-" + it.merger_id }, { it.merger_id }, cards) { notifiedRow(it) }
             } else {
@@ -335,7 +336,7 @@ private fun DashboardContent(
         }
 
         if (soon.isNotEmpty()) {
-            stickyHeader(key = "h-Coming up") { StickyTitle("Coming up") }
+            stickyHeader(key = SectionHeaderPrefix + "Coming up") { StickyTitle("Coming up") }
             days.forEach { (day, events) ->
                 stickyHeader(key = dayKey(day)) { DayHeader("Coming up", day, pinned = dayKey(day) in pinnedDays) }
                 columnsOf(events, wide, ::eventKey) { e, modifier ->
@@ -354,7 +355,7 @@ private fun DashboardContent(
         // What has just happened on the register, newest day first: the site's
         // Recent events, with the same types left out (RecentEventType.shown).
         if (pastDays.isNotEmpty()) {
-            stickyHeader(key = "h-Recent events") { StickyTitle("Recent events") }
+            stickyHeader(key = SectionHeaderPrefix + "Recent events") { StickyTitle("Recent events") }
             pastDays.forEach { (day, events) ->
                 stickyHeader(key = pastDayKey(day)) { DayHeader("Recent events", day, pinned = pastDayKey(day) in pinnedDays) }
                 columnsOf(events, wide, ::eventKey) { e, modifier ->
