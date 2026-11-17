@@ -716,21 +716,11 @@ private fun ReasonsCard(e: MergerEvent, reasons: List<Reasons.Block>) {
                 .animateContentSize(MaterialTheme.motionScheme.defaultSpatialSpec()),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Column {
-                Text(
-                    "Why the ACCC decided",
-                    style = MaterialTheme.typography.titleMediumEmphasized,
-                    modifier = Modifier.semantics { heading() },
-                )
-                listOfNotNull(e.display_title ?: e.title, Dates.format(e.date)).joinToString(" · ")
-                    .takeIf { it.isNotEmpty() }?.let {
-                        Text(
-                            it,
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSecondaryContainer,
-                        )
-                    }
-            }
+            Text(
+                "Why the ACCC decided",
+                style = MaterialTheme.typography.titleMediumEmphasized,
+                modifier = Modifier.semantics { heading() },
+            )
             shown.forEach { ReasonBlock(it) }
             if (long) {
                 TextButton(
