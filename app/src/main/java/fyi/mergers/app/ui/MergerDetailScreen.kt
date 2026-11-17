@@ -270,6 +270,13 @@ private fun Detail(vm: AppViewModel, m: MergerDetail, listState: LazyListState) 
     val context = LocalContext.current
     val events = remember(m) { m.events.sortedWith(compareByDescending<MergerEvent> { it.date ?: "" }) }
     val upcoming = remember(m) { TrackedEvents.upcoming(m).sortedBy { it.date } }
+    // The latest determination's reasons lead the page; its timeline row then
+    // doesn't repeat them.
+    val decision = remember(events) {
+        events.firstNotNullOfOrNull { e ->
+            Reasons.forEvent(e).takeIf { e.is_determination_event && it.isNotEmpty() }?.let { e to it }
+        }
+    }
 
     // Room at the foot for the floating toolbar.
     LazyColumn(Modifier.fillMaxSize().testTag("detail"), state = listState, contentPadding = PaddingValues(bottom = 104.dp).readable()) {
@@ -292,6 +299,10 @@ private fun Detail(vm: AppViewModel, m: MergerDetail, listState: LazyListState) 
         }
 
         item { Facts(m) }
+
+        decision?.let { (e, reasons) ->
+            item { ReasonsCard(e, reasons) }
+        }
 
         if (upcoming.isNotEmpty()) {
             item { SectionTitle("Coming up") }
@@ -391,7 +402,9 @@ private fun Detail(vm: AppViewModel, m: MergerDetail, listState: LazyListState) 
         if (events.isNotEmpty()) {
             item { SectionTitle("Timeline") }
             items(events.size) { i ->
-                EventRow(events[i], last = i == events.lastIndex) { url -> openUrl(context, url) }
+                EventRow(events[i], last = i == events.lastIndex, withReasons = events[i] !== decision?.first) { url ->
+                    openUrl(context, url)
+                }
             }
         }
 
@@ -502,7 +515,9 @@ private fun Facts(m: MergerDetail) {
         Dates.format(m.original_notification_datetime)
             ?.takeIf { m.original_notification_datetime?.take(10) != m.effective_notification_datetime?.take(10) }
             ?.let { "First notified" to it },
-        Dates.format(m.consultation_response_due_date)?.let { "Consultation responses due" to it },
+        // Almost always a week after notification, so only worth a row while it's still to come.
+        m.consultation_response_due_date?.takeIf { (Dates.daysUntil(it) ?: -1) >= 0 }
+            ?.let(Dates::format)?.let { "Consultation responses due" to it },
         if (determinationDate == null) {
             Dates.format(m.end_of_determination_period)?.let { "Determination due" to it }
         } else {
@@ -607,10 +622,10 @@ private fun Chips(labels: List<Pair<String, () -> Unit>>) {
 
 /** One event on the timeline: a dot and a line, its date, title, document and the reasons. */
 @Composable
-private fun EventRow(e: MergerEvent, last: Boolean, open: (String) -> Unit) {
+private fun EventRow(e: MergerEvent, last: Boolean, withReasons: Boolean = true, open: (String) -> Unit) {
     val doc = documentUrl(e.url_gh, e.url)
     var expanded by rememberSaveable(e.date, e.title) { mutableStateOf(false) }
-    val reasons: List<Reasons.Block> = remember(e) { Reasons.forEvent(e) }
+    val reasons: List<Reasons.Block> = remember(e, withReasons) { if (withReasons) Reasons.forEvent(e) else emptyList() }
     val accent = when {
         e.is_appeal -> AppealIndigo.fill
         e.is_determination_event -> MaterialTheme.colorScheme.secondary
@@ -681,6 +696,61 @@ private fun EventRow(e: MergerEvent, last: Boolean, open: (String) -> Unit) {
         }
     }
 }
+
+/**
+ * The latest determination's reasons, as a card under the facts: the first
+ * few blocks, and the rest behind "Read all reasons" when there are more.
+ */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+private fun ReasonsCard(e: MergerEvent, reasons: List<Reasons.Block>) {
+    var expanded by rememberSaveable(e.date, e.title) { mutableStateOf(false) }
+    val long = reasons.size > REASONS_PREVIEW
+    val shown = if (long && !expanded) reasons.take(REASONS_PREVIEW) else reasons
+    Card(
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+    ) {
+        Column(
+            Modifier.padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = if (long) 4.dp else 16.dp)
+                .animateContentSize(MaterialTheme.motionScheme.defaultSpatialSpec()),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Column {
+                Text(
+                    "Why the ACCC decided",
+                    style = MaterialTheme.typography.titleMediumEmphasized,
+                    modifier = Modifier.semantics { heading() },
+                )
+                listOfNotNull(e.display_title ?: e.title, Dates.format(e.date)).joinToString(" · ")
+                    .takeIf { it.isNotEmpty() }?.let {
+                        Text(
+                            it,
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer,
+                        )
+                    }
+            }
+            shown.forEach { ReasonBlock(it) }
+            if (long) {
+                TextButton(
+                    onClick = { expanded = !expanded },
+                    modifier = Modifier.offset(x = (-12).dp)
+                        .semantics { stateDescription = if (expanded) "Expanded" else "Collapsed" },
+                ) {
+                    Text(if (expanded) "Show less" else "Read all reasons")
+                    Icon(
+                        if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp),
+                    )
+                }
+            }
+        }
+    }
+}
+
+private const val REASONS_PREVIEW = 3
 
 /** One block of a determination's reasons: a heading, a paragraph or a list. */
 @Composable

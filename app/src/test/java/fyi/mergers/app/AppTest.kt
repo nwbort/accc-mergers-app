@@ -483,12 +483,15 @@ class AppTest {
         )
         waitForText("Asahi – Warehouse site on Tilburn Rd, Deer Park (Vic)")
         shot("7-detail-decided")
-        // Its timeline, and a determination's reasons opened there: the toggle
-        // says which way it is to TalkBack, not only by its arrow.
-        compose.onNodeWithTag("detail").performScrollToNode(hasText("Show reasons"))
+        // The determination's reasons lead the page, in a card under the facts
+        // (which leave out the consultation date once it has passed); the
+        // timeline doesn't repeat them.
+        compose.onNodeWithText("Why the ACCC decided").assertExists()
+        compose.onNodeWithText("Consultation responses due").assertDoesNotExist()
+        compose.onNodeWithTag("detail").performScrollToNode(hasText("Timeline"))
         shot("7a-detail-timeline")
-        compose.onNodeWithText("Show reasons").assert(hasStateDescription("Collapsed")).performClick()
-        compose.onNodeWithText("Hide reasons").assert(hasStateDescription("Expanded"))
+        compose.onNodeWithText("Show reasons").assertDoesNotExist()
+        compose.onNodeWithTag("detail").performScrollToIndex(0)
         shot("7b-detail-reasons")
 
         // A page the app has no screen for goes to the browser, and the app stays put.
