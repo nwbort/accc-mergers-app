@@ -114,6 +114,7 @@ import fyi.mergers.app.data.outcomeText
 import fyi.mergers.app.data.stageLabel
 import fyi.mergers.app.tracking.TrackedEvents
 import fyi.mergers.app.ui.theme.AppealIndigo
+import fyi.mergers.app.ui.theme.reasonsColors
 import fyi.mergers.app.ui.theme.statusColors
 import fyi.mergers.app.ui.theme.statusGlyphColors
 import fyi.mergers.app.ui.theme.isDarkTheme
@@ -301,7 +302,7 @@ private fun Detail(vm: AppViewModel, m: MergerDetail, listState: LazyListState) 
         item { Facts(m) }
 
         decision?.let { (e, reasons) ->
-            item { ReasonsCard(e, reasons) }
+            item { ReasonsCard(m, e, reasons) }
         }
 
         if (upcoming.isNotEmpty()) {
@@ -700,15 +701,17 @@ private fun EventRow(e: MergerEvent, last: Boolean, withReasons: Boolean = true,
 /**
  * The latest determination's reasons, as a card under the facts: the first
  * few blocks, and the rest behind "Read all reasons" when there are more.
+ * Green for a merger let through, red for one refused ([reasonsColors]).
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-private fun ReasonsCard(e: MergerEvent, reasons: List<Reasons.Block>) {
+private fun ReasonsCard(m: MergerDetail, e: MergerEvent, reasons: List<Reasons.Block>) {
     var expanded by rememberSaveable(e.date, e.title) { mutableStateOf(false) }
     val long = reasons.size > REASONS_PREVIEW
     val shown = if (long && !expanded) reasons.take(REASONS_PREVIEW) else reasons
+    val colors = reasonsColors(m.outcomeInput().headerStatus()?.label ?: m.status)
     Card(
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
+        colors = CardDefaults.cardColors(containerColor = colors.fill, contentColor = colors.onFill),
         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
     ) {
         Column(
