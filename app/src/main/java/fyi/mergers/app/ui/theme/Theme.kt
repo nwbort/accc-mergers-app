@@ -163,6 +163,21 @@ fun statusGlyphColors(label: String?, dark: Boolean): StatusColors {
     }
 }
 
+/**
+ * The card of a decided merger's reasons: the scheme's green container, or
+ * red for a merger the ACCC refused (Tailwind's red 100 under red 950; in
+ * the dark, red 900 under red 50, as the green's 800 under 50).
+ */
+@Composable
+fun reasonsColors(label: String?): StatusColors = reasonsColors(label, isDarkTheme())
+
+fun reasonsColors(label: String?, dark: Boolean): StatusColors = when (label) {
+    Status.NOT_APPROVED, Status.DECLINED ->
+        if (dark) StatusColors(Color(0xFF7F1D1D), Color(0xFFFEF2F2))
+        else StatusColors(Color(0xFFFEE2E2), Color(0xFF450A0A))
+    else -> (if (dark) Dark else Light).let { StatusColors(it.secondaryContainer, it.onSecondaryContainer) }
+}
+
 /** The wash a matter under appeal or judicial review takes, as on the site. */
 val AppealIndigo = StatusColors(Color(0xFF4338CA), Color.White)
 
