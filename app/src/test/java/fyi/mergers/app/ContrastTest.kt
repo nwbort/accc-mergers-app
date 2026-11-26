@@ -14,6 +14,7 @@ import fyi.mergers.app.ui.theme.WaiverAmber
 import fyi.mergers.app.ui.theme.digestColors
 import fyi.mergers.app.ui.theme.eventTypeColors
 import fyi.mergers.app.ui.theme.reasonsColors
+import fyi.mergers.app.ui.theme.relatedMergerColors
 import fyi.mergers.app.ui.theme.recentEventColors
 import fyi.mergers.app.ui.theme.statusColors
 import fyi.mergers.app.ui.theme.statusGlyphColors
@@ -92,6 +93,14 @@ class ContrastTest {
         for (dark in listOf(false, true)) statuses.forEach {
             val c = reasonsColors(it, dark)
             assertText("${it ?: "unknown"} reasons, dark=$dark", c.onFill, c.fill)
+        }
+    }
+
+    @Test
+    fun related_merger_link_reads_on_its_card() {
+        for (dark in listOf(false, true)) {
+            val c = relatedMergerColors(dark)
+            assertText("related merger, dark=$dark", c.onFill, c.fill.compositeOver(if (dark) Dark.surface else Light.surface))
         }
     }
 

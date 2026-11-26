@@ -38,6 +38,8 @@ import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Link
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -73,6 +75,7 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -115,6 +118,7 @@ import fyi.mergers.app.data.stageLabel
 import fyi.mergers.app.tracking.TrackedEvents
 import fyi.mergers.app.ui.theme.AppealIndigo
 import fyi.mergers.app.ui.theme.reasonsColors
+import fyi.mergers.app.ui.theme.relatedMergerColors
 import fyi.mergers.app.ui.theme.statusColors
 import fyi.mergers.app.ui.theme.statusGlyphColors
 import fyi.mergers.app.ui.theme.isDarkTheme
@@ -317,15 +321,9 @@ private fun Detail(vm: AppViewModel, m: MergerDetail, listState: LazyListState) 
             }
         }
 
-        m.related_merger?.merger_id?.let { relatedId ->
-            item {
-                val what = when (m.related_merger.relationship) {
-                    "refiled_as", "suspended_refiled_as" -> "Re-filed as"
-                    "refiled_from", "suspended_refiled_from" -> "Re-filed from"
-                    else -> "Related"
-                }
-                SectionTitle(what)
-                ListRow(m.related_merger.merger_name ?: relatedId, relatedId, null, onClick = { vm.openRelatedMerger(relatedId) })
+        m.related_merger?.let { related ->
+            related.merger_id?.let { relatedId ->
+                item { RelatedMergerCard(related.text, related.merger_name, relatedId) { vm.openRelatedMerger(relatedId) } }
             }
         }
 
@@ -566,19 +564,86 @@ private fun InfoCard(rows: List<Pair<String, String>>, link: Pair<String, String
     }
 }
 
+/**
+ * The merger this one is paired with (the notification a declined waiver was
+ * re-filed as, and so on), as the site's amber link: the pair's own wording,
+ * then the other matter's name and number, on a card that reads as a button.
+ */
+@Composable
+private fun RelatedMergerCard(label: String, name: String?, id: String, onClick: () -> Unit) {
+    val colors = relatedMergerColors()
+    Card(
+        onClick = onClick,
+        colors = CardDefaults.cardColors(
+            containerColor = colors.fill.compositeOver(MaterialTheme.colorScheme.surface),
+            contentColor = colors.onFill,
+        ),
+        shape = MaterialTheme.shapes.large,
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp).testTag("related-merger"),
+    ) {
+        Row(
+            Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Icon(Icons.Filled.Link, contentDescription = null, modifier = Modifier.size(22.dp))
+            Column(Modifier.weight(1f)) {
+                Text(label, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+                Text(
+                    listOfNotNull(name?.takeIf { it.isNotBlank() }, id).joinToString(" · "),
+                    style = MaterialTheme.typography.bodySmall,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null)
+        }
+    }
+}
+
+/**
+ * Long prose cut short, with "Read more". A tap anywhere on it opens or
+ * closes it, not only on the words at its foot.
+ */
 @Composable
 private fun Expandable(text: String) {
     var expanded by rememberSaveable { mutableStateOf(false) }
     val long = text.length > 600
-    Column(Modifier.padding(horizontal = 16.dp).animateContentSize()) {
+    Column(
+        Modifier.padding(horizontal = 16.dp)
+            .then(if (long) Modifier.toggleOnTap(expanded, "Read more") { expanded = !expanded } else Modifier)
+            .animateContentSize(),
+    ) {
         if (!long || expanded) {
             Prose(text)
         } else {
             Prose(text.take(600).substringBeforeLast(' ') + "…")
         }
-        if (long) {
-            TextButton(onClick = { expanded = !expanded }) { Text(if (expanded) "Show less" else "Read more") }
-        }
+        if (long) MoreToggle(expanded, "Read more")
+    }
+}
+
+/**
+ * The whole of a cut-short block opens or closes it on a tap: TalkBack
+ * reads it as one button, saying what it does and whether it's open. Not
+ * clipped (the ripple keeps to the block anyway): a clip at the text's edge
+ * shaves the overhang off a first letter such as "B".
+ */
+private fun Modifier.toggleOnTap(expanded: Boolean, more: String, toggle: () -> Unit): Modifier =
+    clickable(onClickLabel = if (expanded) "Show less" else more, onClick = toggle)
+        .semantics { stateDescription = if (expanded) "Expanded" else "Collapsed" }
+
+/** "Read more" or "Show less" at the foot of a block [toggleOnTap] opens. */
+@Composable
+private fun MoreToggle(expanded: Boolean, more: String, color: Color = MaterialTheme.colorScheme.primary) {
+    Row(Modifier.padding(vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+        Text(if (expanded) "Show less" else more, style = MaterialTheme.typography.labelLarge, color = color)
+        Icon(
+            if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
+            contentDescription = null,
+            tint = color,
+            modifier = Modifier.size(18.dp),
+        )
     }
 }
 
@@ -715,7 +780,7 @@ private fun ReasonsCard(m: MergerDetail, e: MergerEvent, reasons: List<Reasons.B
         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
     ) {
         Column(
-            Modifier.padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = if (long) 4.dp else 16.dp)
+            Modifier.padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = if (long) 2.dp else 16.dp)
                 .animateContentSize(MaterialTheme.motionScheme.defaultSpatialSpec()),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
@@ -724,20 +789,17 @@ private fun ReasonsCard(m: MergerDetail, e: MergerEvent, reasons: List<Reasons.B
                 style = MaterialTheme.typography.titleMediumEmphasized,
                 modifier = Modifier.semantics { heading() },
             )
-            shown.forEach { ReasonBlock(it) }
-            if (long) {
-                TextButton(
-                    onClick = { expanded = !expanded },
-                    modifier = Modifier.offset(x = (-12).dp)
-                        .semantics { stateDescription = if (expanded) "Expanded" else "Collapsed" },
-                ) {
-                    Text(if (expanded) "Show less" else "Read all reasons")
-                    Icon(
-                        if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp),
-                    )
-                }
+            // The reasons themselves, and "Read all reasons" under them: a tap
+            // anywhere on them opens or closes the rest.
+            Column(
+                Modifier.then(
+                    if (long) Modifier.toggleOnTap(expanded, "Read all reasons") { expanded = !expanded }
+                    else Modifier,
+                ),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                shown.forEach { ReasonBlock(it) }
+                if (long) MoreToggle(expanded, "Read all reasons", LocalContentColor.current)
             }
         }
     }

@@ -275,11 +275,40 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     /** The dashboard's Catch me up card, or a link to /digest (with its section, if it named one). */
     fun openDigest(section: String? = null) {
         digestSection = section
+        if (!signupShown) signupShown = SignupPrompt.shows(getApplication())
         goTo(Route.Digest)
+    }
+
+    /**
+     * Settings' "Weekly email": the digest, its signup at the top whether or
+     * not it was dismissed, with the address field taking the keyboard.
+     */
+    fun openDigestSignup() {
+        if (signup is SignupState.Sent || signup is SignupState.Failed) signup = SignupState.Idle
+        signupShown = true
+        signupFocus = true
+        openDigest()
     }
 
     fun refreshDigest() {
         viewModelScope.launch { repo.refreshDigest() }
+    }
+
+    /**
+     * Whether the digest leads with its email signup ([SignupPrompt]): not
+     * for 60 days once dismissed, nor again once an address has been sent
+     * (though it stays to say "Check your inbox" until you leave it).
+     */
+    var signupShown by mutableStateOf(SignupPrompt.shows(app))
+        private set
+
+    /** The signup's address field should take focus (and the keyboard) once drawn; it clears this. */
+    var signupFocus by mutableStateOf(false)
+
+    fun dismissDigestSignup() {
+        signupShown = false
+        if (signup !is SignupState.Sent) SignupPrompt.dismiss(getApplication())
+        if (signup != SignupState.Sending) signup = SignupState.Idle
     }
 
     /** Where the digest's email signup is up to, kept while you go in and out of the digest. */
@@ -297,6 +326,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             signup = when (val r = Graph.signup.subscribe(address)) {
                 is SignupResult.Sent -> SignupState.Sent(address, r.message)
+                    .also { SignupPrompt.signedUp(getApplication()) }
                 is SignupResult.Failed -> SignupState.Failed(r.message)
             }
         }

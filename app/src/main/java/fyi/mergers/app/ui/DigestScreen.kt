@@ -123,6 +123,9 @@ import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.runtime.snapshotFlow
 import kotlinx.coroutines.delay
@@ -202,10 +205,12 @@ private fun DigestContent(vm: AppViewModel, digest: Digest, tracking: TrackingSt
     val sections = remember(digest) {
         Digests.sections(digest).map { (s, mergers) -> Triple(s, mergers.size, Digests.groups(s, mergers)) }
     }
-    // Where each section's heading sits in the list: after the intro and the
-    // counts, a heading, then each group's label (if it has one) and rows.
-    val headingIndex = remember(sections) {
-        var i = 2
+    // Where each section's heading sits in the list: after the intro, the
+    // signup (while it shows) and the counts, a heading, then each group's
+    // label (if it has one) and rows.
+    val signupShown = vm.signupShown
+    val headingIndex = remember(sections, signupShown) {
+        var i = if (signupShown) 3 else 2
         sections.associate { (s, _, groups) ->
             (s to i).also { i += 1 + groups.sumOf { g -> (if (g.label != null) 1 else 0) + g.rows.size } }
         }
@@ -223,6 +228,10 @@ private fun DigestContent(vm: AppViewModel, digest: Digest, tracking: TrackingSt
         contentPadding = PaddingValues(bottom = 32.dp).readable(),
     ) {
         item(key = "intro") { DigestHero(digest) }
+
+        if (signupShown) {
+            item(key = "email") { EmailSignup(vm, Modifier.animateItem()) }
+        }
 
         if (sections.isEmpty()) {
             item(key = "quiet") { Centered("No merger activity to report for this period.") }
@@ -252,8 +261,6 @@ private fun DigestContent(vm: AppViewModel, digest: Digest, tracking: TrackingSt
                 }
             }
         }
-
-        item(key = "email") { EmailSignup(vm) }
     }
 }
 
@@ -262,12 +269,24 @@ private fun DigestContent(vm: AppViewModel, digest: Digest, tracking: TrackingSt
  * to confirm (it can't ask the app for its Turnstile check), and the address
  * goes on the list once that's pressed. Says what's collected and links the
  * privacy policy, as Play asks of a form like this.
+ *
+ * It leads the digest until its × puts it away for 60 days, or an address
+ * is sent ([SignupPrompt]); Settings' "Weekly email" brings it back with the
+ * field focused ([AppViewModel.signupFocus]).
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalFoundationApi::class)
 @Composable
-private fun EmailSignup(vm: AppViewModel) {
+private fun EmailSignup(vm: AppViewModel, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val state = vm.signup
+    val focus = remember { FocusRequester() }
+    val keyboard = LocalSoftwareKeyboardController.current
+    LaunchedEffect(vm.signupFocus, state) {
+        if (!vm.signupFocus || state is SignupState.Sent) return@LaunchedEffect
+        vm.signupFocus = false
+        runCatching { focus.requestFocus() }
+        keyboard?.show()
+    }
     var email by rememberSaveable { mutableStateOf("") }
     val ink = MaterialTheme.colorScheme.onSecondaryContainer
     // While the address is being typed, the whole card (Subscribe included)
@@ -287,14 +306,14 @@ private fun EmailSignup(vm: AppViewModel) {
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer, contentColor = ink),
         shape = MaterialTheme.shapes.extraLarge,
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
-            .padding(start = 16.dp, end = 16.dp, top = 24.dp)
+            .padding(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 8.dp)
             .bringIntoViewRequester(card)
             .testTag("digest-signup"),
     ) {
-        Column(Modifier.padding(start = 20.dp, end = 20.dp, top = 18.dp, bottom = 14.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+        Column(Modifier.padding(start = 20.dp, end = 8.dp, top = 8.dp, bottom = 14.dp)) {
+            Row(Modifier.padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                 Box(
                     Modifier
                         .size(36.dp)
@@ -313,81 +332,88 @@ private fun EmailSignup(vm: AppViewModel) {
                     if (state is SignupState.Sent) "Check your inbox" else "Get this every Monday morning",
                     style = MaterialTheme.typography.titleMediumEmphasized,
                     // Announced when it changes to "Check your inbox": the button just pressed is gone.
-                    modifier = Modifier.padding(start = 12.dp).semantics { heading(); liveRegion = LiveRegionMode.Polite },
+                    modifier = Modifier.weight(1f).padding(start = 12.dp).semantics { heading(); liveRegion = LiveRegionMode.Polite },
                 )
-            }
-            if (state is SignupState.Sent) {
-                Text(
-                    "We’ve sent a link to ${state.email}. Tap it to confirm, and the digest will arrive each Monday.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(top = 10.dp),
-                )
-                // Filled, so it reads as a button and its edge lines up with the text above.
-                FilledTonalButton(
-                    onClick = vm::resetDigestSignup,
-                    shapes = ButtonDefaults.shapes(),
-                    colors = ButtonDefaults.filledTonalButtonColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
-                        contentColor = ink,
-                    ),
-                    contentPadding = ButtonDefaults.ButtonWithIconContentPadding,
-                    modifier = Modifier.padding(top = 12.dp, bottom = 4.dp),
-                ) {
-                    Icon(Icons.Outlined.Edit, contentDescription = null, modifier = Modifier.size(ButtonDefaults.IconSize))
-                    Spacer(Modifier.width(ButtonDefaults.IconSpacing))
-                    Text("Use another address")
+                IconButton(onClick = vm::dismissDigestSignup) {
+                    Icon(Icons.Outlined.Close, contentDescription = "Dismiss email signup")
                 }
-                return@Column
             }
-            val sending = state == SignupState.Sending
-            val submit = { vm.subscribeToDigest(email) }
-            OutlinedTextField(
-                value = email,
-                onValueChange = {
-                    email = it
-                    if (state is SignupState.Failed) vm.resetDigestSignup()
-                },
-                label = { Text("Email address") },
-                singleLine = true,
-                enabled = !sending,
-                isError = state is SignupState.Failed,
-                supportingText = (state as? SignupState.Failed)?.let { f -> { Text(f.message) } },
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Email,
-                    autoCorrectEnabled = false,
-                    imeAction = ImeAction.Send,
-                ),
-                keyboardActions = KeyboardActions(onSend = { submit() }),
-                shape = MaterialTheme.shapes.medium,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 12.dp)
-                    .onFocusChanged { typing = it.isFocused }
-                    .semantics { contentType = ContentType.EmailAddress },
-            )
-            Row(Modifier.padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    buildAnnotatedString {
-                        append("We’ll email a link to confirm. ")
-                        withLink(
-                            LinkAnnotation.Url(
-                                "$SITE/privacy",
-                                TextLinkStyles(SpanStyle(fontWeight = FontWeight.SemiBold, textDecoration = TextDecoration.Underline)),
-                            ) { openUrl(context, "$SITE/privacy") },
-                        ) { append("Privacy policy") }
+            // Everything under the heading keeps clear of the × on the right.
+            Column(Modifier.padding(end = 12.dp)) {
+                if (state is SignupState.Sent) {
+                    Text(
+                        "We’ve sent a link to ${state.email}. Tap it to confirm, and the digest will arrive each Monday.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(top = 10.dp),
+                    )
+                    // Filled, so it reads as a button and its edge lines up with the text above.
+                    FilledTonalButton(
+                        onClick = vm::resetDigestSignup,
+                        shapes = ButtonDefaults.shapes(),
+                        colors = ButtonDefaults.filledTonalButtonColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
+                            contentColor = ink,
+                        ),
+                        contentPadding = ButtonDefaults.ButtonWithIconContentPadding,
+                        modifier = Modifier.padding(top = 12.dp, bottom = 4.dp),
+                    ) {
+                        Icon(Icons.Outlined.Edit, contentDescription = null, modifier = Modifier.size(ButtonDefaults.IconSize))
+                        Spacer(Modifier.width(ButtonDefaults.IconSpacing))
+                        Text("Use another address")
+                    }
+                    return@Column
+                }
+                val sending = state == SignupState.Sending
+                val submit = { vm.subscribeToDigest(email) }
+                OutlinedTextField(
+                    value = email,
+                    onValueChange = {
+                        email = it
+                        if (state is SignupState.Failed) vm.resetDigestSignup()
                     },
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.weight(1f).padding(end = 12.dp),
+                    label = { Text("Email address") },
+                    singleLine = true,
+                    enabled = !sending,
+                    isError = state is SignupState.Failed,
+                    supportingText = (state as? SignupState.Failed)?.let { f -> { Text(f.message) } },
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Email,
+                        autoCorrectEnabled = false,
+                        imeAction = ImeAction.Send,
+                    ),
+                    keyboardActions = KeyboardActions(onSend = { submit() }),
+                    shape = MaterialTheme.shapes.medium,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 12.dp)
+                        .focusRequester(focus)
+                        .onFocusChanged { typing = it.isFocused }
+                        .semantics { contentType = ContentType.EmailAddress },
                 )
-                Button(
-                    onClick = submit,
-                    enabled = !sending && email.isNotBlank(),
-                    shapes = ButtonDefaults.shapes(),
-                ) {
-                    if (sending) {
-                        LoadingIndicator(Modifier.size(20.dp), color = MaterialTheme.colorScheme.onPrimary)
-                    } else {
-                        Text("Subscribe")
+                Row(Modifier.padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        buildAnnotatedString {
+                            append("We’ll email a link to confirm. ")
+                            withLink(
+                                LinkAnnotation.Url(
+                                    "$SITE/privacy",
+                                    TextLinkStyles(SpanStyle(fontWeight = FontWeight.SemiBold, textDecoration = TextDecoration.Underline)),
+                                ) { openUrl(context, "$SITE/privacy") },
+                            ) { append("Privacy policy") }
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.weight(1f).padding(end = 12.dp),
+                    )
+                    Button(
+                        onClick = submit,
+                        enabled = !sending && email.isNotBlank(),
+                        shapes = ButtonDefaults.shapes(),
+                    ) {
+                        if (sending) {
+                            LoadingIndicator(Modifier.size(20.dp), color = MaterialTheme.colorScheme.onPrimary)
+                        } else {
+                            Text("Subscribe")
+                        }
                     }
                 }
             }

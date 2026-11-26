@@ -181,6 +181,24 @@ data class RelatedMerger(
     val merger_id: String? = null,
     val relationship: String? = null,
     val merger_name: String? = null,
+    /** A pair's hand-written wording (related_mergers.json's from_label / to_label), over [RELATED_MERGER_LABELS]. */
+    val label: String? = null,
+) {
+    /** What the link says, as the site's relatedMergerLabel (pages/MergerDetail.jsx). */
+    val text: String
+        get() = label?.takeIf { it.isNotBlank() }
+            ?: RELATED_MERGER_LABELS[relationship]
+            ?: RELATED_MERGER_LABELS.getValue("refiled_from")
+}
+
+/** The site's RELATED_MERGER_LABELS (pages/MergerDetail.jsx), by `relationship`: keep the two in step. */
+val RELATED_MERGER_LABELS = mapOf(
+    "refiled_as" to "Waiver declined – subsequently notified",
+    "refiled_from" to "Originally filed as a waiver application",
+    "suspended_refiled_as" to "Assessment suspended – subsequently refiled",
+    "suspended_refiled_from" to "Refiled after an earlier assessment was suspended",
+    "resubmitted_as" to "Subsequently resubmitted as a separate matter",
+    "resubmitted_from" to "Resubmission of an earlier application",
 )
 
 @Serializable

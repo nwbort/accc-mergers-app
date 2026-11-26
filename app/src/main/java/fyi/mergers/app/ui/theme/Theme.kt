@@ -178,6 +178,19 @@ fun reasonsColors(label: String?, dark: Boolean): StatusColors = when (label) {
     else -> (if (dark) Dark else Light).let { StatusColors(it.secondaryContainer, it.onSecondaryContainer) }
 }
 
+/**
+ * The link to a related merger (the one a waiver was re-filed as, and so on):
+ * amber, as the site's, but a shade deeper than its 50 so it reads as a
+ * button. Tailwind's amber 100 under 900; in the dark, a wash of amber 300
+ * under amber 200 (the fill is translucent: lay it over the surface).
+ */
+@Composable
+fun relatedMergerColors(): StatusColors = relatedMergerColors(isDarkTheme())
+
+fun relatedMergerColors(dark: Boolean): StatusColors =
+    if (dark) StatusColors(Color(0xFFFCD34D).copy(alpha = 0.16f), Color(0xFFFDE68A))
+    else StatusColors(Color(0xFFFEF3C7), Color(0xFF78350F))
+
 /** The wash a matter under appeal or judicial review takes, as on the site. */
 val AppealIndigo = StatusColors(Color(0xFF4338CA), Color.White)
 

@@ -127,6 +127,13 @@ fun SettingsScreen(vm: AppViewModel) {
                 trailing = null,
                 onClick = { openUrl(context, "https://mergers.fyi/") },
             )
+            // The digest's signup, brought back if it was dismissed, the field ready to type in.
+            ListRow(
+                title = "Weekly email",
+                subtitle = "Get the digest in your inbox every Monday morning",
+                trailing = null,
+                onClick = vm::openDigestSignup,
+            )
             ListRow(
                 title = "Made by Nick Twort",
                 subtitle = "About me, on mergers.fyi",
