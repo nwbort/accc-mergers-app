@@ -611,7 +611,7 @@ private fun Expandable(text: String) {
     val long = text.length > 600
     Column(
         Modifier.padding(horizontal = 16.dp)
-            .then(if (long) Modifier.clip(MaterialTheme.shapes.small).toggleOnTap(expanded, "Read more") { expanded = !expanded } else Modifier)
+            .then(if (long) Modifier.toggleOnTap(expanded, "Read more") { expanded = !expanded } else Modifier)
             .animateContentSize(),
     ) {
         if (!long || expanded) {
@@ -625,7 +625,9 @@ private fun Expandable(text: String) {
 
 /**
  * The whole of a cut-short block opens or closes it on a tap: TalkBack
- * reads it as one button, saying what it does and whether it's open.
+ * reads it as one button, saying what it does and whether it's open. Not
+ * clipped (the ripple keeps to the block anyway): a clip at the text's edge
+ * shaves the overhang off a first letter such as "B".
  */
 private fun Modifier.toggleOnTap(expanded: Boolean, more: String, toggle: () -> Unit): Modifier =
     clickable(onClickLabel = if (expanded) "Show less" else more, onClick = toggle)
@@ -791,8 +793,7 @@ private fun ReasonsCard(m: MergerDetail, e: MergerEvent, reasons: List<Reasons.B
             // anywhere on them opens or closes the rest.
             Column(
                 Modifier.then(
-                    if (long) Modifier.clip(MaterialTheme.shapes.small)
-                        .toggleOnTap(expanded, "Read all reasons") { expanded = !expanded }
+                    if (long) Modifier.toggleOnTap(expanded, "Read all reasons") { expanded = !expanded }
                     else Modifier,
                 ),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
