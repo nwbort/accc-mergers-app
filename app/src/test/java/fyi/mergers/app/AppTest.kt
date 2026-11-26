@@ -64,6 +64,12 @@ import fyi.mergers.app.notify.CheckWorker
 import fyi.mergers.app.notify.Push
 import fyi.mergers.app.ui.AppViewModel
 import fyi.mergers.app.ui.Route
+import fyi.mergers.app.ui.SignupPrompt
+import fyi.mergers.app.data.Dates
+import android.content.Context
+import java.time.Clock
+import java.time.Duration
+import androidx.compose.ui.test.performScrollTo
 import fyi.mergers.app.ui.theme.Appearance
 import fyi.mergers.app.ui.theme.ThemeChoice
 import kotlinx.coroutines.runBlocking
@@ -188,6 +194,24 @@ class AppTest {
         shot("1n-digest-signup-sent")
         compose.onNodeWithText("Use another address").performClick()
         waitForText("Get this every Monday morning")
+        // The signup leads the digest until put away; with an address sent,
+        // it stays away for good.
+        compose.onNodeWithTag("digest").performScrollToIndex(0)
+        compose.onNodeWithContentDescription("Dismiss email signup").performClick()
+        compose.waitUntil(10_000) { compose.onAllNodesWithTag("digest-signup").fetchSemanticsNodes().isEmpty() }
+        assertFalse(vm.signupShown)
+        assertFalse(SignupPrompt.shows(app))
+        // Dismissed without one, it's back after 60 days.
+        val settings = app.getSharedPreferences("settings", Context.MODE_PRIVATE)
+        settings.edit().remove(SignupPrompt.SIGNED_UP).commit()
+        SignupPrompt.dismiss(app)
+        assertFalse(SignupPrompt.shows(app))
+        val pinned = Dates.clock
+        Dates.clock = Clock.offset(pinned, Duration.ofDays(59))
+        assertFalse(SignupPrompt.shows(app))
+        Dates.clock = Clock.offset(pinned, Duration.ofDays(60))
+        assertTrue(SignupPrompt.shows(app))
+        Dates.clock = pinned
 
         // A row opens its merger; back returns to the digest.
         compose.onNodeWithTag("digest").performScrollToKey("ongoing-phase-2-MN-01072")
@@ -212,6 +236,15 @@ class AppTest {
         compose.onNodeWithContentDescription("Settings").performClick()
         waitForText("Appearance")
         shot("1f-settings")
+        // About's "Weekly email" brings the signup back, ready to type in.
+        compose.onNodeWithText("Weekly email").performScrollTo().performClick()
+        waitUntil { vm.backStack.lastOrNull() == Route.Digest }
+        waitForText("Get this every Monday morning")
+        val signupField = compose.onNode(hasSetTextAction() and hasAnyAncestor(hasTestTag("digest-signup")))
+        compose.waitUntil(10_000) { runCatching { signupField.assertIsFocused() }.isSuccess }
+        shot("1f2-digest-signup-from-settings")
+        back()
+        waitUntil { vm.backStack.lastOrNull() == Route.Settings }
         compose.onNodeWithText("Dark").performClick()
         waitUntil { vm.theme == ThemeChoice.DARK }
         assertEquals(ThemeChoice.DARK, Appearance.theme(app))
@@ -390,8 +423,11 @@ class AppTest {
         // Following a declined waiver also follows the notification it was
         // re-filed as, once the follow list is next brought up to date.
         compose.runOnUiThread { vm.openMerger("WA-01087") }
-        waitForText("Re-filed as")
+        // Its link to that notification says what the site says, on a card of its own.
+        waitForText("Waiver declined – subsequently notified")
+        compose.onNodeWithTag("detail").performScrollToNode(hasTestTag("related-merger"))
         shot("5-detail-waiver")
+        compose.onNodeWithTag("detail").performScrollToIndex(0)
         compose.onNodeWithContentDescription("Follow").performClick()
         waitUntil { Graph.store.current().isTracked("WA-01087") }
         compose.runOnUiThread { vm.selectTab(fyi.mergers.app.ui.Route.Following) }

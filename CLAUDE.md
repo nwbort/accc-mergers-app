@@ -62,10 +62,13 @@ says, are `data/Digests.kt`. Keep those in step with `Digest.jsx` and
 `DIGEST_COLOR_KEYS`. Each section has its own `MaterialShapes` glyph
 (`DigestSection.shape()` in the screen; a decision takes its outcome's
 `outcomeShape`), on its count card and its heading. The test fixture is a copy of the site's archived digest
-for 26 Oct to 1 Nov 2026. At its foot, a native email signup (`EmailSignup`,
+for 26 Oct to 1 Nov 2026. Under its hero, a native email signup (`EmailSignup`,
 `AppViewModel.subscribeToDigest`) posts to the site's signup worker's
 `/app-signup` route (`data/DigestSignup.kt`), which emails a link to confirm
-(double opt-in) because the app can't show the website's Turnstile check. The
+(double opt-in) because the app can't show the website's Turnstile check. Its ×
+puts it away for 60 days, and a sent address for good (`SignupPrompt`, in the
+`settings` preferences); Settings' "Weekly email" brings it back with the
+field focused (`AppViewModel.openDigestSignup`). The
 tests swap in `FakeSignup` (`MergersApp.digestSignup`). Google Play asks a form
 like this to say what's collected and link the privacy policy: keep both.
 
